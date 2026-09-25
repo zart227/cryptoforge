@@ -602,19 +602,19 @@ Persist useful context:
 
 Checklist:
 
--   [ ] Define canonical trade record.
--   [ ] Avoid duplicating Freqtrade data unnecessarily.
--   [ ] Persist feature snapshot.
--   [ ] Persist entry/exit reason.
--   [ ] Compute MFE/MAE where reliable.
--   [ ] Send durable events through outbox.
--   [ ] Validate records against local trade state.
+-   [x] Define canonical trade record.
+-   [x] Avoid duplicating Freqtrade data unnecessarily.
+-   [x] Persist feature snapshot.
+-   [x] Persist entry/exit reason.
+-   [x] Compute MFE/MAE where reliable.
+-   [x] Send durable events through outbox.
+-   [x] Validate records against local trade state.
 
 ### Definition of Done - Phase 13
 
--   [ ] A completed dry-run trade can be reconstructed from stored
+-   [x] A completed dry-run trade can be reconstructed from stored
     metadata.
--   [ ] Trade context survives Supabase outage via outbox.
+-   [x] Trade context survives Supabase outage via outbox.
 
 ------------------------------------------------------------------------
 
