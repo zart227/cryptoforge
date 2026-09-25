@@ -1,0 +1,13 @@
+[Unit]
+Description=CryptoForge git sync deploy
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+User=root
+Group=root
+ExecStart=/bin/bash /opt/cryptoforge/app/cryptoforge_repo/deploy/update_vps.sh
+Nice=5
+IOSchedulingClass=best-effort
+IOSchedulingPriority=6

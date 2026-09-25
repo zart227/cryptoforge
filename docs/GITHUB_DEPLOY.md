@@ -1,6 +1,6 @@
 # GitHub Deploy
 
-CryptoForge can update the VPS automatically after each push to `main`.
+CryptoForge can update the VPS automatically from `main`.
 
 ## VPS Layout
 
@@ -10,7 +10,26 @@ CryptoForge can update the VPS automatically after each push to `main`.
 
 The `.env` file stays outside git and is not overwritten by deploys.
 
-## GitHub Secrets
+## Server Pull Timer
+
+The active deployment path is a VPS-side systemd timer:
+
+- unit: `cryptoforge-git-sync.service`;
+- timer: `cryptoforge-git-sync.timer`;
+- interval: every two minutes after the previous run.
+
+This pull model works even when the VPS SSH port is not reachable from
+GitHub-hosted runners. The repository is public, so the VPS can fetch it
+over HTTPS without a GitHub deploy key.
+
+## GitHub SSH Workflow
+
+The repository also contains a manual GitHub Actions workflow for direct
+SSH deploys. It is intentionally `workflow_dispatch` only because the VPS
+public SSH port must be reachable from GitHub-hosted runners before it
+can work reliably.
+
+### GitHub Secrets
 
 Add these repository secrets in GitHub:
 
@@ -19,8 +38,8 @@ Add these repository secrets in GitHub:
 - `VPS_USER`: SSH user, currently `root` unless changed later;
 - `VPS_SSH_KEY`: private SSH key allowed to connect to the VPS.
 
-The workflow `.github/workflows/deploy-vps.yml` runs on every push to
-`main` and can also be started manually with `workflow_dispatch`.
+The workflow `.github/workflows/deploy-vps.yml` can be started manually
+with `workflow_dispatch` after public SSH access is available.
 
 ## Server Update Command
 
