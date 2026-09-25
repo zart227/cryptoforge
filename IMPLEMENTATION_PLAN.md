@@ -704,20 +704,20 @@ Checklist:
 
 # PHASE 17 - Champion / Challenger framework
 
--   [ ] Register baseline as initial control/champion candidate.
--   [ ] Define challenger metadata.
--   [ ] Compare on equivalent datasets/windows.
--   [ ] Compare out-of-sample.
--   [ ] Compare walk-forward.
--   [ ] Compare by market regime.
--   [ ] Do not replace champion based solely on absolute historical
+-   [x] Register baseline as initial control/champion candidate.
+-   [x] Define challenger metadata.
+-   [x] Compare on equivalent datasets/windows.
+-   [x] Compare out-of-sample.
+-   [x] Compare walk-forward.
+-   [x] Compare by market regime.
+-   [x] Do not replace champion based solely on absolute historical
     profit.
--   [ ] Record promotion/rejection reason.
+-   [x] Record promotion/rejection reason.
 
 ### Definition of Done - Phase 17
 
--   [ ] Every promotion/rejection is evidence-backed and auditable.
--   [ ] Strategy history remains available.
+-   [x] Every promotion/rejection is evidence-backed and auditable.
+-   [x] Strategy history remains available.
 
 ------------------------------------------------------------------------
 
