@@ -8,6 +8,7 @@ def test_live_blockers_remain_explicit() -> None:
         "dedicated limited Bybit sub-account",
         "withdrawal permission is confirmed absent",
         "small capital allocation is explicitly chosen",
+        "16 USDT",
         "separate live config",
         "backup/restore is verified immediately before live start",
         "live kill switch is tested",

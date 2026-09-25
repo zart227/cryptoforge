@@ -18,6 +18,8 @@ The first live pilot, when explicitly approved later, is limited to:
 - IP-whitelisted API key where feasible;
 - small capital allocation chosen explicitly by the operator.
 
+Recorded first pilot capital allocation: `16 USDT`.
+
 ## Required Operator Attestation
 
 `OperatorAttestation` must confirm:

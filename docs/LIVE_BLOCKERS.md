@@ -8,7 +8,7 @@ operator and re-tested:
 - dedicated limited Bybit sub-account is confirmed;
 - withdrawal permission is confirmed absent;
 - API key IP whitelist is configured where feasible;
-- small capital allocation is explicitly chosen;
+- small capital allocation is explicitly chosen: `16 USDT`;
 - `.env` and VPS secrets are confirmed least-privilege on the deployment
   host;
 - separate live config is created and reviewed without mutating dry-run
@@ -29,4 +29,5 @@ Current status:
 - live pilot readiness tooling exists;
 - kill switch/no-new-entry switch primitives exist;
 - Telegram delivery smoke succeeded;
+- first pilot capital allocation is recorded as `16 USDT`;
 - real trading remains disabled.
