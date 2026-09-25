@@ -1164,3 +1164,27 @@ Follow-up:
 ```
 
 Do not delete previous decisions.
+
+## 2026-09-25 - TypeSafe document evaluation CLI
+
+Phase:
+Out-of-order user-requested utility work after Phase 4.
+Decision:
+Implemented a standalone TypeSafe-powered CLI for evaluating supplied
+documents across configurable Score dimensions before continuing to
+Phase 5.
+Reason:
+The user explicitly requested this CLI and asked to use the installed
+TypeSafe skill.
+Alternatives considered:
+Deferring until later Strategy Lab phases, or building a hardcoded
+one-off script.
+Risk/impact:
+No trading runtime behavior changed. The CLI is optional, requires
+`TYPESAFE_API_KEY`, and stores no secrets.
+Verification:
+Added unit tests with a fake TypeSafe client, validated CLI help and
+missing-key behavior, and ran the non-integration test suite.
+Follow-up:
+Continue the main CryptoForge plan from Phase 5 unless the user asks for
+more TypeSafe CLI refinements.

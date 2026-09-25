@@ -1,0 +1,60 @@
+{
+  "model": "jev-latest",
+  "dimensions": [
+    {
+      "id": "clarity",
+      "label": "Clarity",
+      "instructions": "How clearly does the document communicate its main ideas, assumptions, and conclusions?",
+      "levels": [
+        "Unclear; hard to identify the main point or intended use.",
+        "Partly clear; core idea is present but important context is missing or confusing.",
+        "Mostly clear; main ideas are understandable with minor gaps or ambiguity.",
+        "Very clear; ideas, assumptions, and conclusions are easy to follow."
+      ]
+    },
+    {
+      "id": "evidence_quality",
+      "label": "Evidence quality",
+      "instructions": "How well does the document support its claims with concrete evidence, examples, data, or reasoning?",
+      "levels": [
+        "Unsupported; mostly assertions with little or no evidence.",
+        "Weakly supported; some evidence exists but it is thin, vague, or disconnected.",
+        "Adequately supported; key claims have relevant evidence or reasoning.",
+        "Strongly supported; claims are grounded in specific, credible, and well-connected evidence."
+      ]
+    },
+    {
+      "id": "actionability",
+      "label": "Actionability",
+      "instructions": "How actionable is this document for someone deciding what to do next?",
+      "levels": [
+        "Not actionable; no clear next steps or decision criteria.",
+        "Somewhat actionable; suggests direction but lacks concrete steps or ownership.",
+        "Actionable; includes usable next steps, constraints, or decision points.",
+        "Highly actionable; next steps, priorities, risks, and success criteria are explicit."
+      ]
+    },
+    {
+      "id": "risk_awareness",
+      "label": "Risk awareness",
+      "instructions": "How well does the document identify limitations, risks, failure modes, or tradeoffs?",
+      "levels": [
+        "Ignores meaningful risks or limitations.",
+        "Mentions risks only generally or incompletely.",
+        "Identifies important risks and some mitigations or tradeoffs.",
+        "Thoroughly captures risks, tradeoffs, mitigations, and open uncertainties."
+      ]
+    },
+    {
+      "id": "implementation_readiness",
+      "label": "Implementation readiness",
+      "instructions": "How ready is this document to guide implementation or operational execution?",
+      "levels": [
+        "Not ready; too abstract or incomplete to implement.",
+        "Early draft; useful direction but major implementation details are missing.",
+        "Mostly ready; enough structure to begin with some follow-up decisions.",
+        "Ready; detailed enough to implement or execute with minimal clarification."
+      ]
+    }
+  ]
+}

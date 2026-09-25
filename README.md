@@ -36,6 +36,23 @@ has been installed or started yet.
 .venv/bin/python scripts/bybit_market_data_smoke.py
 ```
 
+## TypeSafe Document Evaluation
+
+Install the optional TypeSafe dependency and set an API key:
+
+```text
+.venv/bin/python -m pip install -e '.[typesafe]'
+export TYPESAFE_API_KEY='...'
+```
+
+Evaluate documents:
+
+```text
+.venv/bin/python -m cryptoforge.document_eval_cli docs README.md \
+  --json-out document-scores.json \
+  --csv-out document-scores.csv
+```
+
 ## Safety
 
 Do not commit `.env`, exchange credentials, Supabase service keys,

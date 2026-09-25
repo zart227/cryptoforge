@@ -13,6 +13,12 @@ dependencies = []
 dev = [
   "pytest>=8.0",
 ]
+typesafe = [
+  "typesafe-sdk>=0.5.0",
+]
+
+[project.scripts]
+cryptoforge-doc-eval = "cryptoforge.document_eval_cli:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
