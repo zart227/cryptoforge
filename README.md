@@ -28,6 +28,14 @@ has been installed or started yet.
 - `supabase/migrations/` - future Supabase schema migrations
 - `user_data/strategies/` - future Freqtrade strategies
 
+## Development Checks
+
+```text
+.venv/bin/python -m pytest tests/test_market_data.py -m 'not integration'
+.venv/bin/python -m pytest tests/test_market_data.py -m integration
+.venv/bin/python scripts/bybit_market_data_smoke.py
+```
+
 ## Safety
 
 Do not commit `.env`, exchange credentials, Supabase service keys,

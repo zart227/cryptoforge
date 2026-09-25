@@ -228,25 +228,25 @@ command:
 
 # PHASE 4 - Bybit public market data
 
--   [ ] Retrieve Bybit Spot instruments.
--   [ ] Identify USDT Spot pairs.
--   [ ] Retrieve ticker/24h market statistics.
--   [ ] Retrieve OHLCV required by strategy.
--   [ ] Primary timeframe: 5m.
--   [ ] Evaluate 15m and 1h as informative timeframes.
--   [ ] Do not enable 1m unless its value is demonstrated.
--   [ ] Handle API timeout/rate-limit/retry correctly.
--   [ ] Detect stale market data.
--   [ ] Stop opening new positions when market data is stale.
--   [ ] Add integration tests around parsing and freshness.
+-   [x] Retrieve Bybit Spot instruments.
+-   [x] Identify USDT Spot pairs.
+-   [x] Retrieve ticker/24h market statistics.
+-   [x] Retrieve OHLCV required by strategy.
+-   [x] Primary timeframe: 5m.
+-   [x] Evaluate 15m and 1h as informative timeframes.
+-   [x] Do not enable 1m unless its value is demonstrated.
+-   [x] Handle API timeout/rate-limit/retry correctly.
+-   [x] Detect stale market data.
+-   [x] Stop opening new positions when market data is stale.
+-   [x] Add integration tests around parsing and freshness.
 
 ### Definition of Done - Phase 4
 
--   [ ] Public market data works without trading credentials where
+-   [x] Public market data works without trading credentials where
     possible.
--   [ ] Stale/missing data is detected.
--   [ ] Rate limits/errors do not crash the runtime.
--   [ ] Memory use remains controlled.
+-   [x] Stale/missing data is detected.
+-   [x] Rate limits/errors do not crash the runtime.
+-   [x] Memory use remains controlled.
 
 ------------------------------------------------------------------------
 
