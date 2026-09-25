@@ -682,23 +682,23 @@ Approval does **not** enable real money.
 
 Checklist:
 
--   [ ] Implement lifecycle metadata.
--   [ ] Prevent invalid state transitions.
--   [ ] Define evaluation criteria.
--   [ ] Compare return and drawdown.
--   [ ] Compare profit factor/expectancy.
--   [ ] Compare Sharpe/Sortino.
--   [ ] Require adequate trade count.
--   [ ] Evaluate stability.
--   [ ] Store evaluation evidence.
--   [ ] Keep human approval boundary for real trading.
+-   [x] Implement lifecycle metadata.
+-   [x] Prevent invalid state transitions.
+-   [x] Define evaluation criteria.
+-   [x] Compare return and drawdown.
+-   [x] Compare profit factor/expectancy.
+-   [x] Compare Sharpe/Sortino.
+-   [x] Require adequate trade count.
+-   [x] Evaluate stability.
+-   [x] Store evaluation evidence.
+-   [x] Keep human approval boundary for real trading.
 
 ### Definition of Done - Phase 16
 
--   [ ] Strategy state is traceable.
--   [ ] A high-profit but unstable/overfit strategy is not automatically
+-   [x] Strategy state is traceable.
+-   [x] A high-profit but unstable/overfit strategy is not automatically
     promoted.
--   [ ] Autonomous promotion cannot bypass hard risk gates.
+-   [x] Autonomous promotion cannot bypass hard risk gates.
 
 ------------------------------------------------------------------------
 

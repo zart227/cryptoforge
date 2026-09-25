@@ -2,6 +2,7 @@
   "strategy_name": "CryptoForgeBaselineStrategy",
   "version": "cryptoforge-baseline-v0.1.0",
   "status": "BACKTESTED",
+  "human_live_approval_required": true,
   "market_scope": "bybit_spot",
   "timeframe": "5m",
   "purpose": "Transparent control strategy for future champion/challenger comparisons.",
