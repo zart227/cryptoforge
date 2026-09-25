@@ -499,25 +499,25 @@ Forbidden:
 
 Checklist:
 
--   [ ] Implement central hard-risk config.
--   [ ] Implement position-size calculation.
--   [ ] Account for stop distance.
--   [ ] Account for fees.
--   [ ] Account for minimum order and precision.
--   [ ] Implement max concurrent positions.
--   [ ] Implement daily loss guard.
--   [ ] Implement portfolio drawdown guard.
--   [ ] Implement no-new-trade fail-safe.
--   [ ] Unit-test boundary conditions.
--   [ ] Ensure strategy cannot bypass hard limits.
--   [ ] Document in `docs/RISK_MANAGEMENT.md`.
+-   [x] Implement central hard-risk config.
+-   [x] Implement position-size calculation.
+-   [x] Account for stop distance.
+-   [x] Account for fees.
+-   [x] Account for minimum order and precision.
+-   [x] Implement max concurrent positions.
+-   [x] Implement daily loss guard.
+-   [x] Implement portfolio drawdown guard.
+-   [x] Implement no-new-trade fail-safe.
+-   [x] Unit-test boundary conditions.
+-   [x] Ensure strategy cannot bypass hard limits.
+-   [x] Document in `docs/RISK_MANAGEMENT.md`.
 
 ### Definition of Done - Phase 10
 
--   [ ] Risk tests cover edge cases.
--   [ ] Deliberately oversized trade requests are rejected.
--   [ ] Daily/drawdown limits stop new entries.
--   [ ] Hard limits are outside strategy/ML control.
+-   [x] Risk tests cover edge cases.
+-   [x] Deliberately oversized trade requests are rejected.
+-   [x] Daily/drawdown limits stop new entries.
+-   [x] Hard limits are outside strategy/ML control.
 
 ------------------------------------------------------------------------
 

@@ -1,0 +1,13 @@
+{
+  "virtual_capital": "1000",
+  "risk_per_trade_pct": "0.005",
+  "max_simultaneous_positions": 2,
+  "daily_loss_limit_pct": "0.02",
+  "max_portfolio_drawdown_pct": "0.10",
+  "taker_fee_pct": "0.001",
+  "min_order_notional": "5",
+  "min_order_qty": "0.000001",
+  "qty_step": "0.000001",
+  "max_position_notional_pct": "0.05",
+  "fail_safe_max_outbox_age_seconds": 3600
+}
