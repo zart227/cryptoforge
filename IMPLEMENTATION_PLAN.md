@@ -833,21 +833,21 @@ Monitor:
 
 Checklist:
 
--   [ ] Implement health checks.
--   [ ] Implement stale-market-data guard.
--   [ ] Implement Supabase-offline indicator.
--   [ ] Implement queue-growth warning.
--   [ ] Implement disk warning.
--   [ ] Implement risk-limit alerts.
--   [ ] Define fail-safe no-new-entry states.
--   [ ] Existing positions remain manageable during remote-backend
+-   [x] Implement health checks.
+-   [x] Implement stale-market-data guard.
+-   [x] Implement Supabase-offline indicator.
+-   [x] Implement queue-growth warning.
+-   [x] Implement disk warning.
+-   [x] Implement risk-limit alerts.
+-   [x] Define fail-safe no-new-entry states.
+-   [x] Existing positions remain manageable during remote-backend
     outage.
--   [ ] Document recovery procedures.
+-   [x] Document recovery procedures.
 
 ### Definition of Done - Phase 20
 
--   [ ] Simulated failures produce safe behavior.
--   [ ] Critical conditions are visible and documented.
+-   [x] Simulated failures produce safe behavior.
+-   [x] Critical conditions are visible and documented.
 
 ------------------------------------------------------------------------
 
