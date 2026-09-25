@@ -2,8 +2,10 @@
 
 ## Current Deployment State
 
-CryptoForge is not deployed yet. Phase 0 read-only VPS audit has been
-started and no server changes have been made.
+CryptoForge is not deployed yet. Phase 0 read-only VPS audit is complete.
+Phase 2 created an isolated `/opt/cryptoforge` runtime directory and a
+`cryptoforge` system user. Phase 3 installed Freqtrade in a venv and
+performed a bounded dry-run startup test with a no-entry strategy.
 
 ## Operating Principles
 
@@ -13,7 +15,7 @@ started and no server changes have been made.
   unless a later phase explicitly requires them and the change is backed
   up first.
 - Keep CryptoForge isolated under a clearly named path such as
-  `/opt/cryptoforge` when deployment begins.
+  `/opt/cryptoforge`.
 - Never copy SSH private keys into this repository.
 - Never print or commit secrets.
 
@@ -23,7 +25,22 @@ The only permitted runtime mode during current implementation is dry-run
 paper trading. Configuration and tests must guard against accidental
 `dry_run=false`.
 
+Current Freqtrade runtime path:
+
+- venv: `/opt/cryptoforge/app/venv`
+- config: `/opt/cryptoforge/config/freqtrade.dry-run.json`
+- user data: `/opt/cryptoforge/app/user_data`
+- dry-run DB: `/opt/cryptoforge/data/tradesv3.dry_run.sqlite`
+- logs: `/opt/cryptoforge/logs`
+
 ## Recovery
 
 Detailed recovery procedures will be added in later phases after the
 runtime, outbox, monitoring, and backup tooling exist.
+
+## VPS Notes
+
+The current VPS is too small for a casual always-on Docker deployment.
+Prefer a native virtualenv-based install until the host is upgraded.
+Keep any future container deployment explicitly resource-limited and
+avoid binding public ports already used by existing services.

@@ -177,52 +177,52 @@ command:
 
 # PHASE 2 - Safe VPS preparation
 
--   [ ] Reconfirm free disk before installation.
--   [ ] Determine whether Docker is viable with current RAM.
--   [ ] If Docker is used, define strict resource-conscious deployment.
--   [ ] If Docker is not viable, document why and keep architecture
+-   [x] Reconfirm free disk before installation.
+-   [x] Determine whether Docker is viable with current RAM.
+-   [x] If Docker is used, define strict resource-conscious deployment.
+-   [x] If Docker is not viable, document why and keep architecture
     containerizable.
--   [ ] Configure safe swap if missing and justified.
--   [ ] Document swap size and swappiness.
--   [ ] Create isolated `/opt/cryptoforge` or justified equivalent.
--   [ ] Keep CryptoForge resources clearly prefixed/namespaced.
--   [ ] Do not alter VPN routes/firewall unless absolutely necessary.
--   [ ] Back up any config before modifying it.
--   [ ] Establish safe file permissions.
--   [ ] Measure post-preparation RAM/disk baseline.
+-   [x] Configure safe swap if missing and justified.
+-   [x] Document swap size and swappiness.
+-   [x] Create isolated `/opt/cryptoforge` or justified equivalent.
+-   [x] Keep CryptoForge resources clearly prefixed/namespaced.
+-   [x] Do not alter VPN routes/firewall unless absolutely necessary.
+-   [x] Back up any config before modifying it.
+-   [x] Establish safe file permissions.
+-   [x] Measure post-preparation RAM/disk baseline.
 
 ### Definition of Done - Phase 2
 
--   [ ] VPS remains reachable.
--   [ ] Existing VPN/network services still function.
--   [ ] CryptoForge has isolated storage/runtime space.
--   [ ] OOM protection is improved without exhausting disk.
--   [ ] Baseline resource usage is documented.
+-   [x] VPS remains reachable.
+-   [x] Existing VPN/network services still function.
+-   [x] CryptoForge has isolated storage/runtime space.
+-   [x] OOM protection is improved without exhausting disk.
+-   [x] Baseline resource usage is documented.
 
 ------------------------------------------------------------------------
 
 # PHASE 3 - Freqtrade runtime
 
--   [ ] Verify current Freqtrade documentation/version compatibility
+-   [x] Verify current Freqtrade documentation/version compatibility
     with Ubuntu 24.04 and Bybit Spot.
--   [ ] Verify current Bybit Spot dry-run support and limitations.
--   [ ] Install minimal Freqtrade runtime.
--   [ ] Configure Bybit only.
--   [ ] Ensure `dry_run=true`.
--   [ ] Ensure Futures/margin/leverage are disabled.
--   [ ] Configure virtual balance: 1000 USDT.
--   [ ] Keep credentials absent until actually required.
--   [ ] Start runtime.
--   [ ] Measure RAM/CPU/disk.
+-   [x] Verify current Bybit Spot dry-run support and limitations.
+-   [x] Install minimal Freqtrade runtime.
+-   [x] Configure Bybit only.
+-   [x] Ensure `dry_run=true`.
+-   [x] Ensure Futures/margin/leverage are disabled.
+-   [x] Configure virtual balance: 1000 USDT.
+-   [x] Keep credentials absent until actually required.
+-   [x] Start runtime.
+-   [x] Measure RAM/CPU/disk.
 -   [ ] Test clean stop/start.
--   [ ] Test state persistence.
+-   [x] Test state persistence.
 
 ### Definition of Done - Phase 3
 
 -   [ ] Freqtrade starts reliably.
--   [ ] Configuration cannot place real orders.
--   [ ] Bybit is the only exchange configured.
--   [ ] Runtime fits current VPS without unacceptable swapping/OOM.
+-   [x] Configuration cannot place real orders.
+-   [x] Bybit is the only exchange configured.
+-   [x] Runtime fits current VPS without unacceptable swapping/OOM.
 
 ------------------------------------------------------------------------
 
