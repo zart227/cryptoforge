@@ -561,11 +561,11 @@ Checklist:
 
 # PHASE 12 - End-to-end Bybit Spot dry-run
 
--   [ ] Connect scanner -\> regime -\> strategy -\> risk -\> Freqtrade.
--   [ ] Confirm only dry-run orders are created.
--   [ ] Confirm no Futures endpoints/config.
--   [ ] Confirm no leverage.
--   [ ] Exercise at least one controlled simulated lifecycle if market
+-   [x] Connect scanner -\> regime -\> strategy -\> risk -\> Freqtrade.
+-   [x] Confirm only dry-run orders are created.
+-   [x] Confirm no Futures endpoints/config.
+-   [x] Confirm no leverage.
+-   [x] Exercise at least one controlled simulated lifecycle if market
     conditions allow.
 -   [ ] Verify restart behavior.
 -   [ ] Verify no duplicate state after restart.
@@ -574,7 +574,7 @@ Checklist:
 ### Definition of Done - Phase 12
 
 -   [ ] End-to-end paper-trading pipeline works.
--   [ ] Real-money execution remains impossible under active config.
+-   [x] Real-money execution remains impossible under active config.
 -   [ ] Runtime remains stable on current VPS.
 
 ------------------------------------------------------------------------
