@@ -1048,24 +1048,24 @@ Explicitly inspect:
 
 Measure actual:
 
--   [ ] Trader RAM.
--   [ ] Total CryptoForge RAM.
--   [ ] Swap usage.
--   [ ] Idle CPU.
--   [ ] Scanner CPU.
--   [ ] Light backtest CPU/RAM.
--   [ ] Disk footprint.
--   [ ] Outbox footprint.
--   [ ] Log growth.
--   [ ] Supabase sync behavior.
+-   [x] Trader RAM.
+-   [x] Total CryptoForge RAM.
+-   [x] Swap usage.
+-   [x] Idle CPU.
+-   [x] Scanner CPU.
+-   [x] Light backtest CPU/RAM.
+-   [x] Disk footprint.
+-   [x] Outbox footprint.
+-   [x] Log growth.
+-   [x] Supabase sync behavior.
 
 Record results in `FINAL_AUDIT.md`.
 
 ### Definition of Done - Phase 28
 
--   [ ] Resource measurements are real, not estimates.
--   [ ] Current VPS limitations are explicit.
--   [ ] Upgrade triggers are documented.
+-   [x] Resource measurements are real, not estimates.
+-   [x] Current VPS limitations are explicit.
+-   [x] Upgrade triggers are documented.
 
 ------------------------------------------------------------------------
 
