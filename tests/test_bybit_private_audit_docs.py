@@ -8,7 +8,9 @@ def test_bybit_private_audit_documents_ip_blocker() -> None:
         "/v5/user/query-api",
         "/v5/account/wallet-balance",
         "10010: Unmatched IP",
-        "whitelist the VPS public IP",
+        "16.138",
+        "master key",
+        "derivatives permission count was non-zero",
         "Real trading remains blocked",
     ]
 

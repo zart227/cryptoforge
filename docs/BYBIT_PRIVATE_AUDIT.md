@@ -20,15 +20,23 @@ It checks:
 
 ## Current Result
 
-Read-only audit was attempted from the local machine and Bybit rejected it
-with `10010: Unmatched IP`.
+Read-only audit was first attempted from the local machine and Bybit
+rejected it with `10010: Unmatched IP`.
 
-This means the API key is IP-restricted and the request source IP is not
-currently whitelisted. Real trading remains blocked until the operator
-adds the trading host IP to the Bybit API whitelist or creates a new key
-bound to the correct trading host.
+The VPS IP was then added to the Bybit whitelist and the audit was run
+from the VPS.
 
-For the planned VPS runtime, whitelist the VPS public IP, not the local
-desktop IP.
+Observed from VPS:
 
-After whitelist update, rerun the private audit before any live pilot.
+- IP whitelist works from the VPS;
+- key is read-write;
+- UTA is enabled;
+- Unified USDT balance is `16.138`, which satisfies the selected
+  `16 USDT` pilot allocation;
+- withdrawal permission was not present as `Withdraw`;
+- key appears to be a master key, not a dedicated sub-account key;
+- derivatives permission count was non-zero.
+
+Real trading remains blocked until the operator creates or switches to a
+dedicated limited sub-account API key and removes derivatives/futures
+permissions for the Spot-only pilot.

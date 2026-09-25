@@ -49,7 +49,7 @@ class BybitPrivateClient:
         api_key: str,
         api_secret: str,
         base_url: str = "https://api.bybit.com",
-        recv_window: str = "5000",
+        recv_window: str = "20000",
         timeout_seconds: float = 10.0,
         http_get: HttpGet | None = None,
         clock_ms: Callable[[], int] | None = None,

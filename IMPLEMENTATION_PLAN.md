@@ -1158,12 +1158,12 @@ Live trading scope for the first pilot:
 -   [x] Bybit only.
 -   [x] Spot only.
 -   [ ] Dedicated sub-account only.
--   [ ] No withdrawal permission.
+-   [x] No withdrawal permission.
 -   [x] No futures.
 -   [x] No margin.
 -   [x] No leverage.
 -   [x] No martingale or martingale-like recovery logic.
--   [ ] IP-whitelisted API key where feasible.
+-   [x] IP-whitelisted API key where feasible.
 -   [x] Small capital allocation chosen explicitly by the user.
 
 Pre-live checklist:
@@ -1174,7 +1174,7 @@ Pre-live checklist:
 -   [x] Create separate live config; do not mutate dry-run config.
 -   [x] Verify live config has Spot only.
 -   [x] Verify live config has no leverage/futures/margin settings.
--   [ ] Verify withdrawal permission is absent.
+-   [x] Verify withdrawal permission is absent.
 -   [x] Verify kill switch.
 -   [x] Verify no-new-entry switch.
 -   [x] Verify daily loss guard.

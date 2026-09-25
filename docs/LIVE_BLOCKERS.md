@@ -30,6 +30,9 @@ Current status:
 - kill switch/no-new-entry switch primitives exist;
 - Telegram delivery smoke succeeded;
 - first pilot capital allocation is recorded as `16 USDT`;
-- Bybit private read-only audit is blocked by API whitelist mismatch
-  (`10010: Unmatched IP`);
+- Bybit private read-only audit from VPS confirms UTA balance
+  `16.138 USDT` and IP whitelist access;
+- current Bybit key appears to be a master key, not a dedicated
+  sub-account key;
+- current Bybit key has non-zero derivatives permissions;
 - real trading remains disabled.
