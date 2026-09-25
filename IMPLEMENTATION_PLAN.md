@@ -926,21 +926,21 @@ Include:
 
 Checklist:
 
--   [ ] Create backup command/script.
--   [ ] Timestamp archive.
--   [ ] Compress.
--   [ ] Generate checksum.
--   [ ] Verify archive after creation.
--   [ ] Create restore command/script.
--   [ ] Restore into controlled test location.
--   [ ] Verify restored contents.
--   [ ] Document `docs/BACKUP_RESTORE.md`.
--   [ ] Do not include huge candle cache by default.
+-   [x] Create backup command/script.
+-   [x] Timestamp archive.
+-   [x] Compress.
+-   [x] Generate checksum.
+-   [x] Verify archive after creation.
+-   [x] Create restore command/script.
+-   [x] Restore into controlled test location.
+-   [x] Verify restored contents.
+-   [x] Document `docs/BACKUP_RESTORE.md`.
+-   [x] Do not include huge candle cache by default.
 
 ### Definition of Done - Phase 23
 
--   [ ] A backup has been created and verified.
--   [ ] A restore test has succeeded.
+-   [x] A backup has been created and verified.
+-   [x] A restore test has succeeded.
 
 ------------------------------------------------------------------------
 

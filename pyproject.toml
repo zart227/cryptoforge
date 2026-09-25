@@ -18,6 +18,7 @@ typesafe = [
 ]
 
 [project.scripts]
+cryptoforge-backup = "cryptoforge.backup:main"
 cryptoforge-doc-eval = "cryptoforge.document_eval_cli:main"
 
 [tool.setuptools.packages.find]
