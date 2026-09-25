@@ -1,0 +1,22 @@
+{
+  "strategy_name": "CryptoForgeBaselineStrategy",
+  "version": "cryptoforge-baseline-v0.1.0",
+  "status": "BACKTESTED",
+  "market_scope": "bybit_spot",
+  "timeframe": "5m",
+  "purpose": "Transparent control strategy for future champion/challenger comparisons.",
+  "indicators": [
+    "ema_fast_12",
+    "ema_slow_36",
+    "rsi_14",
+    "volume_ratio_20",
+    "atr_pct_14"
+  ],
+  "risk_context": {
+    "dry_run_wallet": "1000 USDT",
+    "stake_amount": "10 USDT",
+    "max_open_trades": 2,
+    "stoploss": "-2%",
+    "futures_margin_leverage": "disabled"
+  }
+}

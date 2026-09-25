@@ -460,21 +460,21 @@ Candidate minimal indicators:
 
 Checklist:
 
--   [ ] Implement simple transparent baseline.
--   [ ] Document entry logic.
--   [ ] Document exit logic.
--   [ ] Document indicator purpose.
--   [ ] Avoid indicator bloat.
--   [ ] Include fees in testing.
--   [ ] Check lookahead bias.
--   [ ] Run baseline backtest only within resource limits.
--   [ ] Save baseline version metadata.
+-   [x] Implement simple transparent baseline.
+-   [x] Document entry logic.
+-   [x] Document exit logic.
+-   [x] Document indicator purpose.
+-   [x] Avoid indicator bloat.
+-   [x] Include fees in testing.
+-   [x] Check lookahead bias.
+-   [x] Run baseline backtest only within resource limits.
+-   [x] Save baseline version metadata.
 
 ### Definition of Done - Phase 9
 
--   [ ] Strategy is understandable and reproducible.
--   [ ] Backtest completes without leakage.
--   [ ] Baseline exists for future champion/challenger comparisons.
+-   [x] Strategy is understandable and reproducible.
+-   [x] Backtest completes without leakage.
+-   [x] Baseline exists for future champion/challenger comparisons.
 
 ------------------------------------------------------------------------
 
