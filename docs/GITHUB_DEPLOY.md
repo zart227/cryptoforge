@@ -10,24 +10,56 @@ CryptoForge can update the VPS automatically from `main`.
 
 The `.env` file stays outside git and is not overwritten by deploys.
 
+## Self-Hosted GitHub Actions Runner
+
+The preferred GitHub Actions path is a self-hosted runner installed on
+the VPS with label `cryptoforge-vps`.
+
+This avoids inbound SSH from GitHub-hosted runners. The VPS only needs
+outbound HTTPS access to GitHub.
+
+After the runner is online, `.github/workflows/deploy-vps.yml` runs on
+every push to `main` and executes the local deploy script on the VPS.
+
+To register the runner, open GitHub:
+
+`Settings -> Actions -> Runners -> New self-hosted runner -> Linux x64`
+
+Copy the short registration token from GitHub and run:
+
+```bash
+bash /opt/cryptoforge/app/cryptoforge_repo/deploy/install_github_runner.sh '<token>'
+```
+
+The helper installs the runner into:
+
+```bash
+/opt/github-actions/cryptoforge
+```
+
+It registers the runner with label:
+
+```bash
+cryptoforge-vps
+```
+
 ## Server Pull Timer
 
-The active deployment path is a VPS-side systemd timer:
+The fallback deployment path is a VPS-side systemd timer:
 
 - unit: `cryptoforge-git-sync.service`;
 - timer: `cryptoforge-git-sync.timer`;
 - interval: every two minutes after the previous run.
 
-This pull model works even when the VPS SSH port is not reachable from
-GitHub-hosted runners. The repository is public, so the VPS can fetch it
-over HTTPS without a GitHub deploy key.
+This pull model works even when the VPS SSH port is not reachable and
+the GitHub Actions runner is offline. The repository is public, so the
+VPS can fetch it over HTTPS without a GitHub deploy key.
 
 ## GitHub SSH Workflow
 
-The repository also contains a manual GitHub Actions workflow for direct
-SSH deploys. It is intentionally `workflow_dispatch` only because the VPS
-public SSH port must be reachable from GitHub-hosted runners before it
-can work reliably.
+The repository keeps a disabled direct SSH deploy job as a reference.
+It should stay disabled while public SSH from GitHub-hosted runners is
+not reachable.
 
 ### GitHub Secrets
 
@@ -38,8 +70,7 @@ Add these repository secrets in GitHub:
 - `VPS_USER`: SSH user, currently `root` unless changed later;
 - `VPS_SSH_KEY`: private SSH key allowed to connect to the VPS.
 
-The workflow `.github/workflows/deploy-vps.yml` can be started manually
-with `workflow_dispatch` after public SSH access is available.
+These secrets are not needed for the self-hosted runner path.
 
 ## Server Update Command
 

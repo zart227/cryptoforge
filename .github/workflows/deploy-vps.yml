@@ -1,6 +1,9 @@
 name: Deploy VPS
 
 on:
+  push:
+    branches:
+      - main
   workflow_dispatch:
 
 concurrency:
@@ -8,7 +11,18 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  deploy:
+  deploy-self-hosted:
+    runs-on:
+      - self-hosted
+      - cryptoforge-vps
+    steps:
+      - name: Deploy locally on VPS
+        run: |
+          set -euo pipefail
+          bash /opt/cryptoforge/app/cryptoforge_repo/deploy/update_vps.sh
+
+  deploy-over-ssh:
+    if: ${{ false }}
     runs-on: ubuntu-latest
     steps:
       - name: Deploy over SSH
