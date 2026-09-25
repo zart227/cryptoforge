@@ -1,0 +1,14 @@
+{
+  "version": "sl-tp-v0.1.0",
+  "stop_method": "ATR",
+  "take_profit_method": "RISK_REWARD",
+  "atr_multiple_stop": "2.0",
+  "atr_multiple_take_profit": "3.0",
+  "fixed_stop_pct": "0.02",
+  "min_stop_pct": "0.005",
+  "max_stop_pct": "0.04",
+  "risk_reward": "1.5",
+  "break_even_trigger_r": "1.0",
+  "trailing_trigger_r": "2.0",
+  "trailing_distance_r": "1.0"
+}

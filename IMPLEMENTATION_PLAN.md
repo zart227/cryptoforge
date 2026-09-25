@@ -542,20 +542,20 @@ Evaluate:
 
 Checklist:
 
--   [ ] Every simulated position has defined risk protection.
--   [ ] SL distance feeds position sizing.
--   [ ] SL/TP logic is strategy-versioned.
--   [ ] Test gap/fast-move behavior realistically within Freqtrade
+-   [x] Every simulated position has defined risk protection.
+-   [x] SL distance feeds position sizing.
+-   [x] SL/TP logic is strategy-versioned.
+-   [x] Test gap/fast-move behavior realistically within Freqtrade
     limitations.
--   [ ] Test trailing/break-even logic if enabled.
--   [ ] Do not overcomplicate baseline.
--   [ ] Persist SL/TP context in journal.
+-   [x] Test trailing/break-even logic if enabled.
+-   [x] Do not overcomplicate baseline.
+-   [x] Persist SL/TP context in journal.
 
 ### Definition of Done - Phase 11
 
--   [ ] No simulated trade can open without valid risk definition.
--   [ ] Position sizing and stop distance are consistent.
--   [ ] SL/TP behavior is covered by tests.
+-   [x] No simulated trade can open without valid risk definition.
+-   [x] Position sizing and stop distance are consistent.
+-   [x] SL/TP behavior is covered by tests.
 
 ------------------------------------------------------------------------
 

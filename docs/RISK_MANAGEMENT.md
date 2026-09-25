@@ -45,6 +45,10 @@ It sizes from the smaller of:
 The result is rounded down to the configured quantity step and checked
 against minimum order quantity and notional.
 
+Phase 11 protection planning computes the stop price before calling the
+risk engine, so the same stop distance used for SL/TP is the distance
+used for sizing.
+
 ## No-New-Trade Guards
 
 The engine returns `NO_NEW_TRADES` when any hard guard is active:
