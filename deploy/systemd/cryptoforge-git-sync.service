@@ -5,8 +5,8 @@ After=network-online.target
 
 [Service]
 Type=oneshot
-User=root
-Group=root
+User=cryptoforge
+Group=cryptoforge
 ExecStart=/bin/bash /opt/cryptoforge/app/cryptoforge_repo/deploy/update_vps.sh
 Nice=5
 IOSchedulingClass=best-effort
