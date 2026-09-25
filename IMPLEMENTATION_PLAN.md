@@ -867,15 +867,15 @@ Prepare notifications for:
 
 Checklist:
 
--   [ ] Add `.env.example` placeholders.
--   [ ] Do not commit token/chat ID.
--   [ ] Implement rate-conscious notifications.
--   [ ] Avoid secret leakage.
--   [ ] Test with mocks unless credentials are explicitly supplied.
+-   [x] Add `.env.example` placeholders.
+-   [x] Do not commit token/chat ID.
+-   [x] Implement rate-conscious notifications.
+-   [x] Avoid secret leakage.
+-   [x] Test with mocks unless credentials are explicitly supplied.
 
 ### Definition of Done - Phase 21
 
--   [ ] Notification subsystem is optional and cannot break trading
+-   [x] Notification subsystem is optional and cannot break trading
     runtime.
 
 ------------------------------------------------------------------------
