@@ -11,9 +11,11 @@
 
 -   [ ] Exchange scope is **Bybit only**.
 -   [ ] Current market scope is **Spot only**.
--   [ ] Current execution mode is **DRY-RUN / PAPER TRADING only**.
--   [ ] Real-money trading remains disabled until the user gives a
-    separate explicit approval.
+-   [ ] Current implemented execution mode is **DRY-RUN / PAPER TRADING
+    only** until the controlled-live phase passes audit.
+-   [ ] Real-money trading remains disabled until a dedicated
+    controlled-live phase is implemented, audited, and explicitly
+    enabled.
 -   [ ] Futures, margin and leverage remain disabled.
 -   [ ] Hard risk limits cannot be modified by a strategy, ML model,
     optimizer, or Strategy Lab.
@@ -29,6 +31,36 @@
 -   [ ] Any deviation from this plan must be recorded under **Decision
     Log** with reason, impact and verification.
 -   [ ] Do not silently rewrite or simplify this plan.
+
+## 0.1 Future autonomous operating model
+
+The user wants CryptoForge to become an autonomous trading and research
+system:
+
+-   [ ] Day mode: trade approved strategies automatically.
+-   [ ] Day mode: monitor live outcomes and pause underperforming or
+    unsafe behavior.
+-   [ ] Night mode: train/research/backtest candidate strategies.
+-   [ ] Night mode: prepare improved strategies for the next trading
+    cycle.
+-   [ ] Learn from what worked and what failed.
+-   [ ] Prefer the fastest capital growth only inside explicit hard risk,
+    liquidity, resource and safety limits.
+
+This strategic objective does **not** authorize immediate live trading.
+The implementable objective is **risk-constrained capital growth**, not
+unbounded maximum short-term profit.
+
+Forbidden even under autonomous mode:
+
+-   [ ] Strategy/ML/optimizer self-modification of hard risk limits.
+-   [ ] Live deployment of unvalidated strategies.
+-   [ ] Martingale, doubling after loss, all-in behavior, unlimited
+    averaging down, or stop removal to avoid realizing loss.
+-   [ ] Enabling withdrawal permissions.
+-   [ ] Enabling futures, margin or leverage without a separate plan
+    revision and audit.
+-   [ ] Research jobs starving daytime trading.
 
 ## 1. Target architecture
 
@@ -53,7 +85,7 @@
                              v
                          Freqtrade
                              |
-                    DRY-RUN Execution
+              DRY-RUN / Controlled Live Execution
                              |
               +--------------+---------------+
               |                              |
@@ -75,7 +107,7 @@
                                                       Backtest / Validation
                                                                     |
                                                                     v
-                                                              Future FreqAI
+                                           Night Research / Future FreqAI
 ```
 
 Current VPS: Ubuntu 24.04 LTS, 1 vCPU \~2.2 GHz, 1 GB RAM, 20 GB HDD.
@@ -666,6 +698,7 @@ Checklist:
 -   [ ] Strategy state is traceable.
 -   [ ] A high-profit but unstable/overfit strategy is not automatically
     promoted.
+-   [ ] Autonomous promotion cannot bypass hard risk gates.
 
 ------------------------------------------------------------------------
 
@@ -715,12 +748,18 @@ Current VPS constraints:
 -   [ ] Persist experiment metadata/results.
 -   [ ] Avoid keeping large failed artifacts.
 -   [ ] Implement experiment IDs and reproducibility metadata.
+-   [ ] Implement day/night scheduling policy.
+-   [ ] Keep research disabled or low priority during trading hours.
+-   [ ] Candidate strategies are prepared for review/paper deployment,
+    not uncontrolled live replacement.
 
 ### Definition of Done - Phase 18
 
 -   [ ] Lightweight experiment pipeline exists.
 -   [ ] It cannot starve the trading process.
 -   [ ] Heavy search is explicitly marked NOT ACTIVE on current VPS.
+-   [ ] Night research can produce candidate recommendations without
+    changing live risk limits.
 
 ------------------------------------------------------------------------
 
@@ -763,12 +802,16 @@ Checklist:
 -   [ ] Define champion/challenger ML evaluation.
 -   [ ] Mark heavy continuous training as NOT ACTIVE until resources
     allow.
+-   [ ] Define retraining windows, initially night-only.
+-   [ ] Define shadow-mode validation before any live deployment.
+-   [ ] Define drift detection and automatic deactivation criteria.
 
 ### Definition of Done - Phase 19
 
 -   [ ] `docs/FREQAI.md` provides an implementable upgrade path.
 -   [ ] Current runtime does not waste resources pretending to run heavy
     ML.
+-   [ ] ML cannot autonomously increase live exposure.
 
 ------------------------------------------------------------------------
 
@@ -1103,6 +1146,86 @@ Final checklist:
 
 ------------------------------------------------------------------------
 
+# PHASE 31 - Controlled autonomous live trading pilot
+
+This phase supports the revised long-term objective: autonomous daytime
+trading and nighttime learning. It may begin only after Phase 30 is
+complete and no blocking security, quant, risk, backup, restore,
+monitoring or resource audit item remains open.
+
+Live trading scope for the first pilot:
+
+-   [ ] Bybit only.
+-   [ ] Spot only.
+-   [ ] Dedicated sub-account only.
+-   [ ] No withdrawal permission.
+-   [ ] No futures.
+-   [ ] No margin.
+-   [ ] No leverage.
+-   [ ] No martingale or martingale-like recovery logic.
+-   [ ] IP-whitelisted API key where feasible.
+-   [ ] Small capital allocation chosen explicitly by the user.
+
+Pre-live checklist:
+
+-   [ ] Confirm `.env` and VPS secrets are set with least privilege.
+-   [ ] Confirm `dry_run=false` is impossible without an explicit live
+    config file and explicit operator command.
+-   [ ] Create separate live config; do not mutate dry-run config.
+-   [ ] Verify live config has Spot only.
+-   [ ] Verify live config has no leverage/futures/margin settings.
+-   [ ] Verify withdrawal permission is absent.
+-   [ ] Verify kill switch.
+-   [ ] Verify no-new-entry switch.
+-   [ ] Verify daily loss guard.
+-   [ ] Verify max drawdown guard.
+-   [ ] Verify max position size.
+-   [ ] Verify max simultaneous positions.
+-   [ ] Verify minimum order/precision handling.
+-   [ ] Verify monitoring alerts.
+-   [ ] Verify backup/restore immediately before live start.
+-   [ ] Verify current VPS resources are sufficient or migrate first.
+
+Autonomous day mode:
+
+-   [ ] Run only approved live strategies.
+-   [ ] Monitor strategy health.
+-   [ ] Pause strategy after configured abnormal loss/drift/error.
+-   [ ] Never edit live strategy code in place while positions are open.
+-   [ ] Persist all decisions and trade context.
+-   [ ] Keep user-visible daily summary.
+
+Autonomous night mode:
+
+-   [ ] Stop or avoid resource-heavy jobs if trading runtime is active
+    and constrained.
+-   [ ] Run bounded backtests/research.
+-   [ ] Compare candidates against champion.
+-   [ ] Produce candidate recommendations.
+-   [ ] Promote only through configured gates.
+-   [ ] Deploy first to shadow/paper mode.
+
+Objective:
+
+-   [ ] Optimize for risk-adjusted capital growth.
+-   [ ] Penalize drawdown, instability, illiquidity and excessive
+    turnover.
+-   [ ] Reject strategies optimized only for maximum historical profit.
+-   [ ] Reject strategies that seek "fastest money" by violating risk
+    limits.
+
+### Definition of Done - Phase 31
+
+-   [ ] First live pilot trades only on a dedicated limited sub-account.
+-   [ ] All live trades are explainable from stored strategy/risk state.
+-   [ ] A live kill switch works.
+-   [ ] Daily/night cycle works without starving the VPS.
+-   [ ] Strategy learning improves recommendations without bypassing
+    risk gates.
+-   [ ] Live performance is reviewed against paper expectations.
+
+------------------------------------------------------------------------
+
 # Progress rules for Codex
 
 For every phase:
@@ -1164,6 +1287,35 @@ Follow-up:
 ```
 
 Do not delete previous decisions.
+
+## 2026-09-25 - Revised autonomous trading objective
+
+Phase:
+Global planning / future Phase 31.
+Decision:
+Added a future controlled autonomous live-trading pilot with day trading
+and night research, while keeping current implementation dry-run until
+all pre-live gates pass.
+Reason:
+The user explicitly changed the long-term product objective: the bot
+should eventually trade autonomously during the day, learn/research at
+night, evaluate what worked, edit or prepare strategies, and improve
+over time.
+Alternatives considered:
+Immediately enabling live trading; rewriting the plan around maximum
+short-term profit; keeping the original dry-run-only endpoint.
+Risk/impact:
+Immediate live trading and unbounded "fastest money" optimization were
+rejected as unsafe. The plan now supports autonomous live trading only
+through a dedicated limited sub-account, hard risk gates, no withdrawal
+permission, Spot-only first pilot, and explicit audit requirements.
+Verification:
+Added `docs/AUTONOMOUS_TRADING_POLICY.md`, future operating-model rules,
+day/night Strategy Lab requirements, FreqAI retraining gates, and Phase
+31 controlled-live checklist.
+Follow-up:
+Continue building the current dry-run, risk, persistence, monitoring and
+audit phases before any live pilot.
 
 ## 2026-09-25 - TypeSafe document evaluation CLI
 
