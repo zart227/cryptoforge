@@ -1155,63 +1155,63 @@ monitoring or resource audit item remains open.
 
 Live trading scope for the first pilot:
 
--   [ ] Bybit only.
--   [ ] Spot only.
+-   [x] Bybit only.
+-   [x] Spot only.
 -   [ ] Dedicated sub-account only.
 -   [ ] No withdrawal permission.
--   [ ] No futures.
--   [ ] No margin.
--   [ ] No leverage.
--   [ ] No martingale or martingale-like recovery logic.
+-   [x] No futures.
+-   [x] No margin.
+-   [x] No leverage.
+-   [x] No martingale or martingale-like recovery logic.
 -   [ ] IP-whitelisted API key where feasible.
 -   [ ] Small capital allocation chosen explicitly by the user.
 
 Pre-live checklist:
 
 -   [ ] Confirm `.env` and VPS secrets are set with least privilege.
--   [ ] Confirm `dry_run=false` is impossible without an explicit live
+-   [x] Confirm `dry_run=false` is impossible without an explicit live
     config file and explicit operator command.
 -   [ ] Create separate live config; do not mutate dry-run config.
--   [ ] Verify live config has Spot only.
--   [ ] Verify live config has no leverage/futures/margin settings.
+-   [x] Verify live config has Spot only.
+-   [x] Verify live config has no leverage/futures/margin settings.
 -   [ ] Verify withdrawal permission is absent.
--   [ ] Verify kill switch.
--   [ ] Verify no-new-entry switch.
--   [ ] Verify daily loss guard.
--   [ ] Verify max drawdown guard.
--   [ ] Verify max position size.
--   [ ] Verify max simultaneous positions.
--   [ ] Verify minimum order/precision handling.
+-   [x] Verify kill switch.
+-   [x] Verify no-new-entry switch.
+-   [x] Verify daily loss guard.
+-   [x] Verify max drawdown guard.
+-   [x] Verify max position size.
+-   [x] Verify max simultaneous positions.
+-   [x] Verify minimum order/precision handling.
 -   [ ] Verify monitoring alerts.
 -   [ ] Verify backup/restore immediately before live start.
 -   [ ] Verify current VPS resources are sufficient or migrate first.
 
 Autonomous day mode:
 
--   [ ] Run only approved live strategies.
--   [ ] Monitor strategy health.
--   [ ] Pause strategy after configured abnormal loss/drift/error.
--   [ ] Never edit live strategy code in place while positions are open.
--   [ ] Persist all decisions and trade context.
+-   [x] Run only approved live strategies.
+-   [x] Monitor strategy health.
+-   [x] Pause strategy after configured abnormal loss/drift/error.
+-   [x] Never edit live strategy code in place while positions are open.
+-   [x] Persist all decisions and trade context.
 -   [ ] Keep user-visible daily summary.
 
 Autonomous night mode:
 
--   [ ] Stop or avoid resource-heavy jobs if trading runtime is active
+-   [x] Stop or avoid resource-heavy jobs if trading runtime is active
     and constrained.
--   [ ] Run bounded backtests/research.
--   [ ] Compare candidates against champion.
--   [ ] Produce candidate recommendations.
--   [ ] Promote only through configured gates.
--   [ ] Deploy first to shadow/paper mode.
+-   [x] Run bounded backtests/research.
+-   [x] Compare candidates against champion.
+-   [x] Produce candidate recommendations.
+-   [x] Promote only through configured gates.
+-   [x] Deploy first to shadow/paper mode.
 
 Objective:
 
--   [ ] Optimize for risk-adjusted capital growth.
--   [ ] Penalize drawdown, instability, illiquidity and excessive
+-   [x] Optimize for risk-adjusted capital growth.
+-   [x] Penalize drawdown, instability, illiquidity and excessive
     turnover.
--   [ ] Reject strategies optimized only for maximum historical profit.
--   [ ] Reject strategies that seek "fastest money" by violating risk
+-   [x] Reject strategies optimized only for maximum historical profit.
+-   [x] Reject strategies that seek "fastest money" by violating risk
     limits.
 
 ### Definition of Done - Phase 31
