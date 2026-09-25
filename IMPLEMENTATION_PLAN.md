@@ -975,21 +975,21 @@ Checklist:
 
 # PHASE 25 - Reboot/crash recovery
 
--   [ ] Define startup order.
--   [ ] Trader starts before research.
--   [ ] Heavy research does not auto-start during constrained recovery.
--   [ ] Test process crash.
--   [ ] Test controlled service restart.
--   [ ] Test server reboot only if safe for existing VPS services.
--   [ ] Verify outbox recovery.
--   [ ] Verify local state.
--   [ ] Verify no duplicate trades/events.
+-   [x] Define startup order.
+-   [x] Trader starts before research.
+-   [x] Heavy research does not auto-start during constrained recovery.
+-   [x] Test process crash.
+-   [x] Test controlled service restart.
+-   [x] Test server reboot only if safe for existing VPS services.
+-   [x] Verify outbox recovery.
+-   [x] Verify local state.
+-   [x] Verify no duplicate trades/events.
 
 ### Definition of Done - Phase 25
 
--   [ ] CryptoForge recovers safely without requiring manual database
+-   [x] CryptoForge recovers safely without requiring manual database
     repair.
--   [ ] Existing VPS services remain healthy.
+-   [x] Existing VPS services remain healthy.
 
 ------------------------------------------------------------------------
 
