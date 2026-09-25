@@ -431,18 +431,18 @@ Candidate inputs:
 
 Checklist:
 
--   [ ] Define deterministic regime rules.
--   [ ] Avoid future-data leakage.
--   [ ] Make thresholds configurable.
--   [ ] Add unit tests.
--   [ ] Record regime with each trade.
--   [ ] Document in `docs/MARKET_REGIME.md`.
+-   [x] Define deterministic regime rules.
+-   [x] Avoid future-data leakage.
+-   [x] Make thresholds configurable.
+-   [x] Add unit tests.
+-   [x] Record regime with each trade.
+-   [x] Document in `docs/MARKET_REGIME.md`.
 
 ### Definition of Done - Phase 8
 
--   [ ] Same input produces deterministic classification.
--   [ ] No future candle is used.
--   [ ] Regime is persisted with trade context.
+-   [x] Same input produces deterministic classification.
+-   [x] No future candle is used.
+-   [x] Regime is persisted with trade context.
 
 ------------------------------------------------------------------------
 

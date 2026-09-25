@@ -18,7 +18,7 @@ Core tables:
 - `strategy_versions`: immutable-ish strategy revisions, parameter sets,
   source hashes and risk profile metadata.
 - `trades`: compact trade journal for Bybit Spot dry-run and future
-  audited live trades.
+  audited live trades, including the market regime known at entry time.
 - `trade_features`: bounded feature snapshots around trades.
 - `experiments`: research, backtest, model and parameter-search metadata.
 - `backtest_runs`: summarized backtest runs.
