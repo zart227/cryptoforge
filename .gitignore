@@ -1,0 +1,38 @@
+# Secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+id_rsa
+id_ed25519
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+
+# Runtime state
+data/
+logs/
+outbox/*.db
+outbox/*.sqlite*
+backups/
+freqtrade.sqlite*
+tradesv3.sqlite*
+
+# Research/cache outputs
+user_data/data/
+user_data/backtest_results/
+user_data/hyperopt_results/
+models/
+artifacts/
+
+# OS/editor
+.DS_Store
+.idea/
+.vscode/
