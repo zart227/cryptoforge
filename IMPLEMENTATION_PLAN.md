@@ -740,25 +740,25 @@ Potential research dimensions:
 
 Current VPS constraints:
 
--   [ ] No massive parallel search.
--   [ ] No thousands of concurrent backtests.
--   [ ] Check free RAM/load/disk before research job.
--   [ ] Use `nice`/`ionice` where appropriate.
--   [ ] Defer research when trading resources are constrained.
--   [ ] Persist experiment metadata/results.
--   [ ] Avoid keeping large failed artifacts.
--   [ ] Implement experiment IDs and reproducibility metadata.
--   [ ] Implement day/night scheduling policy.
--   [ ] Keep research disabled or low priority during trading hours.
--   [ ] Candidate strategies are prepared for review/paper deployment,
+-   [x] No massive parallel search.
+-   [x] No thousands of concurrent backtests.
+-   [x] Check free RAM/load/disk before research job.
+-   [x] Use `nice`/`ionice` where appropriate.
+-   [x] Defer research when trading resources are constrained.
+-   [x] Persist experiment metadata/results.
+-   [x] Avoid keeping large failed artifacts.
+-   [x] Implement experiment IDs and reproducibility metadata.
+-   [x] Implement day/night scheduling policy.
+-   [x] Keep research disabled or low priority during trading hours.
+-   [x] Candidate strategies are prepared for review/paper deployment,
     not uncontrolled live replacement.
 
 ### Definition of Done - Phase 18
 
--   [ ] Lightweight experiment pipeline exists.
--   [ ] It cannot starve the trading process.
--   [ ] Heavy search is explicitly marked NOT ACTIVE on current VPS.
--   [ ] Night research can produce candidate recommendations without
+-   [x] Lightweight experiment pipeline exists.
+-   [x] It cannot starve the trading process.
+-   [x] Heavy search is explicitly marked NOT ACTIVE on current VPS.
+-   [x] Night research can produce candidate recommendations without
     changing live risk limits.
 
 ------------------------------------------------------------------------
