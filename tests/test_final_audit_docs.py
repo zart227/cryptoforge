@@ -16,6 +16,7 @@ def test_final_audit_records_real_resource_measurements() -> None:
         "`868M`",
         "Heavy FreqAI is **NOT ACTIVE**",
         "Real trading is still disabled",
+        "A real delivery smoke succeeded on 2026-09-25",
         "Futures are still disabled",
         "Leverage is still disabled",
         "must not enable real trading",

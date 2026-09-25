@@ -99,3 +99,7 @@ It must reject strategies that seek fast money by violating risk limits.
 Live pilot readiness tooling exists. Real trading remains disabled until
 the operator completes attestation, verifies backup/monitoring, confirms
 resources, and explicitly approves a separate live config and command.
+
+Telegram notification delivery was smoke-tested on 2026-09-25 using
+local environment credentials. The test message was sent successfully and
+no token or chat ID was printed.

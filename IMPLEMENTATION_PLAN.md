@@ -1182,7 +1182,7 @@ Pre-live checklist:
 -   [x] Verify max position size.
 -   [x] Verify max simultaneous positions.
 -   [x] Verify minimum order/precision handling.
--   [ ] Verify monitoring alerts.
+-   [x] Verify monitoring alerts.
 -   [ ] Verify backup/restore immediately before live start.
 -   [ ] Verify current VPS resources are sufficient or migrate first.
 

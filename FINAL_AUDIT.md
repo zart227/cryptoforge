@@ -53,8 +53,8 @@ for heavy continuous research.
 ## Partially Working
 
 - Telegram notifications are implemented and unit-tested with mocks.
-  Environment variables are present locally, but a real Telegram delivery
-  smoke is not part of the committed automated test suite.
+  A real delivery smoke succeeded on 2026-09-25 using local environment
+  credentials; token and chat ID were not printed.
 - Supabase sync is available through the outbox path, but the trading
   runtime does not yet depend on Supabase for order management.
 - Backtesting is reproducible and bounded, but the sample has only 5
@@ -291,16 +291,16 @@ ML cannot autonomously increase live exposure or promote itself to live.
 
 - Current VPS has only `939 MiB` RAM and slow cold starts.
 - Backtest sample is too small for strategy validity.
-- Real Telegram delivery has not been committed as an automated
-  integration test.
+- Telegram delivery is smoke-tested manually; it is not committed as an
+  automated integration test.
 - Live trading has no live config, kill switch, or dedicated sub-account
   workflow yet.
 - Supabase is not yet used as a real-time operational dashboard.
 
 ## Technical Debt
 
-- Optional notifications need a real delivery smoke once the operator
-  wants Telegram alerts.
+- Optional notifications have a real delivery smoke, but still need an
+  operational runbook for alert severity and quiet hours.
 - Resource measurement should be repeated after migration to a stronger
   VPS.
 - A broader multi-pair/multi-regime backtest campaign is needed before
