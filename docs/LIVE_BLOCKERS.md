@@ -30,9 +30,13 @@ Current status:
 - kill switch/no-new-entry switch primitives exist;
 - Telegram delivery smoke succeeded;
 - first pilot capital allocation is recorded as `16 USDT`;
-- Bybit private read-only audit from VPS confirms UTA balance
-  `16.138 USDT` and IP whitelist access;
-- current Bybit key appears to be a master key, not a dedicated
-  sub-account key;
-- current Bybit key has non-zero derivatives permissions;
+- Bybit AI sub-account `AIsub590123682` is connected through OAuth;
+- current Bybit key appears to belong to the AI sub-account;
+- current Bybit key has no withdrawal permission;
+- Bybit private read-only audit from VPS confirms IP whitelist access;
+- AI sub-account UTA balance is currently `0 USDT`;
+- pilot capital still needs to be transferred to the AI sub-account;
+- current Bybit key has non-zero derivatives permissions, which are
+  blocked from live use by policy until a separate live derivatives plan
+  is approved;
 - real trading remains disabled.

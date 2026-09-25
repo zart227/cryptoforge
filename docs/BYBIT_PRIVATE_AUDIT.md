@@ -26,7 +26,7 @@ rejected it with `10010: Unmatched IP`.
 The VPS IP was then added to the Bybit whitelist and the audit was run
 from the VPS.
 
-Observed from VPS:
+Initial master-key audit from VPS:
 
 - IP whitelist works from the VPS;
 - key is read-write;
@@ -37,6 +37,22 @@ Observed from VPS:
 - key appears to be a master key, not a dedicated sub-account key;
 - derivatives permission count was non-zero.
 
-Real trading remains blocked until the operator creates or switches to a
-dedicated limited sub-account API key and removes derivatives/futures
-permissions for the Spot-only pilot.
+The operator then authorized a Bybit AI sub-account via OAuth. The
+selected account is `AIsub590123682`.
+
+Observed from VPS after switching `.env` to the AI sub-account key:
+
+- IP whitelist works from the VPS;
+- key is read-write;
+- UTA is enabled;
+- key appears to belong to a sub-account;
+- withdrawal permission was not present as `Withdraw`;
+- Spot trade permission is enabled;
+- Unified USDT balance is `0`, which does not satisfy the selected
+  `16 USDT` pilot allocation;
+- derivatives permission count was non-zero.
+
+Real trading remains blocked until the operator transfers the selected
+pilot allocation to the AI sub-account and CryptoForge re-tests the
+read-only audit. Derivatives/futures permissions are allowed only for
+paper/shadow research until a separate live derivatives plan is approved.

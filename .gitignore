@@ -25,6 +25,7 @@ outbox/*.sqlite*
 backups/
 freqtrade.sqlite*
 tradesv3.sqlite*
+.bybit-skill/
 
 # Research/cache outputs
 user_data/data/
