@@ -30,4 +30,6 @@ Current status:
 - kill switch/no-new-entry switch primitives exist;
 - Telegram delivery smoke succeeded;
 - first pilot capital allocation is recorded as `16 USDT`;
+- Bybit private read-only audit is blocked by API whitelist mismatch
+  (`10010: Unmatched IP`);
 - real trading remains disabled.

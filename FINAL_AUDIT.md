@@ -166,6 +166,9 @@ Safety:
 - committed configs are Spot only;
 - API keys are not embedded in Freqtrade JSON;
 - live trading remains disabled.
+- read-only private audit is currently blocked by Bybit IP whitelist
+  mismatch (`10010: Unmatched IP`), so API permissions and Unified
+  balance must be rechecked after whitelisting the trading host.
 
 ## Supabase Integration
 

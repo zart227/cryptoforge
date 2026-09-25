@@ -33,6 +33,11 @@ Recorded first pilot capital allocation: `16 USDT`.
 Without this attestation, `evaluate_live_pilot_readiness()` returns
 blockers.
 
+`cryptoforge.bybit_private` provides a read-only audit helper for Bybit
+V5 private endpoints. It can check API key scope, UTA status, IP
+whitelist count and Unified USDT balance without placing orders or
+printing secrets.
+
 ## Kill Switch And No-New-Entry Switch
 
 The live pilot requires both:

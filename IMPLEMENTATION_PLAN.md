@@ -1164,7 +1164,7 @@ Live trading scope for the first pilot:
 -   [x] No leverage.
 -   [x] No martingale or martingale-like recovery logic.
 -   [ ] IP-whitelisted API key where feasible.
--   [ ] Small capital allocation chosen explicitly by the user.
+-   [x] Small capital allocation chosen explicitly by the user.
 
 Pre-live checklist:
 
