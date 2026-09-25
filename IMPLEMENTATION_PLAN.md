@@ -1125,23 +1125,23 @@ Create `FINAL_AUDIT.md` with:
 
 Final checklist:
 
--   [ ] Bybit public data works.
--   [ ] Market Scanner works.
--   [ ] Market Regime works.
--   [ ] Baseline strategy works.
--   [ ] Independent Risk Engine works.
--   [ ] Freqtrade dry-run works.
--   [ ] Trade Journal works.
--   [ ] Supabase sync works.
--   [ ] Local outbox works through outage/recovery.
--   [ ] Monitoring/fail-safe works.
--   [ ] Backup and tested restore work.
--   [ ] Migration export is ready.
--   [ ] Real trading is still disabled.
--   [ ] Futures are still disabled.
--   [ ] Leverage is still disabled.
--   [ ] Heavy FreqAI is honestly marked inactive if not running.
--   [ ] `FINAL_AUDIT.md` accurately distinguishes working/partial/not
+-   [x] Bybit public data works.
+-   [x] Market Scanner works.
+-   [x] Market Regime works.
+-   [x] Baseline strategy works.
+-   [x] Independent Risk Engine works.
+-   [x] Freqtrade dry-run works.
+-   [x] Trade Journal works.
+-   [x] Supabase sync works.
+-   [x] Local outbox works through outage/recovery.
+-   [x] Monitoring/fail-safe works.
+-   [x] Backup and tested restore work.
+-   [x] Migration export is ready.
+-   [x] Real trading is still disabled.
+-   [x] Futures are still disabled.
+-   [x] Leverage is still disabled.
+-   [x] Heavy FreqAI is honestly marked inactive if not running.
+-   [x] `FINAL_AUDIT.md` accurately distinguishes working/partial/not
     implemented.
 
 ------------------------------------------------------------------------
