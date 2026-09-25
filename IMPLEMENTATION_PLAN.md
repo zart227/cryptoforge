@@ -337,27 +337,27 @@ Checklist:
 Use a lightweight persistent local queue such as SQLite, not
 Kafka/RabbitMQ.
 
--   [ ] Define event envelope.
--   [ ] Generate UUID/idempotency key.
--   [ ] Persist event locally before remote delivery.
--   [ ] Implement Supabase delivery.
--   [ ] ACK only after successful remote persistence.
--   [ ] Implement retry/backoff.
--   [ ] Prevent duplicate remote records.
--   [ ] Survive process restart.
--   [ ] Survive Supabase outage.
--   [ ] Monitor queue depth/oldest event age.
--   [ ] Define fail-safe threshold for prolonged persistence outage.
--   [ ] Test disconnect -\> queue -\> reconnect -\> flush.
--   [ ] Test duplicate delivery attempts.
+-   [x] Define event envelope.
+-   [x] Generate UUID/idempotency key.
+-   [x] Persist event locally before remote delivery.
+-   [x] Implement Supabase delivery.
+-   [x] ACK only after successful remote persistence.
+-   [x] Implement retry/backoff.
+-   [x] Prevent duplicate remote records.
+-   [x] Survive process restart.
+-   [x] Survive Supabase outage.
+-   [x] Monitor queue depth/oldest event age.
+-   [x] Define fail-safe threshold for prolonged persistence outage.
+-   [x] Test disconnect -\> queue -\> reconnect -\> flush.
+-   [x] Test duplicate delivery attempts.
 
 ### Definition of Done - Phase 6
 
--   [ ] No test event is lost during simulated Supabase outage.
--   [ ] Retries are idempotent.
--   [ ] Open-position management does not depend on Supabase
+-   [x] No test event is lost during simulated Supabase outage.
+-   [x] Retries are idempotent.
+-   [x] Open-position management does not depend on Supabase
     availability.
--   [ ] Queue growth is observable.
+-   [x] Queue growth is observable.
 
 ------------------------------------------------------------------------
 
