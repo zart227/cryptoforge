@@ -15,7 +15,7 @@ def make_project(root):  # type: ignore[no-untyped-def]
     (root / "config").mkdir()
     (root / "config" / "risk.dry-run.json").write_text("{}", encoding="utf-8")
     (root / "user_data" / "strategies").mkdir(parents=True)
-    (root / "user_data" / "strategies" / "Strategy.py").write_text("class S: pass", encoding="utf-8")
+    (root / "user_data" / "strategies" / "Strategy.py").write_text("class S:\n    value = 1\n", encoding="utf-8")
     (root / "supabase" / "migrations").mkdir(parents=True)
     (root / "supabase" / "migrations" / "001.sql").write_text("select 1;", encoding="utf-8")
     (root / "deploy" / "systemd").mkdir(parents=True)

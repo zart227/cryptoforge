@@ -1073,24 +1073,24 @@ Record results in `FINAL_AUDIT.md`.
 
 Search for:
 
--   [ ] `TODO`
--   [ ] `FIXME`
--   [ ] `pass`
--   [ ] `NotImplemented`
--   [ ] stubs/placeholders
--   [ ] production mocks
--   [ ] hardcoded secrets
--   [ ] broad/empty exception handling
--   [ ] disabled tests
--   [ ] dead code
--   [ ] unsafe defaults
--   [ ] unbounded loops
--   [ ] unbounded storage
--   [ ] accidental `dry_run=false`
+-   [x] `TODO`
+-   [x] `FIXME`
+-   [x] `pass`
+-   [x] `NotImplemented`
+-   [x] stubs/placeholders
+-   [x] production mocks
+-   [x] hardcoded secrets
+-   [x] broad/empty exception handling
+-   [x] disabled tests
+-   [x] dead code
+-   [x] unsafe defaults
+-   [x] unbounded loops
+-   [x] unbounded storage
+-   [x] accidental `dry_run=false`
 
 ### Definition of Done - Phase 29
 
--   [ ] Every relevant finding is fixed or explicitly documented as
+-   [x] Every relevant finding is fixed or explicitly documented as
     technical debt.
 
 ------------------------------------------------------------------------
