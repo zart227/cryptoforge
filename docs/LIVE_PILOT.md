@@ -59,6 +59,11 @@ The validator requires:
 
 Committed repository configs remain dry-run only.
 
+`cryptoforge.live_config` can generate a separate live pilot config into
+an operator-chosen, gitignored path. The generated config starts in
+`initial_state=stopped`, uses environment references for Bybit keys, and
+does not embed plaintext secrets.
+
 ## Day Mode
 
 Autonomous day mode may only run approved live strategies. It must:
@@ -68,6 +73,9 @@ Autonomous day mode may only run approved live strategies. It must:
 - avoid editing live strategy code in place while positions are open;
 - persist decisions and trade context;
 - keep a user-visible daily summary.
+
+`cryptoforge.daily_summary` renders a concise daily summary from metrics,
+monitoring status, open position count and operator notes.
 
 ## Night Mode
 

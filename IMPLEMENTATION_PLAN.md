@@ -1171,7 +1171,7 @@ Pre-live checklist:
 -   [ ] Confirm `.env` and VPS secrets are set with least privilege.
 -   [x] Confirm `dry_run=false` is impossible without an explicit live
     config file and explicit operator command.
--   [ ] Create separate live config; do not mutate dry-run config.
+-   [x] Create separate live config; do not mutate dry-run config.
 -   [x] Verify live config has Spot only.
 -   [x] Verify live config has no leverage/futures/margin settings.
 -   [ ] Verify withdrawal permission is absent.
@@ -1193,7 +1193,7 @@ Autonomous day mode:
 -   [x] Pause strategy after configured abnormal loss/drift/error.
 -   [x] Never edit live strategy code in place while positions are open.
 -   [x] Persist all decisions and trade context.
--   [ ] Keep user-visible daily summary.
+-   [x] Keep user-visible daily summary.
 
 Autonomous night mode:
 
