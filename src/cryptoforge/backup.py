@@ -66,6 +66,7 @@ def create_backup(
     *,
     timestamp: datetime | None = None,
     include_paths: tuple[str, ...] = DEFAULT_INCLUDE_PATHS,
+    archive_prefix: str = "cryptoforge-backup",
 ) -> BackupResult:
     project_root = project_root.resolve()
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -74,7 +75,7 @@ def create_backup(
         created_at = created_at.replace(tzinfo=UTC)
 
     stamp = created_at.strftime("%Y%m%dT%H%M%SZ")
-    archive_path = output_dir / f"cryptoforge-backup-{stamp}.tar.gz"
+    archive_path = output_dir / f"{archive_prefix}-{stamp}.tar.gz"
     checksum_path = archive_path.with_suffix(archive_path.suffix + ".sha256")
 
     files = collect_backup_files(project_root, include_paths=include_paths)

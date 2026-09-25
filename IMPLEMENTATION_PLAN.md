@@ -957,18 +957,18 @@ market data 7. start dry-run 8. verify health
 
 Checklist:
 
--   [ ] Create `docs/MIGRATION.md`.
--   [ ] Create export/import tooling.
--   [ ] Exclude bulk reproducible candles by default.
--   [ ] Verify archive checksum.
--   [ ] Document handling of IP-whitelisted Bybit keys for future real
+-   [x] Create `docs/MIGRATION.md`.
+-   [x] Create export/import tooling.
+-   [x] Exclude bulk reproducible candles by default.
+-   [x] Verify archive checksum.
+-   [x] Document handling of IP-whitelisted Bybit keys for future real
     trading.
--   [ ] Test export locally without destructive migration.
+-   [x] Test export locally without destructive migration.
 
 ### Definition of Done - Phase 24
 
--   [ ] Compact migration package can be produced.
--   [ ] Migration procedure does not depend on copying the entire 20 GB
+-   [x] Compact migration package can be produced.
+-   [x] Migration procedure does not depend on copying the entire 20 GB
     disk.
 
 ------------------------------------------------------------------------
