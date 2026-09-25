@@ -1,0 +1,31 @@
+[Unit]
+Description=CryptoForge Freqtrade dry-run runtime
+Documentation=https://www.freqtrade.io/
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=cryptoforge
+Group=cryptoforge
+WorkingDirectory=/opt/cryptoforge/app
+Environment=PYTHONUNBUFFERED=1
+ExecStart=/opt/cryptoforge/app/venv/bin/freqtrade trade --config /opt/cryptoforge/config/freqtrade.dry-run.json --userdir /opt/cryptoforge/app/user_data --strategy CryptoForgeNoEntryStrategy --logfile /opt/cryptoforge/logs/freqtrade-service.log
+KillSignal=SIGTERM
+KillMode=mixed
+SuccessExitStatus=130 143
+TimeoutStartSec=360
+TimeoutStopSec=90
+Restart=no
+Nice=5
+CPUQuota=80%
+MemoryMax=700M
+MemoryHigh=620M
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=true
+ReadWritePaths=/opt/cryptoforge
+
+[Install]
+WantedBy=multi-user.target

@@ -87,7 +87,7 @@ Confirmed:
 - Root filesystem usage after installing Freqtrade was about 5.5 GiB
   used / 14 GiB available / 30% used.
 
-Observed constraints:
+Initial observed constraints:
 
 - Cold startup is slow on the current 1 vCPU VPS; imports and startup can
   take multiple minutes.
@@ -97,7 +97,54 @@ Observed constraints:
   but did not reach full logged startup within the 210 second test
   window.
 
-Because of this, the runtime is installed and can start in dry-run, but
-clean stop/start reliability is not yet fully proven. A systemd service
-with explicit `TimeoutStopSec`, `KillSignal=SIGTERM`, memory limits, and
-log policy should be created before declaring Phase 3 complete.
+## Systemd Service
+
+Service template:
+
+- `deploy/systemd/cryptoforge-freqtrade.service`
+
+Deployment target:
+
+- `/etc/systemd/system/cryptoforge-freqtrade.service`
+
+The service is intended for controlled dry-run runtime management. It
+uses the `cryptoforge` system user, explicit `SIGTERM` stop behavior,
+bounded start/stop timeouts, CPU and memory limits, and write access only
+to `/opt/cryptoforge`.
+
+The service should not be enabled for boot until monitoring, recovery,
+and log rotation phases are in place.
+
+## Systemd Verification
+
+The systemd service was installed on the VPS and verified manually. It
+is intentionally disabled for boot:
+
+- `systemctl is-enabled cryptoforge-freqtrade.service` -> `disabled`
+
+To avoid cleanup hangs seen during the first signal tests, websocket
+market streams are disabled in the dry-run config with
+`exchange.enable_ws=false`. The service also marks signal shutdown status
+codes as successful.
+
+Verified service cycle:
+
+- `systemctl start cryptoforge-freqtrade.service`
+- Freqtrade reached `Changing state to: RUNNING`
+- dry-run mode was logged
+- exchange was `Bybit`
+- pair whitelist was `BTC/USDT`
+- `systemctl stop cryptoforge-freqtrade.service`
+- final systemd state was `inactive/dead`
+- `Result=success`
+- no lingering Freqtrade process remained
+
+Measured during service verification:
+
+- service memory around 400-490 MiB while starting/running
+- post-stop available RAM around 449 MiB
+- swap remained unused
+- root filesystem remained about 30% used
+
+Cold startup remains slow on the current 1 vCPU VPS and should be
+treated as an operational constraint.

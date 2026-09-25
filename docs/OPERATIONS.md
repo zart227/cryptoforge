@@ -33,6 +33,22 @@ Current Freqtrade runtime path:
 - dry-run DB: `/opt/cryptoforge/data/tradesv3.dry_run.sqlite`
 - logs: `/opt/cryptoforge/logs`
 
+Systemd service:
+
+- name: `cryptoforge-freqtrade.service`
+- unit source: `deploy/systemd/cryptoforge-freqtrade.service`
+- installed path: `/etc/systemd/system/cryptoforge-freqtrade.service`
+- boot state: disabled until monitoring/recovery/log rotation phases are
+  complete
+
+Manual dry-run control:
+
+```text
+systemctl start cryptoforge-freqtrade.service
+systemctl status cryptoforge-freqtrade.service --no-pager
+systemctl stop cryptoforge-freqtrade.service
+```
+
 ## Recovery
 
 Detailed recovery procedures will be added in later phases after the

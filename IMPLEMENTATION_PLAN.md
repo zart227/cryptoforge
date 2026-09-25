@@ -214,12 +214,12 @@ command:
 -   [x] Keep credentials absent until actually required.
 -   [x] Start runtime.
 -   [x] Measure RAM/CPU/disk.
--   [ ] Test clean stop/start.
+-   [x] Test clean stop/start.
 -   [x] Test state persistence.
 
 ### Definition of Done - Phase 3
 
--   [ ] Freqtrade starts reliably.
+-   [x] Freqtrade starts reliably.
 -   [x] Configuration cannot place real orders.
 -   [x] Bybit is the only exchange configured.
 -   [x] Runtime fits current VPS without unacceptable swapping/OOM.

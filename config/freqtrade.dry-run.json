@@ -21,6 +21,7 @@
     "name": "bybit",
     "key": "",
     "secret": "",
+    "enable_ws": false,
     "ccxt_config": {
       "enableRateLimit": true
     },
