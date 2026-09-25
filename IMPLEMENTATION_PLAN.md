@@ -1020,26 +1020,26 @@ Checklist:
 
 Explicitly inspect:
 
--   [ ] Lookahead bias.
--   [ ] Data leakage.
--   [ ] Future candles.
--   [ ] Incorrect indicator shifting.
--   [ ] Unrealistic fills.
--   [ ] Fees.
--   [ ] Spread assumptions.
--   [ ] Minimum order sizes.
--   [ ] Precision.
--   [ ] Selection bias.
--   [ ] Hyperparameter overfitting.
--   [ ] Insufficient trade count.
--   [ ] Chronological split.
--   [ ] Out-of-sample separation.
--   [ ] Walk-forward methodology.
+-   [x] Lookahead bias.
+-   [x] Data leakage.
+-   [x] Future candles.
+-   [x] Incorrect indicator shifting.
+-   [x] Unrealistic fills.
+-   [x] Fees.
+-   [x] Spread assumptions.
+-   [x] Minimum order sizes.
+-   [x] Precision.
+-   [x] Selection bias.
+-   [x] Hyperparameter overfitting.
+-   [x] Insufficient trade count.
+-   [x] Chronological split.
+-   [x] Out-of-sample separation.
+-   [x] Walk-forward methodology.
 
 ### Definition of Done - Phase 27
 
--   [ ] Findings are documented.
--   [ ] Blocking quant flaws are fixed before claiming strategy
+-   [x] Findings are documented.
+-   [x] Blocking quant flaws are fixed before claiming strategy
     validity.
 
 ------------------------------------------------------------------------
