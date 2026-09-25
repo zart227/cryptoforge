@@ -894,20 +894,20 @@ temporary backtests
 
 Checklist:
 
--   [ ] Configure bounded log rotation/compression.
--   [ ] Define disk thresholds.
--   [ ] `<70%` normal.
--   [ ] `70-80%` warning.
--   [ ] `80-90%` clean only safe temp/reproducible data.
--   [ ] `>90%` stop research and emit critical warning.
--   [ ] Never auto-delete critical data.
--   [ ] Test cleanup on safe synthetic data.
+-   [x] Configure bounded log rotation/compression.
+-   [x] Define disk thresholds.
+-   [x] `<70%` normal.
+-   [x] `70-80%` warning.
+-   [x] `80-90%` clean only safe temp/reproducible data.
+-   [x] `>90%` stop research and emit critical warning.
+-   [x] Never auto-delete critical data.
+-   [x] Test cleanup on safe synthetic data.
 
 ### Definition of Done - Phase 22
 
--   [ ] Logs cannot grow without bound.
--   [ ] Disk guard never deletes critical state.
--   [ ] Research stops before filesystem exhaustion.
+-   [x] Logs cannot grow without bound.
+-   [x] Disk guard never deletes critical state.
+-   [x] Research stops before filesystem exhaustion.
 
 ------------------------------------------------------------------------
 
