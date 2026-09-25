@@ -57,8 +57,21 @@ Safety checks:
 - no exchange credentials embedded in Freqtrade config.
 - no leverage setting in the dry-run config.
 
-VPS runtime restart/resource verification was attempted next, but the
-WireGuard SSH endpoint `10.77.0.1` became unreachable during the bounded
-test (`ssh: connect to host 10.77.0.1 port 22: Connection timed out`).
-Phase 12 remains partially open until VPS access is restored and the
-restart/resource checks complete.
+VPS runtime restart/resource verification after access was restored:
+
+- First Freqtrade dry-run start reached `Changing state to: RUNNING`.
+- Second Freqtrade dry-run start reached `Changing state to: RUNNING`.
+- Both runs logged `Dry run is enabled`.
+- Both runs used exchange `Bybit`.
+- Both runs resolved `CryptoForgeBaselineStrategy`.
+- Service remained `inactive` and `disabled`; the test did not enable
+  boot startup.
+- No lingering Freqtrade process remained after shutdown.
+- Baseline dry-run SQLite DB existed with `trades_count=0` and
+  `orders_count=0`, so the restart check did not create duplicate
+  trade/order state.
+- Post-test resources: swap `0`, root filesystem `5.5G / 20G` (`30%`),
+  available RAM about `458 MiB`.
+
+The current VPS can run the bounded dry-run verification, but cold starts
+remain slow and should stay part of operational expectations.

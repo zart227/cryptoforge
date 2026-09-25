@@ -567,15 +567,15 @@ Checklist:
 -   [x] Confirm no leverage.
 -   [x] Exercise at least one controlled simulated lifecycle if market
     conditions allow.
--   [ ] Verify restart behavior.
--   [ ] Verify no duplicate state after restart.
--   [ ] Measure CPU/RAM/swap/disk during normal operation.
+-   [x] Verify restart behavior.
+-   [x] Verify no duplicate state after restart.
+-   [x] Measure CPU/RAM/swap/disk during normal operation.
 
 ### Definition of Done - Phase 12
 
--   [ ] End-to-end paper-trading pipeline works.
+-   [x] End-to-end paper-trading pipeline works.
 -   [x] Real-money execution remains impossible under active config.
--   [ ] Runtime remains stable on current VPS.
+-   [x] Runtime remains stable on current VPS.
 
 ------------------------------------------------------------------------
 
