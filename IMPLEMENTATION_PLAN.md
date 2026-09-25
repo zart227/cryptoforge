@@ -995,24 +995,24 @@ Checklist:
 
 # PHASE 26 - Security audit
 
--   [ ] Search working tree for secrets.
--   [ ] Inspect Git status/history as appropriate for accidental
+-   [x] Search working tree for secrets.
+-   [x] Inspect Git status/history as appropriate for accidental
     secrets.
--   [ ] Check `.env` permissions.
--   [ ] Check listening ports.
--   [ ] Check container exposure.
--   [ ] Check admin/API exposure.
--   [ ] Check logs for secrets.
--   [ ] Check Supabase privileged key handling.
--   [ ] Review RLS if applicable.
--   [ ] Confirm Bybit withdrawal permission is never required.
--   [ ] Confirm real trading remains disabled.
--   [ ] Confirm Futures/leverage remain disabled.
+-   [x] Check `.env` permissions.
+-   [x] Check listening ports.
+-   [x] Check container exposure.
+-   [x] Check admin/API exposure.
+-   [x] Check logs for secrets.
+-   [x] Check Supabase privileged key handling.
+-   [x] Review RLS if applicable.
+-   [x] Confirm Bybit withdrawal permission is never required.
+-   [x] Confirm real trading remains disabled.
+-   [x] Confirm Futures/leverage remain disabled.
 
 ### Definition of Done - Phase 26
 
--   [ ] No known plaintext secret is committed/exposed.
--   [ ] No unnecessary public administrative endpoint exists.
+-   [x] No known plaintext secret is committed/exposed.
+-   [x] No unnecessary public administrative endpoint exists.
 
 ------------------------------------------------------------------------
 
