@@ -51,6 +51,8 @@ class Ticker24h:
     low_price_24h: Decimal | None
     turnover_24h: Decimal | None
     volume_24h: Decimal | None
+    bid1_price: Decimal | None = None
+    ask1_price: Decimal | None = None
 
 
 @dataclass(frozen=True)
@@ -187,6 +189,8 @@ def parse_ticker(item: dict[str, Any]) -> Ticker24h:
         low_price_24h=parse_optional_decimal(item.get("lowPrice24h")),
         turnover_24h=parse_optional_decimal(item.get("turnover24h")),
         volume_24h=parse_optional_decimal(item.get("volume24h")),
+        bid1_price=parse_optional_decimal(item.get("bid1Price")),
+        ask1_price=parse_optional_decimal(item.get("ask1Price")),
     )
 
 

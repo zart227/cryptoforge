@@ -367,14 +367,14 @@ Use staged filtering to save resources.
 
 ## Cheap universe filter
 
--   [ ] Bybit Spot only.
--   [ ] USDT quote only.
--   [ ] Exclude unsuitable stablecoin pairs where appropriate.
--   [ ] Exclude leveraged/special tokens where applicable.
--   [ ] Filter insufficient history.
--   [ ] Filter very low quote volume.
--   [ ] Filter excessive spread.
--   [ ] Filter pairs incompatible with minimum order requirements.
+-   [x] Bybit Spot only.
+-   [x] USDT quote only.
+-   [x] Exclude unsuitable stablecoin pairs where appropriate.
+-   [x] Exclude leveraged/special tokens where applicable.
+-   [x] Filter insufficient history.
+-   [x] Filter very low quote volume.
+-   [x] Filter excessive spread.
+-   [x] Filter pairs incompatible with minimum order requirements.
 
 ## Candidate scoring
 
@@ -392,21 +392,21 @@ Evaluate justified subset of:
 
 Checklist:
 
--   [ ] Implement cheap first-stage filter.
--   [ ] Limit expensive calculations to shortlist.
--   [ ] Make thresholds configurable.
--   [ ] Avoid selecting a coin solely because of extreme 24h gain.
--   [ ] Add pump/illiquidity safeguards.
--   [ ] Cap number of actively analyzed pairs.
--   [ ] Benchmark scanner CPU/RAM.
--   [ ] Unit-test filters/scoring.
+-   [x] Implement cheap first-stage filter.
+-   [x] Limit expensive calculations to shortlist.
+-   [x] Make thresholds configurable.
+-   [x] Avoid selecting a coin solely because of extreme 24h gain.
+-   [x] Add pump/illiquidity safeguards.
+-   [x] Cap number of actively analyzed pairs.
+-   [x] Benchmark scanner CPU/RAM.
+-   [x] Unit-test filters/scoring.
 
 ### Definition of Done - Phase 7
 
--   [ ] Scanner produces a bounded candidate set.
--   [ ] Scanner does not overload 1 vCPU/1 GB VPS.
--   [ ] Low-liquidity/high-spread candidates are rejected.
--   [ ] Selection reasons are observable/logged without excessive
+-   [x] Scanner produces a bounded candidate set.
+-   [x] Scanner does not overload 1 vCPU/1 GB VPS.
+-   [x] Low-liquidity/high-spread candidates are rejected.
+-   [x] Selection reasons are observable/logged without excessive
     logging.
 
 ------------------------------------------------------------------------
