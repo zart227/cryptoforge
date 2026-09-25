@@ -636,18 +636,18 @@ Compute at minimum:
 
 Checklist:
 
--   [ ] Define formulas and assumptions.
--   [ ] Avoid treating win rate as primary metric.
--   [ ] Produce daily metrics.
--   [ ] Produce strategy-version metrics.
--   [ ] Produce regime-specific metrics.
--   [ ] Test calculations against controlled samples.
--   [ ] Persist summaries to Supabase.
+-   [x] Define formulas and assumptions.
+-   [x] Avoid treating win rate as primary metric.
+-   [x] Produce daily metrics.
+-   [x] Produce strategy-version metrics.
+-   [x] Produce regime-specific metrics.
+-   [x] Test calculations against controlled samples.
+-   [x] Persist summaries to Supabase.
 
 ### Definition of Done - Phase 14
 
--   [ ] Metrics are reproducible from stored trades.
--   [ ] Controlled test cases match expected calculations.
+-   [x] Metrics are reproducible from stored trades.
+-   [x] Controlled test cases match expected calculations.
 
 ------------------------------------------------------------------------
 
