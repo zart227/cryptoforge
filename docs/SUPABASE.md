@@ -9,6 +9,8 @@ to make safe local decisions if Supabase is offline.
 
 The initial schema is stored in
 `supabase/migrations/20260925000100_initial_schema.sql`.
+Server-side Data API grants for the secret/service role are stored in
+`supabase/migrations/20260925000200_grant_service_role_server_access.sql`.
 
 Core tables:
 
@@ -44,6 +46,11 @@ frontend policies are created yet because there is no frontend data
 access requirement. If a dashboard is added later, it should receive
 least-privilege read policies or a separate backend API rather than broad
 table access.
+
+The server-side secret key uses the privileged `service_role` context.
+That role receives explicit table privileges so backend delivery through
+the Supabase Data API works while RLS remains enabled and client roles
+remain closed.
 
 ## Storage Policy
 

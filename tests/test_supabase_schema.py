@@ -1,7 +1,10 @@
 from pathlib import Path
 
 
-MIGRATION = Path("supabase/migrations/20260925000100_initial_schema.sql")
+INITIAL_MIGRATION = Path("supabase/migrations/20260925000100_initial_schema.sql")
+SERVICE_ROLE_MIGRATION = Path(
+    "supabase/migrations/20260925000200_grant_service_role_server_access.sql"
+)
 
 
 EXPECTED_TABLES = {
@@ -20,7 +23,7 @@ EXPECTED_TABLES = {
 
 
 def _sql() -> str:
-    return MIGRATION.read_text(encoding="utf-8").lower()
+    return INITIAL_MIGRATION.read_text(encoding="utf-8").lower()
 
 
 def test_supabase_migration_contains_expected_tables() -> None:
@@ -60,3 +63,12 @@ def test_supabase_migration_excludes_bulk_or_binary_storage() -> None:
     assert "create table public.order_book" not in sql
     assert "artifact_sha256" in sql
     assert "artifact_uri" in sql
+
+
+def test_supabase_service_role_migration_grants_server_access_only() -> None:
+    sql = SERVICE_ROLE_MIGRATION.read_text(encoding="utf-8").lower()
+
+    assert "service_role" in sql
+    assert "grant select, insert, update, delete on public.%i to service_role" in sql
+    assert " to anon" not in sql
+    assert " to authenticated" not in sql
