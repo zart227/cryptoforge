@@ -653,22 +653,22 @@ Checklist:
 
 # PHASE 15 - Backtesting framework
 
--   [ ] Define historical-data download/cache process.
--   [ ] Keep candles reproducible/disposable.
--   [ ] Include fees.
--   [ ] Use realistic execution assumptions.
--   [ ] Check minimum order/precision.
--   [ ] Prevent future leakage.
--   [ ] Save summary results, not unlimited raw output.
--   [ ] Limit resource usage.
--   [ ] Run research at lower priority than trading.
--   [ ] Document backtesting procedure.
+-   [x] Define historical-data download/cache process.
+-   [x] Keep candles reproducible/disposable.
+-   [x] Include fees.
+-   [x] Use realistic execution assumptions.
+-   [x] Check minimum order/precision.
+-   [x] Prevent future leakage.
+-   [x] Save summary results, not unlimited raw output.
+-   [x] Limit resource usage.
+-   [x] Run research at lower priority than trading.
+-   [x] Document backtesting procedure.
 
 ### Definition of Done - Phase 15
 
--   [ ] Baseline backtest is reproducible.
--   [ ] Resource usage is bounded.
--   [ ] Backtest does not interfere materially with trader runtime.
+-   [x] Baseline backtest is reproducible.
+-   [x] Resource usage is bounded.
+-   [x] Backtest does not interfere materially with trader runtime.
 
 ------------------------------------------------------------------------
 
