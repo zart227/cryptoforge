@@ -791,27 +791,27 @@ Candidate features:
 
 Checklist:
 
--   [ ] Document future FreqAI architecture.
--   [ ] Define chronological train/validation/test.
--   [ ] Define walk-forward process.
--   [ ] Define feature versioning.
--   [ ] Define model versioning.
--   [ ] Define artifact metadata/checksum.
--   [ ] Define retraining triggers.
--   [ ] Define anti-leakage checks.
--   [ ] Define champion/challenger ML evaluation.
--   [ ] Mark heavy continuous training as NOT ACTIVE until resources
+-   [x] Document future FreqAI architecture.
+-   [x] Define chronological train/validation/test.
+-   [x] Define walk-forward process.
+-   [x] Define feature versioning.
+-   [x] Define model versioning.
+-   [x] Define artifact metadata/checksum.
+-   [x] Define retraining triggers.
+-   [x] Define anti-leakage checks.
+-   [x] Define champion/challenger ML evaluation.
+-   [x] Mark heavy continuous training as NOT ACTIVE until resources
     allow.
--   [ ] Define retraining windows, initially night-only.
--   [ ] Define shadow-mode validation before any live deployment.
--   [ ] Define drift detection and automatic deactivation criteria.
+-   [x] Define retraining windows, initially night-only.
+-   [x] Define shadow-mode validation before any live deployment.
+-   [x] Define drift detection and automatic deactivation criteria.
 
 ### Definition of Done - Phase 19
 
--   [ ] `docs/FREQAI.md` provides an implementable upgrade path.
--   [ ] Current runtime does not waste resources pretending to run heavy
+-   [x] `docs/FREQAI.md` provides an implementable upgrade path.
+-   [x] Current runtime does not waste resources pretending to run heavy
     ML.
--   [ ] ML cannot autonomously increase live exposure.
+-   [x] ML cannot autonomously increase live exposure.
 
 ------------------------------------------------------------------------
 
