@@ -302,32 +302,32 @@ Design only justified tables. Candidate entities:
 
 Checklist:
 
--   [ ] Design schema.
--   [ ] Define primary keys/UUIDs.
--   [ ] Define timestamps consistently.
--   [ ] Define relationships.
--   [ ] Add appropriate indexes.
--   [ ] Avoid unnecessary duplication.
--   [ ] Store SQL migrations in Git.
--   [ ] Document schema in `docs/SUPABASE.md`.
--   [ ] Keep privileged credentials server-side only.
--   [ ] Define security/RLS approach if frontend access is introduced.
--   [ ] Do not store model binaries as PostgreSQL BYTEA by default.
+-   [x] Design schema.
+-   [x] Define primary keys/UUIDs.
+-   [x] Define timestamps consistently.
+-   [x] Define relationships.
+-   [x] Add appropriate indexes.
+-   [x] Avoid unnecessary duplication.
+-   [x] Store SQL migrations in Git.
+-   [x] Document schema in `docs/SUPABASE.md`.
+-   [x] Keep privileged credentials server-side only.
+-   [x] Define security/RLS approach if frontend access is introduced.
+-   [x] Do not store model binaries as PostgreSQL BYTEA by default.
 
 ## 5.2 Storage policy
 
--   [ ] Define model artifact metadata.
--   [ ] Define future Supabase Storage path convention.
--   [ ] Store checksum for important artifacts.
--   [ ] Do not upload unlimited raw candles/tick/order-book data.
--   [ ] Document what is critical, reproducible and temporary.
+-   [x] Define model artifact metadata.
+-   [x] Define future Supabase Storage path convention.
+-   [x] Store checksum for important artifacts.
+-   [x] Do not upload unlimited raw candles/tick/order-book data.
+-   [x] Document what is critical, reproducible and temporary.
 
 ### Definition of Done - Phase 5
 
--   [ ] Migrations can create schema reproducibly.
--   [ ] Schema is documented.
--   [ ] Secrets are not in Git.
--   [ ] Bulk reproducible market data is excluded from uncontrolled
+-   [x] Migrations can create schema reproducibly.
+-   [x] Schema is documented.
+-   [x] Secrets are not in Git.
+-   [x] Bulk reproducible market data is excluded from uncontrolled
     long-term storage.
 
 ------------------------------------------------------------------------
@@ -1340,3 +1340,29 @@ missing-key behavior, and ran the non-integration test suite.
 Follow-up:
 Continue the main CryptoForge plan from Phase 5 unless the user asks for
 more TypeSafe CLI refinements.
+
+## 2026-09-25 - Portable Supabase schema migration
+
+Phase:
+Phase 5 - Supabase persistent backend.
+Decision:
+Authored the initial Supabase schema as a SQL migration in Git and made
+client-role revokes conditional so the migration works in Supabase and
+can also be verified against a clean local PostgreSQL instance.
+Reason:
+Supabase project credentials are not configured locally yet, but Phase 5
+requires a reproducible schema and documented persistence boundaries.
+Local PostgreSQL does not define Supabase roles such as `anon` and
+`authenticated` by default.
+Alternatives considered:
+Waiting for live Supabase credentials; creating Supabase roles in local
+test databases; writing docs without a migration.
+Risk/impact:
+No production database was modified. The migration keeps RLS enabled and
+still revokes access from Supabase client roles when they exist.
+Verification:
+Applied the migration successfully with `pg_virtualenv psql`, added
+schema tests, and ran the non-integration test suite.
+Follow-up:
+When Supabase credentials are added, apply the migration to the real
+project through the Supabase workflow and verify remote table/RLS state.
