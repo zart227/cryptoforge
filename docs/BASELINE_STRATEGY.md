@@ -11,6 +11,12 @@ optimized historical winner.
 - `rsi`: 14-period RSI, momentum confirmation.
 - `volume_ratio`: current volume divided by 20-candle average volume.
 - `atr_pct`: 14-candle ATR divided by close, volatility filter.
+- `support`: previous rolling low over the configured level window.
+- `resistance`: previous rolling high over the configured level window.
+- `support_bounce`: close is near support and confirms a bounce candle.
+- `resistance_breakout`: close breaks prior resistance with stronger
+  volume.
+- `support_breakdown`: close loses prior support.
 
 All indicators are calculated from current and past candles only. The
 strategy does not use negative shifts, centered rolling windows or future
@@ -21,13 +27,13 @@ candles.
 A long entry can be signaled when:
 
 - fast EMA is above slow EMA;
-- close is above fast EMA;
 - RSI is at least 55;
+- price is either bouncing from support or breaking above resistance;
 - volume is above its 20-candle average by the configured ratio;
 - ATR percentage is inside the configured volatility band;
 - volume is positive.
 
-The entry tag is `ema_rsi_volume_atr_baseline`.
+The entry tag is `level_bounce_or_breakout`.
 
 ## Exit Logic
 
@@ -35,7 +41,10 @@ An exit can be signaled when:
 
 - fast EMA falls below slow EMA;
 - RSI drops to 45 or lower;
+- RSI reaches the configured overbought band;
 - ATR percentage exceeds the configured maximum volatility band.
+- price is near resistance after a move;
+- price loses prior support through `support_breakdown`.
 
 The exit tag is `baseline_exit_signal`. Freqtrade ROI and stoploss rules
 remain active in addition to the exit signal.

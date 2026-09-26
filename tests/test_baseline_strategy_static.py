@@ -56,7 +56,12 @@ def test_baseline_strategy_documents_entry_and_exit_tags() -> None:
     source = STRATEGY.read_text(encoding="utf-8")
     docs = Path("docs/BASELINE_STRATEGY.md").read_text(encoding="utf-8")
 
-    assert "ema_rsi_volume_atr_baseline" in source
+    assert "support" in source
+    assert "resistance" in source
+    assert "support_bounce" in source
+    assert "resistance_breakout" in source
+    assert "level_bounce_or_breakout" in source
     assert "baseline_exit_signal" in source
-    assert "ema_rsi_volume_atr_baseline" in docs
+    assert "level_bounce_or_breakout" in docs
+    assert "support_breakdown" in docs
     assert "baseline_exit_signal" in docs

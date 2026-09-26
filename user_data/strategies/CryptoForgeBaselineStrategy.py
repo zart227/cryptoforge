@@ -28,6 +28,10 @@ class CryptoForgeBaselineStrategy(IStrategy):
     min_volume_ratio = 1.05
     min_atr_pct = 0.0015
     max_atr_pct = 0.04
+    level_window = 48
+    level_atr_buffer = 0.75
+    breakout_volume_ratio = 1.25
+    overbought_rsi = 72
 
     @property
     def version(self) -> str:
@@ -40,16 +44,43 @@ class CryptoForgeBaselineStrategy(IStrategy):
         dataframe["volume_mean_20"] = dataframe["volume"].rolling(20, min_periods=20).mean()
         dataframe["volume_ratio"] = dataframe["volume"] / dataframe["volume_mean_20"]
         dataframe["atr_pct"] = average_true_range_pct(dataframe, period=14)
+        dataframe["atr"] = dataframe["atr_pct"] * dataframe["close"]
+        dataframe["support"] = dataframe["low"].rolling(self.level_window, min_periods=self.level_window).min().shift(1)
+        dataframe["resistance"] = dataframe["high"].rolling(self.level_window, min_periods=self.level_window).max().shift(1)
+        dataframe["near_support"] = dataframe["close"] <= (
+            dataframe["support"] + dataframe["atr"] * self.level_atr_buffer
+        )
+        dataframe["near_resistance"] = dataframe["close"] >= (
+            dataframe["resistance"] - dataframe["atr"] * self.level_atr_buffer
+        )
+        dataframe["support_bounce"] = (
+            dataframe["near_support"]
+            & (dataframe["close"] > dataframe["open"])
+            & (dataframe["close"] > dataframe["close"].shift(1))
+        )
+        dataframe["resistance_breakout"] = (
+            (dataframe["close"] > dataframe["resistance"])
+            & (dataframe["close"].shift(1) <= dataframe["resistance"].shift(1))
+            & (dataframe["volume_ratio"] >= self.breakout_volume_ratio)
+        )
+        dataframe["support_breakdown"] = (
+            (dataframe["close"] < dataframe["support"])
+            & (dataframe["close"].shift(1) >= dataframe["support"].shift(1))
+        )
         return dataframe
 
     def populate_entry_trend(self, dataframe: DataFrame, metadata: dict) -> DataFrame:
         dataframe["enter_long"] = 0
         dataframe["enter_tag"] = None
 
-        entry_condition = (
+        trend_filter = (
             (dataframe["ema_fast"] > dataframe["ema_slow"])
-            & (dataframe["close"] > dataframe["ema_fast"])
             & (dataframe["rsi"] >= self.buy_rsi)
+        )
+        level_entry = dataframe["support_bounce"] | dataframe["resistance_breakout"]
+        entry_condition = (
+            trend_filter
+            & level_entry
             & (dataframe["volume_ratio"] >= self.min_volume_ratio)
             & (dataframe["atr_pct"] >= self.min_atr_pct)
             & (dataframe["atr_pct"] <= self.max_atr_pct)
@@ -57,7 +88,7 @@ class CryptoForgeBaselineStrategy(IStrategy):
         )
         dataframe.loc[entry_condition, ["enter_long", "enter_tag"]] = (
             1,
-            "ema_rsi_volume_atr_baseline",
+            "level_bounce_or_breakout",
         )
         return dataframe
 
@@ -68,7 +99,10 @@ class CryptoForgeBaselineStrategy(IStrategy):
         exit_condition = (
             (dataframe["ema_fast"] < dataframe["ema_slow"])
             | (dataframe["rsi"] <= self.sell_rsi)
+            | (dataframe["rsi"] >= self.overbought_rsi)
             | (dataframe["atr_pct"] > self.max_atr_pct)
+            | dataframe["near_resistance"]
+            | dataframe["support_breakdown"]
         )
         dataframe.loc[exit_condition, ["exit_long", "exit_tag"]] = (
             1,
