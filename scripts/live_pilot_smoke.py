@@ -109,7 +109,7 @@ def main() -> int:
         print(f"{key}={value}")
     print(f"backup_archive={backup.archive_path}")
     print(f"live_config={live_config_path}")
-    print(f"telegram_reason={notification_result.reason}")
+    print(f"alert_reason={notification_result.reason}")
     if live_config_blockers:
         print("live_config_blockers=" + "; ".join(live_config_blockers))
     if readiness.blockers:
