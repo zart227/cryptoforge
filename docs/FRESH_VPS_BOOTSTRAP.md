@@ -36,6 +36,22 @@ chown cryptoforge:cryptoforge /opt/cryptoforge/app/.env
 chmod 600 /opt/cryptoforge/app/.env
 ```
 
+If you copied the env file to the fresh VPS, run:
+
+```bash
+bash /opt/cryptoforge/app/cryptoforge_repo/deploy/post_bootstrap_restore.sh /path/to/.env
+```
+
+With a GitHub self-hosted runner registration token:
+
+```bash
+bash /opt/cryptoforge/app/cryptoforge_repo/deploy/post_bootstrap_restore.sh /path/to/.env '<runner-token>'
+```
+
+The post-bootstrap helper syncs strategies, optionally installs the
+runner, selects the current intraday Spot universe, and runs the no-trade
+live smoke check.
+
 ## Bybit Whitelist
 
 If the Bybit API key is IP-whitelisted, add the new VPS public IP in
