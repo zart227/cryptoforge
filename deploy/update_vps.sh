@@ -13,12 +13,13 @@ git fetch --prune "$REMOTE" "$BRANCH"
 REMOTE_COMMIT="$(git rev-parse "$REMOTE/$BRANCH")"
 CURRENT_COMMIT="$(git rev-parse HEAD 2>/dev/null || true)"
 
-if [ "$CURRENT_COMMIT" = "$REMOTE_COMMIT" ]; then
+if [ "$CURRENT_COMMIT" = "$REMOTE_COMMIT" ] && git diff --quiet && git diff --cached --quiet; then
   echo "cryptoforge_deploy_no_change branch=$BRANCH commit=$(git rev-parse --short HEAD)"
   exit 0
 fi
 
 git checkout -B "$BRANCH" "$REMOTE/$BRANCH"
+git reset --hard "$REMOTE/$BRANCH"
 
 if [ -x "$VENV_DIR/bin/python" ]; then
   PYTHON="$VENV_DIR/bin/python"
