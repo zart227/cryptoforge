@@ -48,11 +48,11 @@ Observed from VPS after switching `.env` to the AI sub-account key:
 - key appears to belong to a sub-account;
 - withdrawal permission was not present as `Withdraw`;
 - Spot trade permission is enabled;
-- Unified USDT balance is `0`, which does not satisfy the selected
+- Unified USDT balance is `16.138`, which satisfies the selected
   `16 USDT` pilot allocation;
 - derivatives permission count was non-zero.
 
-Real trading remains blocked until the operator transfers the selected
-pilot allocation to the AI sub-account and CryptoForge re-tests the
-read-only audit. Derivatives/futures permissions are allowed only for
-paper/shadow research until a separate live derivatives plan is approved.
+Real trading remains blocked until the final live smoke checks pass and
+the operator explicitly approves starting the live pilot. Derivatives and
+futures permissions are allowed only for paper/shadow research until a
+separate live derivatives plan is approved.

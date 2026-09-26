@@ -34,8 +34,8 @@ Current status:
 - current Bybit key appears to belong to the AI sub-account;
 - current Bybit key has no withdrawal permission;
 - Bybit private read-only audit from VPS confirms IP whitelist access;
-- AI sub-account UTA balance is currently `0 USDT`;
-- pilot capital still needs to be transferred to the AI sub-account;
+- AI sub-account UTA balance is currently `16.138 USDT`;
+- pilot capital transfer to the AI sub-account is complete;
 - current Bybit key has non-zero derivatives permissions, which are
   blocked from live use by policy until a separate live derivatives plan
   is approved;
