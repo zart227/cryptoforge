@@ -77,6 +77,17 @@ universe. It favors liquid pairs with back-and-forth movement using the
 scanner `oscillation_score`, while still rejecting stablecoin-like,
 leveraged/special, thin, wide-spread and pump-like markets.
 
+The VPS live service unit is `cryptoforge-live-pilot.service`. It uses:
+
+- config: `/opt/cryptoforge/config/freqtrade.live-pilot.json`;
+- environment: `/opt/cryptoforge/app/.env`;
+- userdir: `/opt/cryptoforge/app/user_data`;
+- strategy: `CryptoForgeBaselineStrategy`;
+- log file: `/opt/cryptoforge/logs/freqtrade-live-pilot.log`.
+
+Deployment syncs repository strategies into the runtime userdir before
+the service is started.
+
 ## Day Mode
 
 Autonomous day mode may only run approved live strategies. It must:

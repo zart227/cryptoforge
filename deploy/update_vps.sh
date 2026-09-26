@@ -40,6 +40,9 @@ print("cryptoforge_import_ok")
 print(BybitPrivateClient.__name__)
 PY
 
+mkdir -p "$APP_DIR/user_data/strategies"
+cp "$REPO_DIR"/user_data/strategies/*.py "$APP_DIR/user_data/strategies/"
+
 if [ "$(id -u)" = "0" ] && command -v systemctl >/dev/null 2>&1; then
   systemctl daemon-reload
 fi
