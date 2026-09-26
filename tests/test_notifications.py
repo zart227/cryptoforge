@@ -1,6 +1,8 @@
 from dataclasses import dataclass, field
 
 from cryptoforge.notifications import (
+    FallbackNotificationSink,
+    NtfyNotificationSink,
     Notification,
     NotificationKind,
     RateLimitedNotifier,
@@ -153,3 +155,42 @@ def test_telegram_sink_uses_send_message_endpoint_without_printing_secret() -> N
         "https://api.telegram.org/bot[redacted]/sendMessage"
     )
     assert b'"chat_id": "999"' in calls[0][1]
+
+
+def test_telegram_sink_accepts_proxy_url() -> None:
+    sink = TelegramNotificationSink(
+        bot_token="123456:secret-token",
+        chat_id="999",
+        proxy_url="http://proxy.example:8080",
+        http_post=lambda *_args: None,
+    )
+
+    assert sink.proxy_url == "http://proxy.example:8080"
+
+
+def test_fallback_sink_uses_second_channel_after_first_failure() -> None:
+    calls: list[str] = []
+
+    class FailingSink:
+        def send(self, message: str) -> None:
+            raise RuntimeError("blocked")
+
+    class WorkingSink:
+        def send(self, message: str) -> None:
+            calls.append(message)
+
+    FallbackNotificationSink((FailingSink(), WorkingSink())).send("hello")
+
+    assert calls == ["hello"]
+
+
+def test_ntfy_sink_posts_plain_text_message() -> None:
+    calls: list[tuple[str, bytes, dict[str, str], float]] = []
+
+    def record(url: str, payload: bytes, headers: dict[str, str], timeout: float) -> None:
+        calls.append((url, payload, headers, timeout))
+
+    NtfyNotificationSink(topic="cryptoforge-test", http_post=record).send("hello")
+
+    assert calls[0][0] == "https://ntfy.sh/cryptoforge-test"
+    assert calls[0][1] == b"hello"

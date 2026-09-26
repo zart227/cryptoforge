@@ -40,6 +40,8 @@ Current status:
   blocked from live use by policy until a separate live derivatives plan
   is approved;
 - final no-trade live smoke check passed Bybit, config, kill-switch,
-  no-new-entry and backup gates, but Telegram delivery from the VPS
-  failed because `api.telegram.org:443` timed out;
+  no-new-entry, backup and alert gates after adding an `ntfy` fallback;
+- Telegram delivery from the VPS still times out without a proxy, and
+  the tested proxy list rejected authentication, so Telegram remains a
+  secondary channel until its route is fixed;
 - real trading remains disabled.

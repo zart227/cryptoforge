@@ -76,12 +76,28 @@ class NullNotificationSink:
         return None
 
 
+class FallbackNotificationSink:
+    def __init__(self, sinks: tuple[NotificationSink, ...]) -> None:
+        self.sinks = sinks
+
+    def send(self, message: str) -> None:
+        errors: list[str] = []
+        for sink in self.sinks:
+            try:
+                sink.send(message)
+                return
+            except Exception as exc:  # noqa: BLE001 - fallback sink must try the next channel.
+                errors.append(str(exc))
+        raise RuntimeError("; ".join(errors) or "no notification sinks configured")
+
+
 class TelegramNotificationSink:
     def __init__(
         self,
         *,
         bot_token: str,
         chat_id: str,
+        proxy_url: str = "",
         timeout_seconds: float = 10.0,
         http_post: HttpPost | None = None,
     ) -> None:
@@ -91,8 +107,9 @@ class TelegramNotificationSink:
             raise ValueError("chat_id is required")
         self.bot_token = bot_token
         self.chat_id = chat_id
+        self.proxy_url = proxy_url
         self.timeout_seconds = timeout_seconds
-        self.http_post = http_post or post_json
+        self.http_post = http_post or (proxied_post_json(proxy_url) if proxy_url else post_json)
 
     def send(self, message: str) -> None:
         url = f"https://api.telegram.org/bot{self.bot_token}/sendMessage"
@@ -105,6 +122,31 @@ class TelegramNotificationSink:
             url,
             json.dumps(payload).encode("utf-8"),
             {"Content-Type": "application/json"},
+            self.timeout_seconds,
+        )
+
+
+class NtfyNotificationSink:
+    def __init__(
+        self,
+        *,
+        topic: str,
+        base_url: str = "https://ntfy.sh",
+        timeout_seconds: float = 10.0,
+        http_post: HttpPost | None = None,
+    ) -> None:
+        if not topic:
+            raise ValueError("topic is required")
+        self.topic = topic.strip("/")
+        self.base_url = base_url.rstrip("/")
+        self.timeout_seconds = timeout_seconds
+        self.http_post = http_post or post_json
+
+    def send(self, message: str) -> None:
+        self.http_post(
+            f"{self.base_url}/{parse.quote(self.topic)}",
+            message.encode("utf-8"),
+            {"Content-Type": "text/plain; charset=utf-8"},
             self.timeout_seconds,
         )
 
@@ -160,12 +202,17 @@ def telegram_notifier_from_env(
     env = os.environ if environ is None else environ
     token = env.get("TELEGRAM_BOT_TOKEN", "")
     chat_id = env.get("TELEGRAM_CHAT_ID", "")
-    if not token or not chat_id:
+    proxy_url = env.get("TELEGRAM_PROXY_URL", "")
+    ntfy_topic = env.get("NTFY_TOPIC", "")
+    ntfy_base_url = env.get("NTFY_BASE_URL", "https://ntfy.sh")
+    sinks: list[NotificationSink] = []
+    if token and chat_id:
+        sinks.append(TelegramNotificationSink(bot_token=token, chat_id=chat_id, proxy_url=proxy_url))
+    if ntfy_topic:
+        sinks.append(NtfyNotificationSink(topic=ntfy_topic, base_url=ntfy_base_url))
+    if not sinks:
         return RateLimitedNotifier(NullNotificationSink(), clock=clock)
-    return RateLimitedNotifier(
-        TelegramNotificationSink(bot_token=token, chat_id=chat_id),
-        clock=clock,
-    )
+    return RateLimitedNotifier(FallbackNotificationSink(tuple(sinks)), clock=clock)
 
 
 def redact_value(key: str, value: object) -> str:
@@ -209,6 +256,24 @@ def post_json(url: str, payload: bytes, headers: dict[str, str], timeout_seconds
         raise RuntimeError(f"Telegram HTTP {exc.code}: {body[:300]}") from exc
     except error.URLError as exc:
         raise RuntimeError(f"Telegram request failed: {exc}") from exc
+
+
+def proxied_post_json(proxy_url: str) -> HttpPost:
+    opener = request.build_opener(request.ProxyHandler({"http": proxy_url, "https": proxy_url}))
+
+    def _post(url: str, payload: bytes, headers: dict[str, str], timeout_seconds: float) -> None:
+        req = request.Request(url, data=payload, headers=headers, method="POST")
+        try:
+            with opener.open(req, timeout=timeout_seconds) as response:
+                if response.status not in {200, 201, 204}:
+                    raise RuntimeError(f"Telegram returned unexpected status {response.status}")
+        except error.HTTPError as exc:
+            body = exc.read().decode("utf-8", errors="replace")
+            raise RuntimeError(f"Telegram HTTP {exc.code}: {body[:300]}") from exc
+        except error.URLError as exc:
+            raise RuntimeError(f"Telegram request failed: {exc}") from exc
+
+    return _post
 
 
 def telegram_api_url_without_secret(url: str) -> str:

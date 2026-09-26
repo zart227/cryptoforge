@@ -122,6 +122,8 @@ no token or chat ID was printed.
 The final no-trade live smoke check on 2026-09-26 passed Bybit, config,
 kill-switch, no-new-entry and backup gates from the VPS. Telegram
 delivery from the VPS failed because `api.telegram.org:443` timed out
-while other outbound HTTPS, including GitHub, still worked. Live trading
-should stay disabled until VPS notifications have a working Telegram
-route or an approved replacement alert channel.
+while other outbound HTTPS, including GitHub, still worked.
+
+An `ntfy` fallback channel was then configured through the deployment
+environment and the no-trade live smoke check passed the alert gate from
+the VPS. Telegram remains a secondary channel until its route is fixed.

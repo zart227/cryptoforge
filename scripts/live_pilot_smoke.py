@@ -101,7 +101,7 @@ def main() -> int:
         "kill_switch_tested": read_switch(kill_switch),
         "no_new_entry_switch_tested": read_switch(no_new_entry_switch),
         "backup_verified": True,
-        "telegram_smoke_sent": notification_result.sent,
+        "alert_smoke_sent": notification_result.sent,
         "readiness_ready": readiness.ready,
     }
 
