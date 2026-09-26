@@ -18,6 +18,7 @@ if [ "$CURRENT_COMMIT" = "$REMOTE_COMMIT" ] && git diff --quiet && git diff --ca
   exit 0
 fi
 
+git reset --hard HEAD
 git clean -fd
 git checkout -B "$BRANCH" "$REMOTE/$BRANCH"
 git reset --hard "$REMOTE/$BRANCH"
