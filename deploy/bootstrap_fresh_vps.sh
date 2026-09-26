@@ -59,6 +59,7 @@ fi
 "$VENV_DIR/bin/python" -m pip install --upgrade pip setuptools wheel
 "$VENV_DIR/bin/pip" install -e "$REPO_DIR"
 "$VENV_DIR/bin/pip" install freqtrade
+chown -R "$USER_NAME:$USER_NAME" "$REPO_DIR"
 chown -R "$USER_NAME:$USER_NAME" "$VENV_DIR"
 
 mkdir -p "$APP_DIR/user_data/strategies"
