@@ -39,4 +39,7 @@ Current status:
 - current Bybit key has non-zero derivatives permissions, which are
   blocked from live use by policy until a separate live derivatives plan
   is approved;
+- final no-trade live smoke check passed Bybit, config, kill-switch,
+  no-new-entry and backup gates, but Telegram delivery from the VPS
+  failed because `api.telegram.org:443` timed out;
 - real trading remains disabled.

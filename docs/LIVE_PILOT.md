@@ -118,3 +118,10 @@ resources, and explicitly approves a separate live config and command.
 Telegram notification delivery was smoke-tested on 2026-09-25 using
 local environment credentials. The test message was sent successfully and
 no token or chat ID was printed.
+
+The final no-trade live smoke check on 2026-09-26 passed Bybit, config,
+kill-switch, no-new-entry and backup gates from the VPS. Telegram
+delivery from the VPS failed because `api.telegram.org:443` timed out
+while other outbound HTTPS, including GitHub, still worked. Live trading
+should stay disabled until VPS notifications have a working Telegram
+route or an approved replacement alert channel.
