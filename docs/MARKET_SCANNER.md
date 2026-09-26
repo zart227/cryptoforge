@@ -12,12 +12,17 @@ fetching candles for every listed market.
    shortlist.
 4. Fetch OHLCV only for the expensive shortlist.
 5. Score candidates with a balanced mix of liquidity, ATR, realized
-   volatility and momentum, while penalizing wide spreads and volume
-   anomalies.
+   volatility, momentum and oscillation, while penalizing wide spreads
+   and volume anomalies.
 
 The scanner deliberately avoids selecting a market solely because it had
 an extreme 24h gain. Pump-like conditions are limited through intraday
 range and volume-anomaly guards.
+
+For the day-trading universe, `oscillation_score` rewards markets where
+the intraday path length is meaningfully larger than the net displacement.
+That favors pairs that move back and forth during the day instead of
+only trending in one direction.
 
 ## Resource Bounds
 

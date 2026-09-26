@@ -34,7 +34,8 @@ def main() -> int:
             f"score={candidate.score:.4f} "
             f"turnover_24h={candidate.turnover_24h:.0f} "
             f"atr_pct={candidate.atr_pct:.6f} "
-            f"momentum_pct={candidate.momentum_pct:.6f}"
+            f"momentum_pct={candidate.momentum_pct:.6f} "
+            f"oscillation_score={candidate.oscillation_score:.4f}"
         )
     return 0
 

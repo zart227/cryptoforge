@@ -71,6 +71,12 @@ an operator-chosen, gitignored path. The generated config starts in
 `initial_state=stopped`, uses environment references for Bybit keys, and
 does not embed plaintext secrets.
 
+Before live start, `scripts/select_live_universe.py` can scan Bybit Spot
+USDT markets and update the live config whitelist with a bounded intraday
+universe. It favors liquid pairs with back-and-forth movement using the
+scanner `oscillation_score`, while still rejecting stablecoin-like,
+leveraged/special, thin, wide-spread and pump-like markets.
+
 ## Day Mode
 
 Autonomous day mode may only run approved live strategies. It must:

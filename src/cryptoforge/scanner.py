@@ -34,6 +34,7 @@ class ScannerConfig:
     min_candle_count: int = 60
     max_intraday_range_pct: Decimal = Decimal("0.35")
     max_volume_anomaly_ratio: Decimal = Decimal("6")
+    min_oscillation_score: Decimal = Decimal("1.2")
     cheap_shortlist_size: int = 30
     expensive_shortlist_size: int = 12
     output_limit: int = 8
@@ -65,6 +66,7 @@ class ScoredCandidate:
     realized_volatility_pct: Decimal
     intraday_range_pct: Decimal
     momentum_pct: Decimal
+    oscillation_score: Decimal
     volume_anomaly_ratio: Decimal
     reasons: tuple[str, ...]
 
@@ -119,6 +121,14 @@ class MarketScanner:
                     RejectedCandidate(
                         scored_candidate.symbol,
                         ("volume anomaly too extreme",),
+                    )
+                )
+                continue
+            if scored_candidate.oscillation_score < self.config.min_oscillation_score:
+                rejected.append(
+                    RejectedCandidate(
+                        scored_candidate.symbol,
+                        ("insufficient intraday back-and-forth movement",),
                     )
                 )
                 continue
@@ -205,6 +215,7 @@ def score_candidate(
     realized_vol = realized_volatility_pct(candles)
     intraday_range = intraday_range_pct(candidate.ticker)
     momentum = momentum_pct(candles)
+    oscillation = oscillation_score(candles)
     anomaly = volume_anomaly_ratio(candles)
     turnover = candidate.ticker.turnover_24h or Decimal("0")
 
@@ -219,12 +230,14 @@ def score_candidate(
     momentum_component = min_decimal(abs(momentum) * Decimal("20"), Decimal("3"))
     volatility_component = min_decimal(realized_vol * Decimal("40"), Decimal("3"))
     atr_component = min_decimal(atr * Decimal("50"), Decimal("3"))
+    oscillation_component = min_decimal(oscillation, Decimal("3"))
 
     score = (
         liquidity_score
         + momentum_component
         + volatility_component
         + atr_component
+        + oscillation_component
         - spread_penalty
         - anomaly_penalty
     )
@@ -238,10 +251,11 @@ def score_candidate(
         realized_volatility_pct=realized_vol,
         intraday_range_pct=intraday_range,
         momentum_pct=momentum,
+        oscillation_score=oscillation,
         volume_anomaly_ratio=anomaly,
         reasons=(
             "passed liquidity/spread filters",
-            "score balances liquidity, volatility and momentum",
+            "score balances liquidity, volatility, momentum and oscillation",
         ),
     )
 
@@ -297,6 +311,21 @@ def momentum_pct(candles: list[Candle]) -> Decimal:
     if first <= 0:
         return Decimal("0")
     return (last - first) / first
+
+
+def oscillation_score(candles: list[Candle]) -> Decimal:
+    if len(candles) < 3:
+        return Decimal("0")
+
+    path = Decimal("0")
+    for previous, current in zip(candles, candles[1:], strict=False):
+        if previous.close > 0:
+            path += abs((current.close - previous.close) / previous.close)
+
+    displacement = abs(momentum_pct(candles))
+    if displacement == 0:
+        return path * Decimal("100")
+    return path / displacement
 
 
 def volume_anomaly_ratio(candles: list[Candle], lookback: int = 20) -> Decimal:

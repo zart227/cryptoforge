@@ -5,6 +5,7 @@ from cryptoforge.scanner import (
     MarketScanner,
     ScannerConfig,
     cheap_filter,
+    oscillation_score,
     score_candidate,
 )
 
@@ -58,6 +59,28 @@ def candles(symbol: str, count: int = 80) -> list[Candle]:
     return result
 
 
+def oscillating_candles(symbol: str, count: int = 80) -> list[Candle]:
+    result: list[Candle] = []
+    base = Decimal("100")
+    for idx in range(count):
+        offset = Decimal("1.5") if idx % 2 == 0 else Decimal("-1.5")
+        price = base + offset + Decimal(idx) / Decimal("100")
+        result.append(
+            Candle(
+                symbol=symbol,
+                interval="5",
+                start_ms=idx * 300_000,
+                open=price - Decimal("0.8"),
+                high=price + Decimal("1.2"),
+                low=price - Decimal("1.2"),
+                close=price,
+                volume=Decimal("1000") + Decimal(idx),
+                turnover=price * Decimal("1000"),
+            )
+        )
+    return result
+
+
 def test_cheap_filter_rejects_unsuitable_pairs() -> None:
     config = ScannerConfig(min_turnover_24h_usdt=Decimal("500000"))
     instruments = [
@@ -100,7 +123,15 @@ def test_score_candidate_requires_history_and_uses_balanced_signals() -> None:
     assert scored is not None
     assert scored.symbol == "BTCUSDT"
     assert scored.score > 0
-    assert "score balances liquidity, volatility and momentum" in scored.reasons
+    assert "score balances liquidity, volatility, momentum and oscillation" in scored.reasons
+    assert scored.oscillation_score >= 0
+
+
+def test_oscillation_score_prefers_back_and_forth_over_clean_trend() -> None:
+    trend = candles("TRENDUSDT", count=80)
+    choppy = oscillating_candles("CHOPUSDT", count=80)
+
+    assert oscillation_score(choppy) > oscillation_score(trend)
 
 
 def test_market_scanner_caps_expensive_analysis() -> None:
@@ -124,6 +155,8 @@ def test_market_scanner_caps_expensive_analysis() -> None:
 
         def get_klines(self, symbol, interval, limit):  # type: ignore[no-untyped-def]
             self.kline_calls.append(symbol)
+            if symbol == "AAAUSDT":
+                return oscillating_candles(symbol, count=80)
             return candles(symbol, count=80)
 
     client = FakeClient()
@@ -136,3 +169,4 @@ def test_market_scanner_caps_expensive_analysis() -> None:
 
     assert client.kline_calls == ["AAAUSDT", "BBBUSDT"]
     assert len(result.selected) == 1
+    assert result.selected[0].symbol == "AAAUSDT"

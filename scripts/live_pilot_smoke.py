@@ -43,10 +43,13 @@ def main() -> int:
     load_env(args.env_file)
     args.runtime_dir.mkdir(parents=True, exist_ok=True)
 
-    live_config_path = write_live_config(
-        args.live_config,
-        LiveConfigRequest(stake_amount=args.stake_amount, max_open_trades=1, pair_whitelist=("BTC/USDT",)),
-    )
+    if args.live_config.exists():
+        live_config_path = args.live_config
+    else:
+        live_config_path = write_live_config(
+            args.live_config,
+            LiveConfigRequest(stake_amount=args.stake_amount, max_open_trades=1, pair_whitelist=("BTC/USDT",)),
+        )
     live_config_blockers = validate_live_freqtrade_config(live_config_path)
 
     kill_switch = args.runtime_dir / "kill-switch"
