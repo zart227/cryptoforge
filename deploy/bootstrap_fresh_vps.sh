@@ -89,6 +89,8 @@ write_live_config(
 )
 PY
 fi
+chown -R "$USER_NAME:$USER_NAME" "$CONFIG_DIR"
+chmod 0750 "$CONFIG_DIR"
 
 cp "$REPO_DIR/deploy/systemd/cryptoforge-git-sync.service" /etc/systemd/system/cryptoforge-git-sync.service
 cp "$REPO_DIR/deploy/systemd/cryptoforge-git-sync.timer" /etc/systemd/system/cryptoforge-git-sync.timer
