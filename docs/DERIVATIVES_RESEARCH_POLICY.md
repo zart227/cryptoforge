@@ -1,10 +1,14 @@
 # Derivatives Research Policy
 
-Updated: 2026-09-25.
+Updated: 2026-09-26.
 
 The operator asked CryptoForge to check Futures/Margin/Leverage if they
 appear profitable. CryptoForge may research derivatives only in paper,
 shadow, or backtest mode.
+
+`CryptoForgeLongShortResearchStrategy` exists for this research lane. It
+can study short entries and exits, but it is not part of the first
+real-money Spot live pilot.
 
 ## Allowed
 
