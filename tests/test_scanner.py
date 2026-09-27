@@ -1,6 +1,6 @@
 from decimal import Decimal
 
-from cryptoforge.market_data import Candle, Instrument, Ticker24h
+from cryptoforge.market_data import Candle, Instrument, MarketDataTimeout, Ticker24h
 from cryptoforge.scanner import (
     MarketScanner,
     ScannerConfig,
@@ -170,3 +170,36 @@ def test_market_scanner_caps_expensive_analysis() -> None:
     assert client.kline_calls == ["AAAUSDT", "BBBUSDT"]
     assert len(result.selected) == 1
     assert result.selected[0].symbol == "AAAUSDT"
+
+
+def test_market_scanner_skips_candidate_with_unavailable_candles() -> None:
+    class FakeClient:
+        def get_usdt_spot_instruments(self):  # type: ignore[no-untyped-def]
+            return [
+                instrument("AAAUSDT", "AAA"),
+                instrument("BBBUSDT", "BBB"),
+            ]
+
+        def get_tickers(self):  # type: ignore[no-untyped-def]
+            return [
+                ticker("AAAUSDT", turnover="3000000", bid="99.9", ask="100.1"),
+                ticker("BBBUSDT", turnover="2000000", bid="99.9", ask="100.1"),
+            ]
+
+        def get_klines(self, symbol, interval, limit):  # type: ignore[no-untyped-def]
+            if symbol == "AAAUSDT":
+                raise MarketDataTimeout("temporary Bybit timeout")
+            return oscillating_candles(symbol, count=80)
+
+    scanner = MarketScanner(
+        FakeClient(),  # type: ignore[arg-type]
+        ScannerConfig(expensive_shortlist_size=2, output_limit=1),
+    )
+
+    result = scanner.scan()
+
+    assert [candidate.symbol for candidate in result.selected] == ["BBBUSDT"]
+    assert any(
+        item.symbol == "AAAUSDT" and item.reasons[0].startswith("market data unavailable")
+        for item in result.rejected
+    )

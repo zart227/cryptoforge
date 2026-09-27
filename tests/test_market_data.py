@@ -1,4 +1,5 @@
 from decimal import Decimal
+from urllib.error import URLError
 
 import pytest
 
@@ -12,6 +13,7 @@ from cryptoforge.market_data import (
     parse_instrument,
     parse_ticker,
 )
+import cryptoforge.market_data as market_data
 
 
 def test_parse_spot_usdt_instrument() -> None:
@@ -112,6 +114,37 @@ def test_client_sorts_reverse_bybit_klines() -> None:
     candles = FakeClient().get_klines("BTCUSDT", limit=2)
 
     assert [candle.start_ms for candle in candles] == [1000, 2000]
+
+
+def test_client_retries_transient_timeout(monkeypatch: pytest.MonkeyPatch) -> None:
+    calls = 0
+
+    class FakeResponse:
+        def __enter__(self):  # type: ignore[no-untyped-def]
+            return self
+
+        def __exit__(self, *args):  # type: ignore[no-untyped-def]
+            return None
+
+        def read(self) -> bytes:
+            return b'{"retCode":0,"result":{"list":[]}}'
+
+    def fake_urlopen(request, timeout):  # type: ignore[no-untyped-def]
+        nonlocal calls
+        calls += 1
+        if calls == 1:
+            raise URLError(TimeoutError("temporary timeout"))
+        return FakeResponse()
+
+    sleeps: list[float] = []
+    monkeypatch.setattr(market_data, "urlopen", fake_urlopen)
+    monkeypatch.setattr(market_data.time, "sleep", sleeps.append)
+
+    client = BybitPublicClient(timeout=1, max_retries=1, retry_backoff_seconds=0.25)
+
+    assert client._get_json("/v5/market/tickers", {"category": "spot"})["retCode"] == 0
+    assert calls == 2
+    assert sleeps == [0.25]
 
 
 @pytest.mark.integration

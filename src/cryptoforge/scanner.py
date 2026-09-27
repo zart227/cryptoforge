@@ -8,6 +8,7 @@ from cryptoforge.market_data import (
     BybitPublicClient,
     Candle,
     Instrument,
+    MarketDataError,
     PRIMARY_TIMEFRAME,
     Ticker24h,
 )
@@ -94,11 +95,20 @@ class MarketScanner:
 
         scored: list[ScoredCandidate] = []
         for candidate in cheap_candidates[: self.config.expensive_shortlist_size]:
-            candles = self.client.get_klines(
-                candidate.instrument.symbol,
-                interval=self.config.timeframe,
-                limit=self.config.candle_limit,
-            )
+            try:
+                candles = self.client.get_klines(
+                    candidate.instrument.symbol,
+                    interval=self.config.timeframe,
+                    limit=self.config.candle_limit,
+                )
+            except MarketDataError as exc:
+                rejected.append(
+                    RejectedCandidate(
+                        candidate.instrument.symbol,
+                        (f"market data unavailable: {exc}",),
+                    )
+                )
+                continue
             scored_candidate = score_candidate(candidate, candles, self.config)
             if scored_candidate is None:
                 rejected.append(

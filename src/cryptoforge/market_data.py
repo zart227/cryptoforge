@@ -90,9 +90,17 @@ class MarketDataSnapshot:
 
 
 class BybitPublicClient:
-    def __init__(self, base_url: str = BYBIT_MAINNET_BASE_URL, timeout: float = 10.0) -> None:
+    def __init__(
+        self,
+        base_url: str = BYBIT_MAINNET_BASE_URL,
+        timeout: float = 10.0,
+        max_retries: int = 2,
+        retry_backoff_seconds: float = 1.0,
+    ) -> None:
         self.base_url = base_url.rstrip("/")
         self.timeout = timeout
+        self.max_retries = max_retries
+        self.retry_backoff_seconds = retry_backoff_seconds
 
     def get_spot_instruments(self) -> list[Instrument]:
         payload = self._get_json("/v5/market/instruments-info", {"category": SPOT_CATEGORY})
@@ -148,6 +156,20 @@ class BybitPublicClient:
     def _get_json(self, path: str, params: dict[str, str]) -> dict[str, Any]:
         url = f"{self.base_url}{path}?{urlencode(params)}"
         request = Request(url, headers={"User-Agent": "CryptoForge/0.1 public-market-data"})
+        last_error: MarketDataError | None = None
+        for attempt in range(self.max_retries + 1):
+            try:
+                return self._get_json_once(request)
+            except (MarketDataTimeout, MarketDataRateLimited) as exc:
+                last_error = exc
+                if attempt >= self.max_retries:
+                    break
+                time.sleep(self.retry_backoff_seconds * (attempt + 1))
+        if last_error is not None:
+            raise last_error
+        raise MarketDataError("Bybit request failed without a captured error")
+
+    def _get_json_once(self, request: Request) -> dict[str, Any]:
         try:
             with urlopen(request, timeout=self.timeout) as response:
                 raw = response.read()
