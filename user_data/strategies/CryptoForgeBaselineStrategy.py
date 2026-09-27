@@ -33,7 +33,6 @@ class CryptoForgeBaselineStrategy(IStrategy):
     breakout_volume_ratio = 1.25
     overbought_rsi = 72
 
-    @property
     def version(self) -> str:
         return "cryptoforge-baseline-v0.1.0"
 

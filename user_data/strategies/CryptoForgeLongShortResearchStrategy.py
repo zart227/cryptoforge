@@ -36,7 +36,6 @@ class CryptoForgeLongShortResearchStrategy(IStrategy):
     level_window = 48
     level_atr_buffer = 0.75
 
-    @property
     def version(self) -> str:
         return "cryptoforge-long-short-research-v0.1.0"
 
