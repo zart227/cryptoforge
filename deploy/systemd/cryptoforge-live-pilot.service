@@ -11,7 +11,7 @@ Group=cryptoforge
 WorkingDirectory=/opt/cryptoforge/app
 Environment=PYTHONUNBUFFERED=1
 EnvironmentFile=/opt/cryptoforge/app/.env
-ExecStart=/opt/cryptoforge/app/venv/bin/freqtrade trade --config /opt/cryptoforge/config/freqtrade.live-pilot.json --userdir /opt/cryptoforge/app/user_data --strategy CryptoForgeBaselineStrategy --logfile /opt/cryptoforge/logs/freqtrade-live-pilot.log
+ExecStart=/opt/cryptoforge/app/cryptoforge_repo/deploy/run_live_pilot.sh
 KillSignal=SIGTERM
 KillMode=mixed
 SuccessExitStatus=130 143
