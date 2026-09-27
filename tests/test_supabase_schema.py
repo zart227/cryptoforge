@@ -5,6 +5,7 @@ INITIAL_MIGRATION = Path("supabase/migrations/20260925000100_initial_schema.sql"
 SERVICE_ROLE_MIGRATION = Path(
     "supabase/migrations/20260925000200_grant_service_role_server_access.sql"
 )
+MARKET_DATA_MIGRATION = Path("supabase/migrations/20260927000100_market_data_cache.sql")
 
 
 EXPECTED_TABLES = {
@@ -72,3 +73,26 @@ def test_supabase_service_role_migration_grants_server_access_only() -> None:
     assert "grant select, insert, update, delete on public.%i to service_role" in sql
     assert " to anon" not in sql
     assert " to authenticated" not in sql
+
+
+def test_market_data_cache_migration_is_server_side_only() -> None:
+    sql = MARKET_DATA_MIGRATION.read_text(encoding="utf-8").lower()
+    tables = {
+        "market_candles",
+        "market_tickers",
+        "selected_universe",
+        "strategy_signals",
+        "trade_decisions",
+        "bot_health",
+    }
+
+    for table in tables:
+        assert f"create table if not exists public.{table}" in sql
+        assert f"alter table public.{table} enable row level security" in sql
+        assert f"'{table}'" in sql
+
+    assert "grant select, insert, update, delete on public.%i to service_role" in sql
+    assert "revoke all on public.%i from %i" in sql
+    assert "create table public.raw_candles" not in sql
+    assert "create table public.ticks" not in sql
+    assert " bytea" not in sql
