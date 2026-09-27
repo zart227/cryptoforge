@@ -8,6 +8,15 @@ from cryptoforge.market_data import BybitPublicClient
 from cryptoforge.scanner import MarketScanner, ScannerConfig
 
 
+def harden_bybit_ccxt_config(config: dict) -> None:
+    exchange = config.setdefault("exchange", {})
+    for key in ("ccxt_config", "ccxt_async_config"):
+        ccxt_config = exchange.setdefault(key, {})
+        ccxt_config["enableRateLimit"] = True
+        ccxt_config.setdefault("has", {})["fetchCurrencies"] = False
+        ccxt_config.setdefault("options", {})["fetchCurrencies"] = False
+
+
 def bybit_symbol_to_freqtrade_pair(symbol: str) -> str:
     if not symbol.endswith("USDT"):
         raise ValueError(f"only USDT spot symbols are supported: {symbol}")
@@ -60,6 +69,7 @@ def main() -> int:
         config = json.loads(args.live_config.read_text(encoding="utf-8"))
         if config.get("trading_mode") != "spot" or config.get("margin_mode") not in ("", None):
             raise ValueError("refusing to update non-spot live config")
+        harden_bybit_ccxt_config(config)
         config.setdefault("exchange", {})["pair_whitelist"] = pairs
         args.live_config.write_text(json.dumps(config, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 

@@ -1,4 +1,4 @@
-from scripts.select_live_universe import bybit_symbol_to_freqtrade_pair
+from scripts.select_live_universe import bybit_symbol_to_freqtrade_pair, harden_bybit_ccxt_config
 
 
 def test_bybit_symbol_to_freqtrade_pair_supports_usdt_spot() -> None:
@@ -11,3 +11,19 @@ def test_bybit_symbol_to_freqtrade_pair_rejects_non_usdt() -> None:
     except ValueError:
         return
     raise AssertionError("non-USDT symbol should be rejected")
+
+
+def test_harden_bybit_ccxt_config_migrates_existing_live_config() -> None:
+    config = {
+        "exchange": {
+            "ccxt_config": {"enableRateLimit": False},
+            "ccxt_async_config": {"enableRateLimit": True},
+        }
+    }
+
+    harden_bybit_ccxt_config(config)
+
+    for key in ("ccxt_config", "ccxt_async_config"):
+        assert config["exchange"][key]["enableRateLimit"] is True
+        assert config["exchange"][key]["has"]["fetchCurrencies"] is False
+        assert config["exchange"][key]["options"]["fetchCurrencies"] is False
