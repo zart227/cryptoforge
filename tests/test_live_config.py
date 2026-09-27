@@ -21,6 +21,10 @@ def test_live_config_generator_creates_separate_spot_only_config_without_plain_s
     assert config["max_open_trades"] == 1
     assert config["exchange"]["key"] == "${BYBIT_API_KEY}"
     assert config["exchange"]["secret"] == "${BYBIT_API_SECRET}"
+    assert config["exchange"]["ccxt_config"]["has"]["fetchCurrencies"] is False
+    assert config["exchange"]["ccxt_config"]["options"]["fetchCurrencies"] is False
+    assert config["exchange"]["ccxt_async_config"]["has"]["fetchCurrencies"] is False
+    assert config["exchange"]["ccxt_async_config"]["options"]["fetchCurrencies"] is False
     assert config["telegram"]["enabled"] is False
     assert "leverage" not in json.dumps(config).lower()
 

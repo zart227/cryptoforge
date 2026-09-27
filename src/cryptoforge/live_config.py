@@ -47,8 +47,16 @@ def build_live_config(request: LiveConfigRequest) -> dict[str, Any]:
             "key": f"${{{request.api_key_env}}}",
             "secret": f"${{{request.api_secret_env}}}",
             "enable_ws": False,
-            "ccxt_config": {"enableRateLimit": True},
-            "ccxt_async_config": {"enableRateLimit": True},
+            "ccxt_config": {
+                "enableRateLimit": True,
+                "has": {"fetchCurrencies": False},
+                "options": {"fetchCurrencies": False},
+            },
+            "ccxt_async_config": {
+                "enableRateLimit": True,
+                "has": {"fetchCurrencies": False},
+                "options": {"fetchCurrencies": False},
+            },
             "pair_whitelist": list(request.pair_whitelist),
             "pair_blacklist": [],
         },
