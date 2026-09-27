@@ -17,6 +17,12 @@ def harden_bybit_ccxt_config(config: dict) -> None:
         ccxt_config.setdefault("options", {})["fetchCurrencies"] = False
 
 
+def normalize_stake_amount(config: dict) -> None:
+    stake_amount = config.get("stake_amount")
+    if isinstance(stake_amount, str) and stake_amount != "unlimited":
+        config["stake_amount"] = float(stake_amount)
+
+
 def bybit_symbol_to_freqtrade_pair(symbol: str) -> str:
     if not symbol.endswith("USDT"):
         raise ValueError(f"only USDT spot symbols are supported: {symbol}")
@@ -70,6 +76,7 @@ def main() -> int:
         if config.get("trading_mode") != "spot" or config.get("margin_mode") not in ("", None):
             raise ValueError("refusing to update non-spot live config")
         harden_bybit_ccxt_config(config)
+        normalize_stake_amount(config)
         config.setdefault("exchange", {})["pair_whitelist"] = pairs
         args.live_config.write_text(json.dumps(config, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 

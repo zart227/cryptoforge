@@ -1,4 +1,8 @@
-from scripts.select_live_universe import bybit_symbol_to_freqtrade_pair, harden_bybit_ccxt_config
+from scripts.select_live_universe import (
+    bybit_symbol_to_freqtrade_pair,
+    harden_bybit_ccxt_config,
+    normalize_stake_amount,
+)
 
 
 def test_bybit_symbol_to_freqtrade_pair_supports_usdt_spot() -> None:
@@ -27,3 +31,11 @@ def test_harden_bybit_ccxt_config_migrates_existing_live_config() -> None:
         assert config["exchange"][key]["enableRateLimit"] is True
         assert config["exchange"][key]["has"]["fetchCurrencies"] is False
         assert config["exchange"][key]["options"]["fetchCurrencies"] is False
+
+
+def test_normalize_stake_amount_converts_numeric_string() -> None:
+    config = {"stake_amount": "10"}
+
+    normalize_stake_amount(config)
+
+    assert config["stake_amount"] == 10.0

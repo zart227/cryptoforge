@@ -36,7 +36,7 @@ def build_live_config(request: LiveConfigRequest) -> dict[str, Any]:
         "cancel_open_orders_on_exit": True,
         "max_open_trades": request.max_open_trades,
         "stake_currency": "USDT",
-        "stake_amount": str(request.stake_amount),
+        "stake_amount": float(request.stake_amount),
         "tradable_balance_ratio": 0.99,
         "fiat_display_currency": "USD",
         "timeframe": "5m",

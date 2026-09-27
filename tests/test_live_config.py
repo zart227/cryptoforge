@@ -19,6 +19,7 @@ def test_live_config_generator_creates_separate_spot_only_config_without_plain_s
     assert config["trading_mode"] == "spot"
     assert config["margin_mode"] == ""
     assert config["max_open_trades"] == 1
+    assert config["stake_amount"] == 10.0
     assert config["exchange"]["key"] == "${BYBIT_API_KEY}"
     assert config["exchange"]["secret"] == "${BYBIT_API_SECRET}"
     assert config["exchange"]["ccxt_config"]["has"]["fetchCurrencies"] is False
