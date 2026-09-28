@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import resource
 import time
 
 from cryptoforge.market_data import BybitPublicClient
@@ -20,13 +19,18 @@ def main() -> int:
     )
     result = scanner.scan()
     elapsed = time.perf_counter() - started
-    max_rss_kb = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
 
     print(f"selected={len(result.selected)}")
     print(f"cheap_candidates={len(result.cheap_candidates)}")
     print(f"rejected={len(result.rejected)}")
     print(f"elapsed_seconds={elapsed:.2f}")
-    print(f"max_rss_mb={max_rss_kb / 1024:.1f}")
+    try:
+        import resource
+        import sys
+        peak = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+        print(f"max_rss_mb={peak / (1024 ** 2 if sys.platform == 'darwin' else 1024):.1f}")
+    except ImportError:
+        print("max_rss_mb=unavailable_on_this_platform")
     for candidate in result.selected:
         print(
             "candidate="

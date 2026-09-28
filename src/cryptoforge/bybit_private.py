@@ -65,6 +65,18 @@ class BybitPrivateClient:
         self.timeout_seconds = timeout_seconds
         self.http_get = http_get or get_json
         self.clock_ms = clock_ms or (lambda: int(time.time() * 1000))
+        self.time_offset_ms = 0
+
+    def synchronize_time(self) -> int:
+        """Adjust request timestamps without changing the operating system clock."""
+        started = self.clock_ms()
+        payload = self.http_get(f"{self.base_url}/v5/market/time", {}, self.timeout_seconds)
+        finished = self.clock_ms()
+        if payload.get("retCode") != 0:
+            raise RuntimeError("Bybit server time request failed")
+        server_ms = int(payload["time"])
+        self.time_offset_ms = server_ms - (started + finished) // 2
+        return self.time_offset_ms
 
     @classmethod
     def from_env(cls) -> "BybitPrivateClient":
@@ -106,7 +118,7 @@ class BybitPrivateClient:
 
     def _private_get(self, path: str, params: dict[str, str]) -> dict[str, Any]:
         query = parse.urlencode(params)
-        timestamp = str(self.clock_ms())
+        timestamp = str(self.clock_ms() + self.time_offset_ms)
         signature = sign_get(
             api_secret=self.api_secret,
             timestamp=timestamp,

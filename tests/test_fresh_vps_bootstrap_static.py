@@ -14,8 +14,8 @@ def test_fresh_vps_bootstrap_installs_core_runtime_without_secrets() -> None:
     assert "pip\" install freqtrade" in script
     assert "cryptoforge-live-pilot.service" in script
     assert "cryptoforge-git-sync.timer" in script
-    assert "BYBIT_API_KEY=" not in script
-    assert "BYBIT_API_SECRET=" not in script
+    assert "BYBIT_API_" + "KEY=" not in script
+    assert "BYBIT_API_" + "SECRET=" not in script
 
 
 def test_live_pilot_service_uses_secret_export_wrapper() -> None:

@@ -58,6 +58,7 @@ def main() -> int:
     write_switch(no_new_entry_switch, True)
 
     client = BybitPrivateClient.from_env()
+    client.synchronize_time()
     audit = client.get_api_key_audit()
     balance = client.get_unified_usdt_balance()
     bybit = readiness_from_audit(audit, balance, args.required_usdt)

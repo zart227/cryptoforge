@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import argparse
 import json
-import os
+import socket
 from pathlib import Path
 
 from cryptoforge.market_data import BybitPublicClient, MarketDataError, PRIMARY_TIMEFRAME
@@ -75,7 +75,7 @@ def main() -> int:
             "failed": failed,
             "interval": args.interval,
             "candle_limit": args.candle_limit,
-            "host": os.uname().nodename,
+            "host": socket.gethostname(),
         },
     )
 

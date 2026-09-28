@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import json
-import resource
 import time
 from decimal import Decimal
 
@@ -33,11 +32,16 @@ def main() -> int:
         )
     )
     elapsed = time.perf_counter() - started
-    max_rss_kb = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
 
     print(f"plans={len(plans)}")
     print(f"elapsed_seconds={elapsed:.2f}")
-    print(f"max_rss_mb={max_rss_kb / 1024:.1f}")
+    try:
+        import resource
+        import sys
+        peak = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+        print(f"max_rss_mb={peak / (1024 ** 2 if sys.platform == 'darwin' else 1024):.1f}")
+    except ImportError:
+        print("max_rss_mb=unavailable_on_this_platform")
     print(json.dumps([plan.as_summary() for plan in plans], indent=2, sort_keys=True))
     return 0
 

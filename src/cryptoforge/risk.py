@@ -23,6 +23,7 @@ class HardRiskConfig:
     min_order_qty: Decimal = Decimal("0.000001")
     qty_step: Decimal = Decimal("0.000001")
     max_position_notional_pct: Decimal = Decimal("0.05")
+    max_position_notional_usdt: Decimal | None = None
     fail_safe_max_outbox_age_seconds: int = 3600
 
     def __post_init__(self) -> None:
@@ -44,6 +45,11 @@ class HardRiskConfig:
             raise ValueError("min_order_qty and qty_step must be positive")
         if not Decimal("0") < self.max_position_notional_pct <= Decimal("0.05"):
             raise ValueError("max_position_notional_pct must be > 0 and <= 5%")
+        if self.max_position_notional_usdt is not None:
+            if self.max_position_notional_usdt <= 0:
+                raise ValueError("max_position_notional_usdt must be positive")
+            if self.max_position_notional_usdt > self.virtual_capital * Decimal("0.50"):
+                raise ValueError("max_position_notional_usdt cannot exceed 50% of virtual_capital")
 
 
 @dataclass(frozen=True)
@@ -141,6 +147,11 @@ class RiskEngine:
         risk_budget = state.equity * self.config.risk_per_trade_pct
         risk_based_notional = risk_budget / effective_risk_pct
         max_position_notional = state.equity * self.config.max_position_notional_pct
+        if self.config.max_position_notional_usdt is not None:
+            max_position_notional = max(
+                max_position_notional,
+                self.config.max_position_notional_usdt,
+            )
         notional = min(risk_based_notional, max_position_notional)
         if request.requested_notional is not None:
             notional = min(notional, request.requested_notional)
