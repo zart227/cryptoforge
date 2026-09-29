@@ -60,8 +60,8 @@ def test_baseline_strategy_documents_entry_and_exit_tags() -> None:
     assert "resistance" in source
     assert "support_bounce" in source
     assert "resistance_breakout" in source
-    assert "level_bounce_or_breakout" in source
+    assert "level_bounce_breakout_or_pullback" in source
     assert "baseline_exit_signal" in source
-    assert "level_bounce_or_breakout" in docs
+    assert "level_bounce_breakout_or_pullback" in docs
     assert "support_breakdown" in docs
     assert "baseline_exit_signal" in docs

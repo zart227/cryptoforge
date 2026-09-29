@@ -28,6 +28,30 @@ has been installed or started yet.
 - `supabase/migrations/` - future Supabase schema migrations
 - `user_data/strategies/` - future Freqtrade strategies
 
+## Local Docker Runtime
+
+CryptoForge can run the Windows/WSL2 local runtime directly from a git
+checkout with Docker Compose.
+
+```powershell
+Copy-Item .env.docker.example .env
+# Fill .env with local Bybit/Supabase/Telegram values. Do not commit it.
+docker compose up -d --build
+docker compose ps
+```
+
+Or use the checked-in helper:
+
+```powershell
+.\scripts\start_local_docker.ps1 -Build
+```
+
+The default executor args in `.env.docker.example` run in shadow mode
+because `--live` is intentionally absent. Add `--live` only after local
+smoke checks pass and the VPS executor timer is disabled.
+
+See `docs/LOCAL_DOCKER_MIGRATION.md` for the full migration runbook.
+
 ## Development Checks
 
 ```text

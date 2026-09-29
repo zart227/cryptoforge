@@ -9,7 +9,7 @@ class CryptoForgeBaselineStrategy(IStrategy):
     """Transparent control strategy for dry-run champion/challenger comparisons."""
 
     timeframe = "5m"
-    startup_candle_count = 80
+    startup_candle_count = 60
     can_short = False
 
     minimal_roi = {
@@ -23,12 +23,12 @@ class CryptoForgeBaselineStrategy(IStrategy):
     use_exit_signal = True
     ignore_roi_if_entry_signal = False
 
-    buy_rsi = 55
-    sell_rsi = 45
-    min_volume_ratio = 1.05
+    buy_rsi = 50
+    sell_rsi = 43
+    min_volume_ratio = 0.9
     min_atr_pct = 0.0015
     max_atr_pct = 0.04
-    level_window = 48
+    level_window = 30
     level_atr_buffer = 0.75
     breakout_volume_ratio = 1.25
     overbought_rsi = 72
@@ -66,6 +66,13 @@ class CryptoForgeBaselineStrategy(IStrategy):
             (dataframe["close"] < dataframe["support"])
             & (dataframe["close"].shift(1) >= dataframe["support"].shift(1))
         )
+        dataframe["trend_pullback"] = (
+            (dataframe["ema_fast"] > dataframe["ema_slow"])
+            & (dataframe["close"] > dataframe["ema_fast"])
+            & (dataframe["close"].shift(1) <= dataframe["ema_fast"].shift(1))
+            & (dataframe["rsi"] >= self.buy_rsi)
+            & (dataframe["rsi"] <= self.overbought_rsi)
+        )
         return dataframe
 
     def populate_entry_trend(self, dataframe: DataFrame, metadata: dict) -> DataFrame:
@@ -76,7 +83,11 @@ class CryptoForgeBaselineStrategy(IStrategy):
             (dataframe["ema_fast"] > dataframe["ema_slow"])
             & (dataframe["rsi"] >= self.buy_rsi)
         )
-        level_entry = dataframe["support_bounce"] | dataframe["resistance_breakout"]
+        level_entry = (
+            dataframe["support_bounce"]
+            | dataframe["resistance_breakout"]
+            | dataframe["trend_pullback"]
+        )
         entry_condition = (
             trend_filter
             & level_entry
@@ -87,7 +98,7 @@ class CryptoForgeBaselineStrategy(IStrategy):
         )
         dataframe.loc[entry_condition, ["enter_long", "enter_tag"]] = (
             1,
-            "level_bounce_or_breakout",
+            "level_bounce_breakout_or_pullback",
         )
         return dataframe
 

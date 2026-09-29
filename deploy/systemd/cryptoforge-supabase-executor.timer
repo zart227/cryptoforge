@@ -1,0 +1,12 @@
+[Unit]
+Description=Run CryptoForge Supabase-backed live executor every 2 minutes
+
+[Timer]
+OnBootSec=45s
+OnUnitActiveSec=2min
+AccuracySec=15s
+Persistent=true
+Unit=cryptoforge-supabase-executor.service
+
+[Install]
+WantedBy=timers.target

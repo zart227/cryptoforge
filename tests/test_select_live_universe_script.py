@@ -3,6 +3,7 @@ from scripts.select_live_universe import (
     harden_bybit_ccxt_config,
     normalize_stake_amount,
 )
+from scripts.sync_supabase_market_data import load_pairs
 
 
 def test_bybit_symbol_to_freqtrade_pair_supports_usdt_spot() -> None:
@@ -39,3 +40,12 @@ def test_normalize_stake_amount_converts_numeric_string() -> None:
     normalize_stake_amount(config)
 
     assert config["stake_amount"] == 10.0
+
+
+def test_market_sync_loads_pairs_from_universe_file(tmp_path) -> None:
+    universe = tmp_path / "live-universe.json"
+    universe.write_text('{"pairs": ["SOL/USDT", "LINK/USDT"]}', encoding="utf-8")
+
+    args = type("Args", (), {"pair": None, "live_config": universe})()
+
+    assert load_pairs(args) == ["SOL/USDT", "LINK/USDT"]

@@ -33,7 +33,7 @@ A long entry can be signaled when:
 - ATR percentage is inside the configured volatility band;
 - volume is positive.
 
-The entry tag is `level_bounce_or_breakout`.
+The entry tag is `level_bounce_breakout_or_pullback`.
 
 ## Exit Logic
 

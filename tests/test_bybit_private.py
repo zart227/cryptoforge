@@ -4,6 +4,7 @@ from cryptoforge.bybit_private import (
     BybitPrivateClient,
     readiness_from_audit,
     sign_get,
+    sign_post,
 )
 
 
@@ -22,6 +23,25 @@ def test_sign_get_is_deterministic() -> None:
         api_key="key",
         recv_window="5000",
         query="accountType=UNIFIED&coin=USDT",
+    )
+    assert len(signature) == 64
+
+
+def test_sign_post_is_deterministic() -> None:
+    signature = sign_post(
+        api_secret="secret",
+        timestamp="1000",
+        api_key="key",
+        recv_window="5000",
+        body='{"category":"spot","symbol":"ETHUSDT"}',
+    )
+
+    assert signature == sign_post(
+        api_secret="secret",
+        timestamp="1000",
+        api_key="key",
+        recv_window="5000",
+        body='{"category":"spot","symbol":"ETHUSDT"}',
     )
     assert len(signature) == 64
 
@@ -128,3 +148,33 @@ def test_readiness_flags_missing_balance_and_withdrawal_permission() -> None:
     assert not readiness["withdrawals_absent"]
     assert readiness["ip_whitelist_count"] == 0
     assert not readiness["has_required_usdt"]
+
+
+def test_private_client_creates_signed_spot_limit_order() -> None:
+    captured = {}
+
+    def fake_post(url, headers, body, timeout):  # type: ignore[no-untyped-def]
+        captured["url"] = url
+        captured["headers"] = headers
+        captured["body"] = body.decode()
+        return {"retCode": 0, "result": {"orderId": "abc"}}
+
+    client = BybitPrivateClient(
+        api_key="key",
+        api_secret="secret",
+        http_post=fake_post,
+        clock_ms=lambda: 1000,
+    )
+
+    response = client.create_spot_limit_order(
+        symbol="ETHUSDT",
+        side="Buy",
+        qty=Decimal("0.003"),
+        price=Decimal("3000.00"),
+        order_link_id="cf-test",
+    )
+
+    assert response["result"]["orderId"] == "abc"
+    assert captured["url"].endswith("/v5/order/create")
+    assert captured["headers"]["X-BAPI-SIGN"]
+    assert '"orderLinkId":"cf-test"' in captured["body"]

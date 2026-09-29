@@ -12,6 +12,7 @@ from urllib import parse, request
 
 
 HttpGet = Callable[[str, dict[str, str], float], dict[str, Any]]
+HttpPost = Callable[[str, dict[str, str], bytes, float], dict[str, Any]]
 
 
 @dataclass(frozen=True)
@@ -52,6 +53,7 @@ class BybitPrivateClient:
         recv_window: str = "20000",
         timeout_seconds: float = 10.0,
         http_get: HttpGet | None = None,
+        http_post: HttpPost | None = None,
         clock_ms: Callable[[], int] | None = None,
     ) -> None:
         if not api_key:
@@ -64,6 +66,7 @@ class BybitPrivateClient:
         self.recv_window = recv_window
         self.timeout_seconds = timeout_seconds
         self.http_get = http_get or get_json
+        self.http_post = http_post or post_json
         self.clock_ms = clock_ms or (lambda: int(time.time() * 1000))
 
     @classmethod
@@ -104,6 +107,43 @@ class BybitPrivateClient:
             usdt_wallet_balance=Decimal(str(usdt.get("walletBalance", "0") or "0")),
         )
 
+    def get_unified_coin_wallet_balance(self, coin: str) -> Decimal:
+        payload = self._private_get(
+            "/v5/account/wallet-balance",
+            {"accountType": "UNIFIED", "coin": coin.upper()},
+        )
+        account = payload["result"]["list"][0]
+        coins = account.get("coin") or []
+        item = next((coin_item for coin_item in coins if coin_item.get("coin") == coin.upper()), {})
+        return Decimal(str(item.get("walletBalance", "0") or "0"))
+
+    def get_open_orders(self, *, symbol: str, category: str = "spot") -> list[dict[str, Any]]:
+        payload = self._private_get("/v5/order/realtime", {"category": category, "symbol": symbol})
+        return list(payload.get("result", {}).get("list") or [])
+
+    def create_spot_limit_order(
+        self,
+        *,
+        symbol: str,
+        side: str,
+        qty: Decimal,
+        price: Decimal,
+        order_link_id: str,
+    ) -> dict[str, Any]:
+        if side not in {"Buy", "Sell"}:
+            raise ValueError("side must be Buy or Sell")
+        body = {
+            "category": "spot",
+            "symbol": symbol,
+            "side": side,
+            "orderType": "Limit",
+            "qty": format(qty, "f"),
+            "price": format(price, "f"),
+            "timeInForce": "GTC",
+            "orderLinkId": order_link_id,
+        }
+        return self._private_post("/v5/order/create", body)
+
     def _private_get(self, path: str, params: dict[str, str]) -> dict[str, Any]:
         query = parse.urlencode(params)
         timestamp = str(self.clock_ms())
@@ -129,14 +169,47 @@ class BybitPrivateClient:
             raise RuntimeError(f"Bybit private API error {payload.get('retCode')}: {payload.get('retMsg')}")
         return payload
 
+    def _private_post(self, path: str, body: dict[str, Any]) -> dict[str, Any]:
+        body_bytes = json.dumps(body, separators=(",", ":"), sort_keys=True).encode("utf-8")
+        timestamp = str(self.clock_ms())
+        signature = sign_post(
+            api_secret=self.api_secret,
+            timestamp=timestamp,
+            api_key=self.api_key,
+            recv_window=self.recv_window,
+            body=body_bytes.decode("utf-8"),
+        )
+        headers = {
+            "X-BAPI-API-KEY": self.api_key,
+            "X-BAPI-TIMESTAMP": timestamp,
+            "X-BAPI-RECV-WINDOW": self.recv_window,
+            "X-BAPI-SIGN": signature,
+            "Content-Type": "application/json",
+        }
+        payload = self.http_post(f"{self.base_url}{path}", headers, body_bytes, self.timeout_seconds)
+        if payload.get("retCode") != 0:
+            raise RuntimeError(f"Bybit private API error {payload.get('retCode')}: {payload.get('retMsg')}")
+        return payload
+
 
 def sign_get(*, api_secret: str, timestamp: str, api_key: str, recv_window: str, query: str) -> str:
     raw = f"{timestamp}{api_key}{recv_window}{query}"
     return hmac.new(api_secret.encode("utf-8"), raw.encode("utf-8"), hashlib.sha256).hexdigest()
 
 
+def sign_post(*, api_secret: str, timestamp: str, api_key: str, recv_window: str, body: str) -> str:
+    raw = f"{timestamp}{api_key}{recv_window}{body}"
+    return hmac.new(api_secret.encode("utf-8"), raw.encode("utf-8"), hashlib.sha256).hexdigest()
+
+
 def get_json(url: str, headers: dict[str, str], timeout_seconds: float) -> dict[str, Any]:
     req = request.Request(url, headers=headers, method="GET")
+    with request.urlopen(req, timeout=timeout_seconds) as response:
+        return json.loads(response.read())
+
+
+def post_json(url: str, headers: dict[str, str], body: bytes, timeout_seconds: float) -> dict[str, Any]:
+    req = request.Request(url, data=body, headers=headers, method="POST")
     with request.urlopen(req, timeout=timeout_seconds) as response:
         return json.loads(response.read())
 
