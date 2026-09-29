@@ -17,3 +17,6 @@ def test_windows_executor_uses_research_emerging_and_ml_shadow() -> None:
     assert "New-TimeSpan -Minutes 2" in text
     assert "MultipleInstances IgnoreNew" in text
     assert "SUPABASE_SERVICE_ROLE_KEY" in text
+    assert "pythonw.exe" in text
+    assert "windows_background_runner.py" in text
+    assert "powershell.exe" not in text

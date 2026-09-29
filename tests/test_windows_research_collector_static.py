@@ -7,3 +7,6 @@ def test_research_collector_runs_dynamic_scan_every_two_minutes() -> None:
     assert "New-TimeSpan -Minutes 2" in text
     assert "MultipleInstances IgnoreNew" in text
     assert "SUPABASE_SERVICE_ROLE_KEY" not in text
+    assert "pythonw.exe" in text
+    assert "windows_background_runner.py" in text
+    assert "powershell.exe" not in text
