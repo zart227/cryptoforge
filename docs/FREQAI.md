@@ -143,6 +143,20 @@ predictions, features, confidence and suggested actions without live
 execution. Promotion can only proceed through lifecycle gates and human
 live approval boundaries.
 
+The Supabase-backed executor supports three explicit modes:
+
+- `off`: do not load the active model;
+- `shadow` (default): load the latest `model.active` event, verify the embedded
+  artifact checksum and freshness, and record probability without changing the
+  conventional strategy decision;
+- `gate`: after the conventional entry signal passes, reject entry when the
+  fresh compatible model probability is below the configured threshold.
+
+Missing, stale, corrupt, unreachable or feature-incompatible models fall back
+to the conventional strategy and risk checks. They never disable exit handling.
+The deployed systemd executor remains in `shadow` with threshold `0.55` until
+model quality and paper observations justify a separately reviewed promotion.
+
 ## Drift And Deactivation
 
 Automatic deactivation criteria:

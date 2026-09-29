@@ -1,7 +1,9 @@
 from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 
-from cryptoforge.supabase_executor import CandleRow, entry_signal
+from types import SimpleNamespace
+
+from cryptoforge.supabase_executor import CandleRow, SupabaseLiveExecutor, entry_signal
 
 
 def support_bounce_candles() -> list[CandleRow]:
@@ -53,3 +55,46 @@ def test_intraday_reversion_requires_explicit_research_mode() -> None:
     assert research_signal
     assert "intraday_reversion=False" in default_reasons
     assert "intraday_reversion=True" in research_reasons
+
+
+class FakeRegistry:
+    def __init__(self, probability: float | None = None) -> None:
+        self.probability = probability
+
+    def latest(self, **kwargs):
+        if self.probability is None:
+            return None
+        return SimpleNamespace(
+            feature_version="candle-v1",
+            model_version="test-model",
+            predict_probability=lambda features: self.probability,
+        )
+
+
+def make_ml_executor(mode: str, probability: float | None) -> SupabaseLiveExecutor:
+    return SupabaseLiveExecutor(
+        reader=SimpleNamespace(),
+        supabase=SimpleNamespace(),
+        bybit=SimpleNamespace(),
+        active_model_registry=FakeRegistry(probability),  # type: ignore[arg-type]
+        ml_mode=mode,
+        ml_threshold=0.55,
+    )
+
+
+def test_ml_shadow_records_low_probability_without_blocking() -> None:
+    allowed, reasons = make_ml_executor("shadow", 0.40)._ml_entry_allows(support_bounce_candles())
+
+    assert allowed
+    assert "ml_probability=0.400000" in reasons
+    assert "ml_shadow=observed" in reasons
+
+
+def test_ml_gate_blocks_low_probability_but_missing_model_falls_back() -> None:
+    blocked, reasons = make_ml_executor("gate", 0.40)._ml_entry_allows(support_bounce_candles())
+    fallback, fallback_reasons = make_ml_executor("gate", None)._ml_entry_allows(support_bounce_candles())
+
+    assert not blocked
+    assert "ml_gate=reject" in reasons
+    assert fallback
+    assert fallback_reasons == ["ml_fallback=no_fresh_model"]

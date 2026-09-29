@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 import argparse
+from datetime import timedelta
 from decimal import Decimal
 
 from cryptoforge.bybit_private import BybitPrivateClient
+from cryptoforge.model_registry import ActiveModelRegistry
 from cryptoforge.research_selection import NightResearchSelector
 from cryptoforge.supabase_executor import SupabaseLiveExecutor, SupabaseMarketReader
 from cryptoforge.supabase_market import SupabaseRestClient
@@ -36,6 +38,14 @@ def main() -> int:
         help="Evaluate all fallback pairs after the research-selected pairs.",
     )
     parser.add_argument("--timeout", type=float, default=15.0)
+    parser.add_argument(
+        "--ml-mode",
+        choices=("off", "shadow", "gate"),
+        default="shadow",
+        help="Observe the active Supabase model or use it as an entry gate.",
+    )
+    parser.add_argument("--ml-threshold", type=float, default=0.55)
+    parser.add_argument("--ml-max-age-hours", type=float, default=36.0)
     args = parser.parse_args()
 
     supabase = SupabaseRestClient.from_env(timeout_seconds=args.timeout)
@@ -64,6 +74,10 @@ def main() -> int:
         bybit=bybit,
         stake_amount=Decimal(args.stake_amount),
         allow_intraday_reversion=args.allow_intraday_reversion and pair_source == "night_research",
+        active_model_registry=ActiveModelRegistry(supabase) if args.ml_mode != "off" else None,
+        ml_mode=args.ml_mode,
+        ml_threshold=args.ml_threshold,
+        ml_max_age=timedelta(hours=args.ml_max_age_hours),
     )
     successes = 0
     failures = 0

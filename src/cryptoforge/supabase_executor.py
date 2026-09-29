@@ -5,11 +5,14 @@ from datetime import UTC, datetime, timedelta
 from decimal import Decimal, ROUND_DOWN
 import hashlib
 import json
-from typing import Any
+from typing import TYPE_CHECKING, Any
 from urllib import parse, request
 
 from cryptoforge.bybit_private import BybitPrivateClient
 from cryptoforge.supabase_market import SupabaseRestClient
+
+if TYPE_CHECKING:
+    from cryptoforge.model_registry import ActiveModelRegistry
 
 
 @dataclass(frozen=True)
@@ -84,7 +87,13 @@ class SupabaseLiveExecutor:
         min_candles: int = 60,
         max_candle_age: timedelta = timedelta(minutes=12),
         allow_intraday_reversion: bool = False,
+        active_model_registry: ActiveModelRegistry | None = None,
+        ml_mode: str = "off",
+        ml_threshold: float = 0.55,
+        ml_max_age: timedelta = timedelta(hours=36),
     ) -> None:
+        if ml_mode not in {"off", "shadow", "gate"}:
+            raise ValueError("ml_mode must be one of: off, shadow, gate")
         self.reader = reader
         self.supabase = supabase
         self.bybit = bybit
@@ -92,6 +101,10 @@ class SupabaseLiveExecutor:
         self.min_candles = min_candles
         self.max_candle_age = max_candle_age
         self.allow_intraday_reversion = allow_intraday_reversion
+        self.active_model_registry = active_model_registry
+        self.ml_mode = ml_mode
+        self.ml_threshold = ml_threshold
+        self.ml_max_age = ml_max_age
 
     def run_once(self, pair: str, *, live: bool = False, now: datetime | None = None) -> ExecutorDecision:
         now = now or datetime.now(UTC)
@@ -141,6 +154,10 @@ class SupabaseLiveExecutor:
         reasons.extend(signal_reasons)
         if not signal:
             return self._record(pair, "hold", reasons, candles, live=live)
+        ml_allows_entry, ml_reasons = self._ml_entry_allows(candles)
+        reasons.extend(ml_reasons)
+        if not ml_allows_entry:
+            return self._record(pair, "reject_entry", reasons, candles, live=live)
         balance = self.bybit.get_unified_usdt_balance()
         if balance.usdt_wallet_balance < self.stake_amount:
             reasons.append("insufficient USDT balance")
@@ -166,6 +183,39 @@ class SupabaseLiveExecutor:
         )
         decision = self._record(pair, "approve_entry", reasons, candles, live=live, order=order)
         return decision
+
+    def _ml_entry_allows(self, candles: list[CandleRow]) -> tuple[bool, list[str]]:
+        # Local import avoids the model-training module's CandleRow dependency
+        # forming a runtime import cycle.
+        from cryptoforge.model_training import FEATURE_VERSION, extract_features
+
+        if self.ml_mode == "off" or self.active_model_registry is None:
+            return True, ["ml_mode=off"]
+        try:
+            model = self.active_model_registry.latest(max_age=self.ml_max_age)
+        except Exception as exc:  # checksum/network/registry failures must fail open.
+            return True, [f"ml_fallback=registry_error:{type(exc).__name__}"]
+        if model is None:
+            return True, ["ml_fallback=no_fresh_model"]
+        if model.feature_version != FEATURE_VERSION:
+            return True, [f"ml_fallback=unsupported_feature_version:{model.feature_version}"]
+        try:
+            probability = model.predict_probability(
+                extract_features(candles, [candle.volume for candle in candles])
+            )
+        except Exception as exc:
+            return True, [f"ml_fallback=prediction_error:{type(exc).__name__}"]
+        reasons = [
+            f"ml_mode={self.ml_mode}",
+            f"ml_model={model.model_version}",
+            f"ml_probability={probability:.6f}",
+            f"ml_threshold={self.ml_threshold:.6f}",
+        ]
+        if self.ml_mode == "gate" and probability < self.ml_threshold:
+            reasons.append("ml_gate=reject")
+            return False, reasons
+        reasons.append("ml_gate=pass" if self.ml_mode == "gate" else "ml_shadow=observed")
+        return True, reasons
 
     def _record(
         self,
