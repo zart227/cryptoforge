@@ -55,6 +55,8 @@ def main() -> int:
 
     supabase = SupabaseRestClient.from_env(timeout_seconds=args.timeout)
     bybit = BybitPrivateClient.from_env()
+    clock_offset_ms = bybit.synchronize_time()
+    print(f"bybit_clock_offset_ms={clock_offset_ms}")
     fallback_pairs = args.pair or ["ETH/USDT"]
     pair_source = "cli"
     pair_reasons: tuple[str, ...] = ()

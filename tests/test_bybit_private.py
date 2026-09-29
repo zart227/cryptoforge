@@ -85,6 +85,29 @@ def test_sign_post_is_deterministic() -> None:
     assert len(signature) == 64
 
 
+def test_server_clock_offset_is_applied_to_signed_post_requests() -> None:
+    captured = {}
+    client = BybitPrivateClient(
+        api_key="key",
+        api_secret="secret",
+        clock_ms=lambda: 5000,
+        http_post=lambda url, headers, body, timeout: (
+            captured.update(headers=headers) or {"retCode": 0, "result": {}}
+        ),
+    )
+    client.time_offset_ms = -3000
+
+    client.create_spot_limit_order(
+        symbol="ETHUSDT",
+        side="Buy",
+        qty=Decimal("0.002"),
+        price=Decimal("3000"),
+        order_link_id="cf-clock-test",
+    )
+
+    assert captured["headers"]["X-BAPI-TIMESTAMP"] == "2000"
+
+
 def test_private_client_parses_key_audit_and_balance() -> None:
     calls: list[str] = []
 

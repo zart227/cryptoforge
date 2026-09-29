@@ -183,7 +183,7 @@ class BybitPrivateClient:
 
     def _private_post(self, path: str, body: dict[str, Any]) -> dict[str, Any]:
         body_bytes = json.dumps(body, separators=(",", ":"), sort_keys=True).encode("utf-8")
-        timestamp = str(self.clock_ms())
+        timestamp = str(self.clock_ms() + self.time_offset_ms)
         signature = sign_post(
             api_secret=self.api_secret,
             timestamp=timestamp,
