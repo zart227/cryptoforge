@@ -47,6 +47,10 @@ def build_live_config(request: LiveConfigRequest) -> dict[str, Any]:
             "key": f"${{{request.api_key_env}}}",
             "secret": f"${{{request.api_secret_env}}}",
             "enable_ws": False,
+            "_ft_has_params": {
+                "ohlcv_candle_limit": 120,
+                "ohlcv_candle_limit_per_timeframe": {"5m": 120},
+            },
             "ccxt_config": {
                 "enableRateLimit": True,
                 "has": {"fetchCurrencies": False},

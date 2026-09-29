@@ -1,0 +1,80 @@
+services:
+  market-feeder:
+    build: .
+    image: cryptoforge-local:latest
+    env_file:
+      - ${CRYPTOFORGE_ENV_FILE:-.env}
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+    command:
+      - /app/docker/run_every.sh
+      - "${CRYPTOFORGE_MARKET_FEEDER_INTERVAL_SECONDS:-120}"
+      - python
+      - /app/scripts/sync_supabase_market_data.py
+      - --pair
+      - ETH/USDT
+      - --pair
+      - NEAR/USDT
+      - --pair
+      - ENA/USDT
+      - --pair
+      - HYPE/USDT
+      - --candle-limit
+      - "${CRYPTOFORGE_CANDLE_LIMIT:-120}"
+      - --bybit-timeout
+      - "${CRYPTOFORGE_BYBIT_TIMEOUT_SECONDS:-20}"
+      - --supabase-timeout
+      - "${CRYPTOFORGE_SUPABASE_TIMEOUT_SECONDS:-20}"
+    restart: unless-stopped
+
+  live-executor:
+    build: .
+    image: cryptoforge-local:latest
+    env_file:
+      - ${CRYPTOFORGE_ENV_FILE:-.env}
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+    command:
+      - /bin/bash
+      - -lc
+      - >
+        /app/docker/run_every.sh "$${CRYPTOFORGE_EXECUTOR_INTERVAL_SECONDS:-120}"
+        python /app/scripts/run_supabase_live_executor.py
+        $${CRYPTOFORGE_LIVE_EXECUTOR_ARGS:---use-night-research --allow-intraday-reversion --append-fallback-pairs --pair ETH/USDT --pair NEAR/USDT --pair ENA/USDT --pair HYPE/USDT --stake-amount 5.5 --timeout 25}
+    restart: unless-stopped
+
+  night-research:
+    build: .
+    image: cryptoforge-local:latest
+    env_file:
+      - ${CRYPTOFORGE_ENV_FILE:-.env}
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+    command:
+      - /bin/bash
+      - -lc
+      - >
+        /app/docker/run_daily.sh "$${CRYPTOFORGE_NIGHT_RESEARCH_TIME:-02:15}"
+        python /app/scripts/run_night_research.py
+        $${CRYPTOFORGE_NIGHT_RESEARCH_ARGS:---pair ETH/USDT --pair NEAR/USDT --pair ENA/USDT --pair HYPE/USDT --lookback-candles 240 --supabase-timeout 30}
+    restart: unless-stopped
+
+  telegram-relay:
+    build: .
+    image: cryptoforge-local:latest
+    env_file:
+      - ${CRYPTOFORGE_ENV_FILE:-.env}
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+    command:
+      - python
+      - -m
+      - cryptoforge.telegram_relay
+      - --watch
+      - --interval-seconds
+      - "${CRYPTOFORGE_TELEGRAM_RELAY_INTERVAL_SECONDS:-60}"
+    restart: unless-stopped

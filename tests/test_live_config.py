@@ -26,6 +26,7 @@ def test_live_config_generator_creates_separate_spot_only_config_without_plain_s
     assert config["exchange"]["ccxt_config"]["options"]["fetchCurrencies"] is False
     assert config["exchange"]["ccxt_async_config"]["has"]["fetchCurrencies"] is False
     assert config["exchange"]["ccxt_async_config"]["options"]["fetchCurrencies"] is False
+    assert config["exchange"]["_ft_has_params"]["ohlcv_candle_limit"] == 120
     assert config["telegram"]["enabled"] is False
     assert "leverage" not in json.dumps(config).lower()
 

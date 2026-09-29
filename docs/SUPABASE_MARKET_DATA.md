@@ -73,3 +73,21 @@ The first safe use is analysis and observability: strategy research, dashboards,
 and checking what data was available around a decision. A live bot may later read
 cached candles or precomputed signals from Supabase, but it must still check
 Bybit directly before placing or cancelling real orders.
+
+The current lightweight live executor can use the latest fresh
+`research.nightly_summary` event to choose which pairs to evaluate during the
+day:
+
+```bash
+PYTHONPATH=src .venv/bin/python scripts/run_supabase_live_executor.py \
+  --use-night-research \
+  --allow-intraday-reversion \
+  --append-fallback-pairs \
+  --pair ETH/USDT --pair NEAR/USDT --pair ENA/USDT --pair HYPE/USDT \
+  --stake-amount 5.5 \
+  --live
+```
+
+If the night report is missing, stale, or has no tradeable candidates, the
+executor falls back to the supplied `--pair` list. Night research never changes
+live risk limits directly; it only prioritizes the daytime scan universe.

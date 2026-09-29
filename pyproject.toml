@@ -24,6 +24,10 @@ postgres = [
 cryptoforge-backup = "cryptoforge.backup:main"
 cryptoforge-doc-eval = "cryptoforge.document_eval_cli:main"
 cryptoforge-migration = "cryptoforge.migration:main"
+cryptoforge-model-training = "cryptoforge.model_training_cli:main"
+cryptoforge-model-registry = "cryptoforge.model_registry_cli:main"
+cryptoforge-night-research = "cryptoforge.night_research_cli:main"
+cryptoforge-telegram-relay = "cryptoforge.telegram_relay:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

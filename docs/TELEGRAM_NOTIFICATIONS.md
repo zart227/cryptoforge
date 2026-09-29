@@ -59,3 +59,40 @@ position management or hard-risk checks.
 The module uses Python standard-library HTTP calls and is tested with
 mocks. Tests do not call Telegram unless a future integration test is
 explicitly added with credentials.
+
+## Local Relay
+
+If Telegram is unavailable from the VPS, keep Telegram disabled in the
+VPS trading runtime and run the relay on a machine that can reach
+`api.telegram.org`.
+
+The VPS should continue delivering operational events to Supabase
+`system_events`. The local relay reads new `trade.opened`,
+`trade.closed` and `performance.daily_summary` events from Supabase and
+sends compact Telegram messages with order status, realized PnL and
+daily benefit metrics.
+
+Required local environment:
+
+```text
+SUPABASE_URL=
+SUPABASE_SERVICE_ROLE_KEY=
+TELEGRAM_BOT_TOKEN=
+TELEGRAM_CHAT_ID=
+CRYPTOFORGE_TELEGRAM_RELAY_STATE=./data/telegram-relay-state.json
+```
+
+Run once:
+
+```bash
+cryptoforge-telegram-relay
+```
+
+Run continuously:
+
+```bash
+cryptoforge-telegram-relay --watch --interval-seconds 60
+```
+
+The relay stores its cursor locally and keeps the most recent delivered
+event ids to avoid duplicates across restarts.

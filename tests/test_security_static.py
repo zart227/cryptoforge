@@ -44,9 +44,11 @@ def test_env_and_private_key_files_are_not_tracked() -> None:
 def test_no_obvious_secret_assignments_in_tracked_text_files() -> None:
     allowed = {
         ".env.example",
+        ".env.docker.example",
         "README.md",
         "docs/TELEGRAM_NOTIFICATIONS.md",
         "docs/TYPESAFE_DOCUMENT_EVAL.md",
+        "tests/test_fresh_vps_bootstrap_static.py",
         "tests/test_security_static.py",
     }
     tracked = subprocess.check_output(["git", "ls-files"], text=True).splitlines()

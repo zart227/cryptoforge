@@ -48,6 +48,8 @@ if [ "$(id -u)" = "0" ] && command -v systemctl >/dev/null 2>&1; then
   cp "$REPO_DIR/deploy/systemd/cryptoforge-git-sync.timer" /etc/systemd/system/cryptoforge-git-sync.timer
   cp "$REPO_DIR/deploy/systemd/cryptoforge-freqtrade.service" /etc/systemd/system/cryptoforge-freqtrade.service
   cp "$REPO_DIR/deploy/systemd/cryptoforge-live-pilot.service" /etc/systemd/system/cryptoforge-live-pilot.service
+  cp "$REPO_DIR/deploy/systemd/cryptoforge-supabase-executor.service" /etc/systemd/system/cryptoforge-supabase-executor.service
+  cp "$REPO_DIR/deploy/systemd/cryptoforge-supabase-executor.timer" /etc/systemd/system/cryptoforge-supabase-executor.timer
   cp "$REPO_DIR/deploy/logrotate/cryptoforge" /etc/logrotate.d/cryptoforge
   systemctl daemon-reload
 fi

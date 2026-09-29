@@ -15,6 +15,8 @@ def load_pairs(args: argparse.Namespace) -> list[str]:
         return args.pair
     if args.live_config:
         config = json.loads(args.live_config.read_text(encoding="utf-8"))
+        if "pairs" in config:
+            return list(config["pairs"])
         return list(config.get("exchange", {}).get("pair_whitelist", []))
     return []
 
