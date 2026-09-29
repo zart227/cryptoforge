@@ -100,7 +100,12 @@ class CryptoForgeBaselineStrategy(IStrategy):
             | (dataframe["rsi"] <= self.sell_rsi)
             | (dataframe["rsi"] >= self.overbought_rsi)
             | (dataframe["atr_pct"] > self.max_atr_pct)
-            | dataframe["near_resistance"]
+            # A breakout above resistance is an entry, not a rejection.
+            | (
+                dataframe["near_resistance"]
+                & (dataframe["close"] <= dataframe["resistance"])
+                & (dataframe["close"] < dataframe["open"])
+            )
             | dataframe["support_breakdown"]
         )
         dataframe.loc[exit_condition, ["exit_long", "exit_tag"]] = (

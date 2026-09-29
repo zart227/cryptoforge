@@ -32,6 +32,9 @@ class CryptoForgeSmallBalancePilotStrategy(CryptoForgeBaselineStrategy):
     stop_distance_pct = Decimal("0.005")
     fee_pct_per_side = Decimal("0.001")
 
+    def entry_pair_allowed(self, pair: str) -> bool:
+        return pair == "XRP/USDT"
+
     def confirm_trade_entry(
         self,
         pair: str,
@@ -44,7 +47,7 @@ class CryptoForgeSmallBalancePilotStrategy(CryptoForgeBaselineStrategy):
         side: str,
         **kwargs,
     ) -> bool:
-        if side != "long" or pair != "XRP/USDT":
+        if side != "long" or not self.entry_pair_allowed(pair):
             return False
         if self.config.get("dry_run") is False:
             if not read_switch(Path("data/live-pilot/live-enabled")):

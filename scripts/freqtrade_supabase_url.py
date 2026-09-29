@@ -26,6 +26,16 @@ def build_runtime_url(source: str) -> str:
         raise ValueError("Do not set search_path in SUPABASE_DB_URL; CryptoForge sets it")
     query["options"] = f"{options} -c search_path=freqtrade".strip()
     query["sslmode"] = "require"
+    # Bound connection establishment and detect dead TCP sessions promptly.
+    # This does not replay a failed transaction; the worker must restart on failure.
+    for name, value in {
+        "connect_timeout": "10",
+        "keepalives": "1",
+        "keepalives_idle": "30",
+        "keepalives_interval": "10",
+        "keepalives_count": "3",
+    }.items():
+        query.setdefault(name, value)
 
     return url.set(drivername="postgresql+psycopg", query=query).render_as_string(
         hide_password=False

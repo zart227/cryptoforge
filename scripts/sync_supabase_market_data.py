@@ -6,6 +6,7 @@ import socket
 from pathlib import Path
 
 from cryptoforge.market_data import BybitPublicClient, MarketDataError, PRIMARY_TIMEFRAME
+from cryptoforge.scanner import MarketScanner, ScannerConfig
 from cryptoforge.supabase_market import SupabaseMarketError, SupabaseMarketWriter, SupabaseRestClient
 
 
@@ -26,6 +27,17 @@ def pair_to_bybit_symbol(pair: str) -> str:
     raise ValueError(f"Only USDT pairs are supported: {pair}")
 
 
+def scan_pairs(client: BybitPublicClient, args: argparse.Namespace) -> tuple[list[str], object]:
+    config = ScannerConfig(
+        cheap_shortlist_size=args.cheap_shortlist_size,
+        expensive_shortlist_size=args.expensive_shortlist_size,
+        output_limit=args.universe_limit,
+        candle_limit=args.scanner_candle_limit,
+    )
+    result = MarketScanner(client, config).scan()
+    return [f"{item.symbol[:-4]}/USDT" for item in result.selected], (config, result)
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Sync bounded Bybit market data into Supabase.")
     parser.add_argument("--pair", action="append", help="Freqtrade pair such as ETH/USDT. Can be repeated.")
@@ -39,16 +51,50 @@ def main() -> int:
     parser.add_argument("--candle-limit", type=int, default=120)
     parser.add_argument("--bybit-timeout", type=float, default=15.0)
     parser.add_argument("--supabase-timeout", type=float, default=15.0)
+    parser.add_argument("--scan-universe", action="store_true")
+    parser.add_argument("--selection-name", default="research-collector")
+    parser.add_argument("--universe-limit", type=int, default=8)
+    parser.add_argument("--cheap-shortlist-size", type=int, default=30)
+    parser.add_argument("--expensive-shortlist-size", type=int, default=12)
+    parser.add_argument("--scanner-candle-limit", type=int, default=120)
     args = parser.parse_args()
-
-    pairs = load_pairs(args)
-    if not pairs:
-        raise SystemExit("No pairs supplied and no live config pair whitelist found.")
 
     bybit = BybitPublicClient(timeout=args.bybit_timeout, max_retries=3, retry_backoff_seconds=2.0)
     writer = SupabaseMarketWriter(
         SupabaseRestClient.from_env(timeout_seconds=args.supabase_timeout)
     )
+    scan = None
+    if args.scan_universe:
+        pairs, scan = scan_pairs(bybit, args)
+    else:
+        pairs = load_pairs(args)
+    if not pairs:
+        raise SystemExit("No pairs selected or supplied.")
+
+    if scan is not None:
+        scanner_config, result = scan
+        writer.write_selected_universe(
+            selection_name=args.selection_name,
+            pairs=pairs,
+            scanner_config={
+                "output_limit": scanner_config.output_limit,
+                "cheap_shortlist_size": scanner_config.cheap_shortlist_size,
+                "expensive_shortlist_size": scanner_config.expensive_shortlist_size,
+                "candle_limit": scanner_config.candle_limit,
+                "timeframe": scanner_config.timeframe,
+            },
+            selected=[
+                {
+                    "pair": f"{item.symbol[:-4]}/USDT",
+                    "score": str(item.score),
+                    "turnover_24h": str(item.turnover_24h),
+                    "atr_pct": str(item.atr_pct),
+                    "oscillation_score": str(item.oscillation_score),
+                }
+                for item in result.selected
+            ],
+            rejected_count=len(result.rejected),
+        )
 
     ok_pairs: list[str] = []
     failed: dict[str, str] = {}

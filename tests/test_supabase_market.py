@@ -1,7 +1,7 @@
 from decimal import Decimal
 
 from cryptoforge.market_data import Candle, Ticker24h
-from cryptoforge.supabase_market import candle_record, ticker_record
+from cryptoforge.supabase_market import SupabaseMarketWriter, candle_record, ticker_record
 
 
 def test_candle_record_converts_bybit_candle_to_supabase_payload() -> None:
@@ -47,3 +47,26 @@ def test_ticker_record_converts_optional_decimals() -> None:
     assert record["last_price"] == "4.123"
     assert record["bid_price"] is None
     assert record["ask_price"] == "4.124"
+
+
+def test_selected_universe_is_appended_as_a_snapshot() -> None:
+    class Client:
+        def __init__(self):
+            self.call = None
+
+        def insert(self, table, records):
+            self.call = (table, records)
+
+    client = Client()
+    SupabaseMarketWriter(client).write_selected_universe(
+        selection_name="research-collector",
+        pairs=["SOL/USDT"],
+        scanner_config={"output_limit": 8},
+        selected=[{"pair": "SOL/USDT", "score": "1.2"}],
+        rejected_count=3,
+    )
+
+    table, records = client.call
+    assert table == "selected_universe"
+    assert records[0]["pairs"] == ["SOL/USDT"]
+    assert records[0]["is_active"] is True

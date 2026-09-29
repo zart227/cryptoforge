@@ -31,8 +31,23 @@ After the migration is applied, run:
 
 ```bash
 PYTHONPATH=src .venv/bin/python scripts/sync_supabase_market_data.py \
-  --live-config /opt/cryptoforge/config/freqtrade.live-pilot.json
+  --scan-universe --selection-name research-collector --universe-limit 8
 ```
+
+This mode does not read a fixed whitelist. Each run scans the current Bybit
+Spot USDT market, stores an auditable `selected_universe` snapshot, then writes
+tickers and bounded candles for the selected pairs. A pair can enter or leave
+the set on any run as liquidity, spread and intraday movement change.
+
+On the Windows research laptop, install the two-minute task from an elevated
+PowerShell prompt:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File deploy/install_windows_research_collector.ps1
+```
+
+The task ignores overlapping runs. The research checkout should periodically
+fast-forward from `origin/main`; data and secrets stay outside Git.
 
 Required environment variables:
 
@@ -41,6 +56,16 @@ Required environment variables:
 
 The sync writes latest tickers, bounded candles and a `bot_health` row. It can
 run on the VPS or on another host with a better route to Bybit.
+
+## Git boundary
+
+Git is the control plane shared by the trading and research computers. Commit
+source, tests, migrations, strategy parameters, feature definitions and compact
+model manifests. Do not commit `.env`, candles, SQLite files, logs or model
+binaries. Market data is exchanged through Supabase tables. Trained binaries
+belong in object storage; `model_runs` records their URI, SHA-256 checksum,
+metrics and producing Git commit. This avoids two-minute Git commits, repository
+growth and merge conflicts between the two computers.
 
 ## Trading Use
 

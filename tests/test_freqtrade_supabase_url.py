@@ -16,6 +16,8 @@ def test_freqtrade_url_uses_private_schema_and_ssl() -> None:
     assert result.password == "encoded@password"
     assert result.query["sslmode"] == "require"
     assert result.query["options"] == "-c search_path=freqtrade"
+    assert result.query["connect_timeout"] == "10"
+    assert result.query["keepalives_idle"] == "30"
 
 
 @pytest.mark.parametrize(

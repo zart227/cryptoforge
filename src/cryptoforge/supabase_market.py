@@ -64,6 +64,27 @@ class SupabaseRestClient:
         except error.URLError as exc:
             raise SupabaseMarketError(f"Supabase request failed: {exc}") from exc
 
+    def insert(self, table: str, records: list[JsonObject]) -> None:
+        if not records:
+            return
+        url = f"{self.supabase_url.rstrip('/')}/rest/v1/{table}"
+        payload = json.dumps(records, separators=(",", ":"), sort_keys=True).encode()
+        headers = {
+            "apikey": self.service_role_key,
+            "authorization": f"Bearer {self.service_role_key}",
+            "content-type": "application/json",
+        }
+        req = request.Request(url, data=payload, headers=headers, method="POST")
+        try:
+            with request.urlopen(req, timeout=self.timeout_seconds) as response:
+                if response.status not in {200, 201, 204}:
+                    raise SupabaseMarketError(f"Supabase returned HTTP {response.status}")
+        except error.HTTPError as exc:
+            details = exc.read().decode("utf-8", errors="replace")
+            raise SupabaseMarketError(f"Supabase HTTP {exc.code}: {details}") from exc
+        except error.URLError as exc:
+            raise SupabaseMarketError(f"Supabase request failed: {exc}") from exc
+
 
 @dataclass(frozen=True)
 class SupabaseMarketWriter:
@@ -98,6 +119,32 @@ class SupabaseMarketWriter:
                 }
             ],
             on_conflict="component",
+        )
+
+    def write_selected_universe(
+        self,
+        *,
+        selection_name: str,
+        pairs: list[str],
+        scanner_config: JsonObject,
+        selected: list[JsonObject],
+        rejected_count: int,
+    ) -> None:
+        self.client.insert(
+            "selected_universe",
+            [
+                {
+                    "exchange": "bybit",
+                    "market_type": "spot",
+                    "selection_name": selection_name,
+                    "selected_at": datetime.now(UTC).isoformat(),
+                    "pairs": pairs,
+                    "scanner_config": scanner_config,
+                    "selected": selected,
+                    "rejected_count": rejected_count,
+                    "is_active": True,
+                }
+            ],
         )
 
 

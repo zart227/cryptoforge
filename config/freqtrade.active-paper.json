@@ -1,0 +1,119 @@
+{
+  "$schema": "https://schema.freqtrade.io/schema.json",
+  "bot_name": "cryptoforge-active-paper",
+  "cancel_open_orders_on_exit": true,
+  "db_url": "sqlite:///./data/live-pilot/tradesv3.paper.sqlite",
+  "dry_run": true,
+  "dry_run_wallet": 10.40884583,
+  "entry_pricing": {
+    "check_depth_of_market": {
+      "bids_to_ask_delta": 1,
+      "enabled": false
+    },
+    "order_book_top": 1,
+    "price_last_balance": 0.0,
+    "price_side": "same",
+    "use_order_book": true
+  },
+  "exchange": {
+    "ccxt_async_config": {
+      "enableRateLimit": true,
+      "has": {
+        "fetchCurrencies": false
+      },
+      "options": {
+        "fetchCurrencies": false
+      }
+    },
+    "ccxt_config": {
+      "enableRateLimit": true,
+      "has": {
+        "fetchCurrencies": false
+      },
+      "options": {
+        "fetchCurrencies": false
+      }
+    },
+    "enable_ws": false,
+    "key": "",
+    "name": "bybit",
+    "pair_blacklist": [
+      "(USDC|USDE|DAI|FDUSD|TUSD|USDD|PYUSD|EUR|EURC)/USDT",
+      ".*(3L|3S|5L|5S)/USDT"
+    ],
+    "pair_whitelist": [],
+    "secret": ""
+  },
+  "exit_pricing": {
+    "order_book_top": 1,
+    "price_side": "same",
+    "use_order_book": true
+  },
+  "fiat_display_currency": "USD",
+  "force_entry_enable": false,
+  "initial_state": "running",
+  "internals": {
+    "process_throttle_secs": 5
+  },
+  "margin_mode": "",
+  "max_open_trades": 1,
+  "minimal_roi": {
+    "0": 0.015
+  },
+  "order_time_in_force": {
+    "entry": "GTC",
+    "exit": "GTC"
+  },
+  "order_types": {
+    "emergency_exit": "market",
+    "entry": "limit",
+    "exit": "limit",
+    "force_entry": "limit",
+    "force_exit": "market",
+    "stoploss": "market",
+    "stoploss_on_exchange": false
+  },
+  "pairlists": [
+    {
+      "method": "VolumePairList",
+      "number_assets": 30,
+      "sort_key": "quoteVolume",
+      "min_value": 500000,
+      "refresh_period": 1800
+    },
+    {
+      "method": "SpreadFilter",
+      "max_spread_ratio": 0.003
+    },
+    {
+      "method": "VolatilityFilter",
+      "lookback_timeframe": "5m",
+      "lookback_period": 288,
+      "min_volatility": 0,
+      "sort_direction": "desc",
+      "refresh_period": 1800
+    },
+    {
+      "method": "OffsetFilter",
+      "number_assets": 8
+    }
+  ],
+  "stake_amount": 5.02,
+  "stake_currency": "USDT",
+  "stoploss": -0.005,
+  "strategy": "CryptoForgeActivePaperStrategy",
+  "telegram": {
+    "chat_id": "",
+    "enabled": false,
+    "token": ""
+  },
+  "timeframe": "5m",
+  "tradable_balance_ratio": 0.99,
+  "trading_mode": "spot",
+  "unfilledtimeout": {
+    "entry": 5,
+    "exit": 5,
+    "unit": "minutes",
+    "exit_timeout_count": 0
+  }
+}
