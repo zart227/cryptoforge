@@ -16,7 +16,7 @@ Description=CryptoForge local lightweight night research
 Type=oneshot
 WorkingDirectory=${PROJECT_DIR}
 Environment=PYTHONPATH=${PROJECT_DIR}/src
-ExecStart=/usr/bin/bash -lc 'set -a; source "${PROJECT_DIR}/.env"; set +a; python3 "${PROJECT_DIR}/scripts/select_live_universe.py" --output "${UNIVERSE_FILE}" --limit "${CRYPTOFORGE_UNIVERSE_LIMIT:-12}" --cheap-shortlist-size "${CRYPTOFORGE_CHEAP_SHORTLIST_SIZE:-40}" --expensive-shortlist-size "${CRYPTOFORGE_EXPENSIVE_SHORTLIST_SIZE:-16}" --candle-limit "${CRYPTOFORGE_UNIVERSE_CANDLE_LIMIT:-120}" && nice -n 10 ionice -c2 -n7 python3 "${PROJECT_DIR}/scripts/run_night_research.py" --pairs-file "${UNIVERSE_FILE}" --lookback-candles "${CRYPTOFORGE_RESEARCH_LOOKBACK_CANDLES:-240}" --supabase-timeout 30'
+ExecStart=/usr/bin/bash -lc 'set -a; source "${PROJECT_DIR}/.env"; set +a; python3 "${PROJECT_DIR}/scripts/select_live_universe.py" --output "${UNIVERSE_FILE}" --limit "${CRYPTOFORGE_UNIVERSE_LIMIT:-20}" --cheap-shortlist-size "${CRYPTOFORGE_CHEAP_SHORTLIST_SIZE:-80}" --expensive-shortlist-size "${CRYPTOFORGE_EXPENSIVE_SHORTLIST_SIZE:-32}" --candle-limit "${CRYPTOFORGE_UNIVERSE_CANDLE_LIMIT:-120}" && nice -n 10 ionice -c2 -n7 python3 "${PROJECT_DIR}/scripts/run_night_research.py" --pairs-file "${UNIVERSE_FILE}" --lookback-candles "${CRYPTOFORGE_RESEARCH_LOOKBACK_CANDLES:-240}" --supabase-timeout 30'
 UNIT
 
 cat >"${SERVICE_DIR}/${SERVICE_NAME}.timer" <<UNIT

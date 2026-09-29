@@ -42,7 +42,7 @@ services:
       - >
         /app/docker/run_every.sh "$${CRYPTOFORGE_EXECUTOR_INTERVAL_SECONDS:-120}"
         python /app/scripts/run_supabase_live_executor.py
-        $${CRYPTOFORGE_LIVE_EXECUTOR_ARGS:---use-night-research --allow-intraday-reversion --append-fallback-pairs --pair ETH/USDT --pair NEAR/USDT --pair ENA/USDT --pair HYPE/USDT --stake-amount 5.5 --timeout 25}
+        $${CRYPTOFORGE_LIVE_EXECUTOR_ARGS:---use-night-research --night-research-limit 8 --allow-intraday-reversion --allow-emerging-momentum --append-fallback-pairs --pair ETH/USDT --pair NEAR/USDT --pair ENA/USDT --pair HYPE/USDT --stake-amount 5.5 --timeout 25}
     restart: unless-stopped
 
   night-research:

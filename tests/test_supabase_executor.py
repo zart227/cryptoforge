@@ -98,3 +98,44 @@ def test_ml_gate_blocks_low_probability_but_missing_model_falls_back() -> None:
     assert "ml_gate=reject" in reasons
     assert fallback
     assert fallback_reasons == ["ml_fallback=no_fresh_model"]
+
+
+def emerging_momentum_candles() -> list[CandleRow]:
+    start = datetime(2026, 9, 29, tzinfo=UTC)
+    candles: list[CandleRow] = []
+    price = Decimal("100")
+    for index in range(70):
+        open_price = price
+        drift = Decimal("-0.08") if index % 3 == 0 else Decimal("0.05")
+        if index >= 58:
+            drift = Decimal("0.35")
+        close = price + drift
+        volume = Decimal("100")
+        if index >= 64:
+            volume = Decimal("180")
+        candles.append(
+            CandleRow(
+                pair="OG/USDT",
+                symbol="OGUSDT",
+                open_time=start + timedelta(minutes=5 * index),
+                open=open_price,
+                high=close + Decimal("0.25"),
+                low=open_price - Decimal("0.15"),
+                close=close,
+                volume=volume,
+            )
+        )
+        price = close
+    return candles
+
+
+def test_emerging_momentum_requires_explicit_research_mode() -> None:
+    candles = emerging_momentum_candles()
+
+    default_signal, default_reasons = entry_signal(candles)
+    research_signal, research_reasons = entry_signal(candles, allow_emerging_momentum=True)
+
+    assert research_signal
+    assert default_signal in {False, True}
+    assert "emerging_momentum=False" in default_reasons
+    assert "emerging_momentum=True" in research_reasons

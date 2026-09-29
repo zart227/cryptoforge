@@ -33,6 +33,11 @@ def main() -> int:
         help="Allow cautious support-bounce mean-reversion entries for research-selected pairs.",
     )
     parser.add_argument(
+        "--allow-emerging-momentum",
+        action="store_true",
+        help="Allow cautious momentum entries for fresh research-selected active pairs.",
+    )
+    parser.add_argument(
         "--append-fallback-pairs",
         action="store_true",
         help="Evaluate all fallback pairs after the research-selected pairs.",
@@ -74,6 +79,7 @@ def main() -> int:
         bybit=bybit,
         stake_amount=Decimal(args.stake_amount),
         allow_intraday_reversion=args.allow_intraday_reversion and pair_source == "night_research",
+        allow_emerging_momentum=args.allow_emerging_momentum and pair_source == "night_research",
         active_model_registry=ActiveModelRegistry(supabase) if args.ml_mode != "off" else None,
         ml_mode=args.ml_mode,
         ml_threshold=args.ml_threshold,

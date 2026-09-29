@@ -55,9 +55,9 @@ def main() -> int:
     parser.add_argument("--supabase-timeout", type=float, default=15.0)
     parser.add_argument("--scan-universe", action="store_true")
     parser.add_argument("--selection-name", default="research-collector")
-    parser.add_argument("--universe-limit", type=int, default=8)
-    parser.add_argument("--cheap-shortlist-size", type=int, default=30)
-    parser.add_argument("--expensive-shortlist-size", type=int, default=12)
+    parser.add_argument("--universe-limit", type=int, default=20)
+    parser.add_argument("--cheap-shortlist-size", type=int, default=80)
+    parser.add_argument("--expensive-shortlist-size", type=int, default=32)
     parser.add_argument("--scanner-candle-limit", type=int, default=120)
     args = parser.parse_args()
 
@@ -92,6 +92,8 @@ def main() -> int:
                     "turnover_24h": str(item.turnover_24h),
                     "atr_pct": str(item.atr_pct),
                     "oscillation_score": str(item.oscillation_score),
+                    "momentum_pct": str(item.momentum_pct),
+                    "emerging_score": str(item.emerging_score),
                 }
                 for item in result.selected
             ],

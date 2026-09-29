@@ -30,15 +30,16 @@ LEVERAGED_SUFFIXES = ("3L", "3S", "5L", "5S", "UP", "DOWN", "BULL", "BEAR")
 
 @dataclass(frozen=True)
 class ScannerConfig:
-    min_turnover_24h_usdt: Decimal = Decimal("500000")
-    max_spread_pct: Decimal = Decimal("0.003")
+    min_turnover_24h_usdt: Decimal = Decimal("250000")
+    max_spread_pct: Decimal = Decimal("0.005")
     min_candle_count: int = 60
     max_intraday_range_pct: Decimal = Decimal("0.35")
     max_volume_anomaly_ratio: Decimal = Decimal("6")
     min_oscillation_score: Decimal = Decimal("1.2")
-    cheap_shortlist_size: int = 30
-    expensive_shortlist_size: int = 12
-    output_limit: int = 8
+    min_emerging_score: Decimal = Decimal("2.2")
+    cheap_shortlist_size: int = 80
+    expensive_shortlist_size: int = 32
+    output_limit: int = 20
     candle_limit: int = 120
     timeframe: str = PRIMARY_TIMEFRAME
 
@@ -69,6 +70,7 @@ class ScoredCandidate:
     momentum_pct: Decimal
     oscillation_score: Decimal
     volume_anomaly_ratio: Decimal
+    emerging_score: Decimal
     reasons: tuple[str, ...]
 
 
@@ -134,11 +136,14 @@ class MarketScanner:
                     )
                 )
                 continue
-            if scored_candidate.oscillation_score < self.config.min_oscillation_score:
+            if (
+                scored_candidate.oscillation_score < self.config.min_oscillation_score
+                and scored_candidate.emerging_score < self.config.min_emerging_score
+            ):
                 rejected.append(
                     RejectedCandidate(
                         scored_candidate.symbol,
-                        ("insufficient intraday back-and-forth movement",),
+                        ("insufficient oscillation or emerging activity",),
                     )
                 )
                 continue
@@ -181,7 +186,7 @@ def cheap_filter(
         )
 
     candidates.sort(
-        key=lambda item: item.ticker.turnover_24h or Decimal("0"),
+        key=lambda item: cheap_activity_score(item, config),
         reverse=True,
     )
     return candidates[: config.cheap_shortlist_size], rejected
@@ -227,6 +232,7 @@ def score_candidate(
     momentum = momentum_pct(candles)
     oscillation = oscillation_score(candles)
     anomaly = volume_anomaly_ratio(candles)
+    emerging = emerging_activity_score(candidate.ticker, candles)
     turnover = candidate.ticker.turnover_24h or Decimal("0")
 
     liquidity_score = min_decimal(turnover / config.min_turnover_24h_usdt, Decimal("6"))
@@ -241,6 +247,7 @@ def score_candidate(
     volatility_component = min_decimal(realized_vol * Decimal("40"), Decimal("3"))
     atr_component = min_decimal(atr * Decimal("50"), Decimal("3"))
     oscillation_component = min_decimal(oscillation, Decimal("3"))
+    emerging_component = min_decimal(emerging, Decimal("5"))
 
     score = (
         liquidity_score
@@ -248,6 +255,7 @@ def score_candidate(
         + volatility_component
         + atr_component
         + oscillation_component
+        + emerging_component
         - spread_penalty
         - anomaly_penalty
     )
@@ -263,11 +271,25 @@ def score_candidate(
         momentum_pct=momentum,
         oscillation_score=oscillation,
         volume_anomaly_ratio=anomaly,
+        emerging_score=emerging,
         reasons=(
             "passed liquidity/spread filters",
-            "score balances liquidity, volatility, momentum and oscillation",
+            "score balances liquidity, volatility, momentum, oscillation and emerging activity",
         ),
     )
+
+
+def cheap_activity_score(candidate: CheapCandidate, config: ScannerConfig) -> Decimal:
+    ticker = candidate.ticker
+    turnover = ticker.turnover_24h or Decimal("0")
+    liquidity = min_decimal(turnover / config.min_turnover_24h_usdt, Decimal("8"))
+    range_component = min_decimal(intraday_range_pct(ticker) * Decimal("20"), Decimal("6"))
+    close_position = close_position_in_24h_range(ticker)
+    near_high = max(Decimal("0"), close_position - Decimal("0.55")) * Decimal("8")
+    spread_penalty = Decimal("0")
+    if candidate.spread_pct is not None:
+        spread_penalty = min_decimal(candidate.spread_pct / config.max_spread_pct, Decimal("4"))
+    return liquidity + range_component + near_high - spread_penalty
 
 
 def spread_pct(ticker: Ticker24h) -> Decimal | None:
@@ -289,6 +311,16 @@ def intraday_range_pct(ticker: Ticker24h) -> Decimal:
     ):
         return Decimal("0")
     return (ticker.high_price_24h - ticker.low_price_24h) / ticker.last_price
+
+
+def close_position_in_24h_range(ticker: Ticker24h) -> Decimal:
+    if (
+        ticker.high_price_24h is None
+        or ticker.low_price_24h is None
+        or ticker.high_price_24h <= ticker.low_price_24h
+    ):
+        return Decimal("0.5")
+    return (ticker.last_price - ticker.low_price_24h) / (ticker.high_price_24h - ticker.low_price_24h)
 
 
 def average_true_range_pct(candles: list[Candle]) -> Decimal:
@@ -318,6 +350,47 @@ def realized_volatility_pct(candles: list[Candle]) -> Decimal:
 def momentum_pct(candles: list[Candle]) -> Decimal:
     first = candles[0].close
     last = candles[-1].close
+    if first <= 0:
+        return Decimal("0")
+    return (last - first) / first
+
+
+def recent_momentum_pct(candles: list[Candle], window: int) -> Decimal:
+    if len(candles) <= window:
+        return momentum_pct(candles)
+    first = candles[-window - 1].close
+    last = candles[-1].close
+    if first <= 0:
+        return Decimal("0")
+    return (last - first) / first
+
+
+def emerging_activity_score(ticker: Ticker24h, candles: list[Candle]) -> Decimal:
+    recent = recent_momentum_pct(candles, 12)
+    previous = previous_window_momentum_pct(candles, 12)
+    acceleration = max(Decimal("0"), recent - previous)
+    volume_burst = min_decimal(volume_anomaly_ratio(candles, 20), Decimal("6"))
+    short_volume_burst = min_decimal(volume_anomaly_ratio(candles, 6), Decimal("6"))
+    close_position = close_position_in_24h_range(ticker)
+    range_component = min_decimal(intraday_range_pct(ticker) * Decimal("10"), Decimal("4"))
+    positive_momentum = max(Decimal("0"), recent) * Decimal("35")
+    acceleration_component = acceleration * Decimal("45")
+    near_high_component = max(Decimal("0"), close_position - Decimal("0.60")) * Decimal("5")
+    return (
+        positive_momentum
+        + acceleration_component
+        + volume_burst * Decimal("0.30")
+        + short_volume_burst * Decimal("0.45")
+        + near_high_component
+        + range_component
+    )
+
+
+def previous_window_momentum_pct(candles: list[Candle], window: int) -> Decimal:
+    if len(candles) <= window * 2:
+        return Decimal("0")
+    first = candles[-window * 2 - 1].close
+    last = candles[-window - 1].close
     if first <= 0:
         return Decimal("0")
     return (last - first) / first

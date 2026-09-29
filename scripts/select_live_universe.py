@@ -33,10 +33,10 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="Select a bounded intraday Spot universe.")
     parser.add_argument("--output", type=Path, default=Path("/opt/cryptoforge/config/live-universe.json"))
     parser.add_argument("--live-config", type=Path)
-    parser.add_argument("--limit", type=int, default=4)
-    parser.add_argument("--cheap-shortlist-size", type=int, default=20)
-    parser.add_argument("--expensive-shortlist-size", type=int, default=8)
-    parser.add_argument("--candle-limit", type=int, default=100)
+    parser.add_argument("--limit", type=int, default=20)
+    parser.add_argument("--cheap-shortlist-size", type=int, default=80)
+    parser.add_argument("--expensive-shortlist-size", type=int, default=32)
+    parser.add_argument("--candle-limit", type=int, default=120)
     args = parser.parse_args()
 
     scanner = MarketScanner(
@@ -61,6 +61,7 @@ def main() -> int:
                 "atr_pct": str(candidate.atr_pct),
                 "momentum_pct": str(candidate.momentum_pct),
                 "oscillation_score": str(candidate.oscillation_score),
+                "emerging_score": str(candidate.emerging_score),
             }
             for candidate in result.selected
         ],

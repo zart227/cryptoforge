@@ -87,6 +87,7 @@ class SupabaseLiveExecutor:
         min_candles: int = 60,
         max_candle_age: timedelta = timedelta(minutes=12),
         allow_intraday_reversion: bool = False,
+        allow_emerging_momentum: bool = False,
         active_model_registry: ActiveModelRegistry | None = None,
         ml_mode: str = "off",
         ml_threshold: float = 0.55,
@@ -101,6 +102,7 @@ class SupabaseLiveExecutor:
         self.min_candles = min_candles
         self.max_candle_age = max_candle_age
         self.allow_intraday_reversion = allow_intraday_reversion
+        self.allow_emerging_momentum = allow_emerging_momentum
         self.active_model_registry = active_model_registry
         self.ml_mode = ml_mode
         self.ml_threshold = ml_threshold
@@ -150,6 +152,7 @@ class SupabaseLiveExecutor:
         signal, signal_reasons = entry_signal(
             candles,
             allow_intraday_reversion=self.allow_intraday_reversion,
+            allow_emerging_momentum=self.allow_emerging_momentum,
         )
         reasons.extend(signal_reasons)
         if not signal:
@@ -250,6 +253,7 @@ def entry_signal(
     candles: list[CandleRow],
     *,
     allow_intraday_reversion: bool = False,
+    allow_emerging_momentum: bool = False,
 ) -> tuple[bool, list[str]]:
     closes = [c.close for c in candles]
     volumes = [c.volume for c in candles]
@@ -258,6 +262,8 @@ def entry_signal(
     rsi_value = rsi(closes, 14)
     volume_mean = sum(volumes[-20:]) / Decimal("20")
     volume_ratio = volumes[-1] / volume_mean if volume_mean > 0 else Decimal("0")
+    short_volume_mean = sum(volumes[-7:-1]) / Decimal("6")
+    short_volume_ratio = volumes[-1] / short_volume_mean if short_volume_mean > 0 else Decimal("0")
     resistance = max(c.high for c in candles[-31:-1])
     support = min(c.low for c in candles[-31:-1])
     last = candles[-1]
@@ -266,6 +272,17 @@ def entry_signal(
     breakout = last.close > resistance and previous.close <= resistance and volume_ratio >= Decimal("1.15")
     bounce = last.close > last.open and last.close > previous.close and last.low <= support * Decimal("1.003")
     pullback = trend and previous.close <= ema_fast and last.close > ema_fast and rsi_value <= Decimal("72")
+    recent_momentum = (last.close - candles[-13].close) / candles[-13].close if candles[-13].close > 0 else Decimal("0")
+    prior_momentum = (candles[-13].close - candles[-25].close) / candles[-25].close if candles[-25].close > 0 else Decimal("0")
+    emerging_momentum = (
+        allow_emerging_momentum
+        and recent_momentum >= Decimal("0.012")
+        and recent_momentum > prior_momentum
+        and volume_ratio >= Decimal("0.75")
+        and short_volume_ratio >= Decimal("1.05")
+        and Decimal("42") <= rsi_value <= Decimal("98.5")
+        and last.close >= ema_fast
+    )
     intraday_reversion = (
         allow_intraday_reversion
         and bounce
@@ -280,10 +297,13 @@ def entry_signal(
         f"breakout={breakout}",
         f"bounce={bounce}",
         f"pullback={pullback}",
+        f"recent_momentum={recent_momentum:.4f}",
+        f"short_volume_ratio={short_volume_ratio:.3f}",
+        f"emerging_momentum={emerging_momentum}",
         f"intraday_reversion={intraday_reversion}",
     ]
     trend_entry = trend and (breakout or bounce or pullback) and volume_ratio >= Decimal("0.85")
-    return bool(trend_entry or intraday_reversion), reasons
+    return bool(trend_entry or intraday_reversion or emerging_momentum), reasons
 
 
 def exit_signal(candles: list[CandleRow]) -> tuple[bool, list[str]]:

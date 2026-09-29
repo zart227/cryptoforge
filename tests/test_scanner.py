@@ -5,6 +5,7 @@ from cryptoforge.scanner import (
     MarketScanner,
     ScannerConfig,
     cheap_filter,
+    emerging_activity_score,
     oscillation_score,
     score_candidate,
 )
@@ -123,8 +124,9 @@ def test_score_candidate_requires_history_and_uses_balanced_signals() -> None:
     assert scored is not None
     assert scored.symbol == "BTCUSDT"
     assert scored.score > 0
-    assert "score balances liquidity, volatility, momentum and oscillation" in scored.reasons
+    assert "score balances liquidity, volatility, momentum, oscillation and emerging activity" in scored.reasons
     assert scored.oscillation_score >= 0
+    assert scored.emerging_score >= 0
 
 
 def test_oscillation_score_prefers_back_and_forth_over_clean_trend() -> None:
@@ -132,6 +134,26 @@ def test_oscillation_score_prefers_back_and_forth_over_clean_trend() -> None:
     choppy = oscillating_candles("CHOPUSDT", count=80)
 
     assert oscillation_score(choppy) > oscillation_score(trend)
+
+
+def test_emerging_activity_score_prefers_recent_volume_momentum() -> None:
+    quiet = candles("QUIETUSDT", count=80)
+    emerging = candles("OGUSDT", count=80)
+    for idx, candle in enumerate(emerging[-12:]):
+        boosted_close = candle.close + Decimal(idx + 1)
+        emerging[-12 + idx] = Candle(
+            symbol=candle.symbol,
+            interval=candle.interval,
+            start_ms=candle.start_ms,
+            open=candle.open,
+            high=boosted_close + Decimal("1"),
+            low=candle.low,
+            close=boosted_close,
+            volume=candle.volume * Decimal("5"),
+            turnover=candle.turnover * Decimal("5"),
+        )
+
+    assert emerging_activity_score(ticker("OGUSDT"), emerging) > emerging_activity_score(ticker("QUIETUSDT"), quiet)
 
 
 def test_market_scanner_caps_expensive_analysis() -> None:
