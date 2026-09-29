@@ -10,7 +10,6 @@ $LogPath = Join-Path $LogDir 'windows-github-update.log'
 $StatusPath = Join-Path $DataDir 'update-status.json'
 $LockPath = Join-Path $DataDir 'update.lock'
 $LiveConfig = Join-Path $DataDir 'freqtrade.live.json'
-$Database = Join-Path $DataDir 'tradesv3.sqlite'
 $LiveSwitch = Join-Path $DataDir 'live-enabled'
 $NoEntrySwitch = Join-Path $DataDir 'no-new-entry'
 $Python = Join-Path $Root '.venv\Scripts\python.exe'
@@ -39,8 +38,8 @@ function Invoke-Git([string[]]$Arguments) {
 }
 
 function Get-LiveDbStatus {
-    $output = & $Python $DbHelper status --database $Database 2>&1
-    if ($LASTEXITCODE -ne 0) { throw "Cannot read live database status: $($output -join ' ')" }
+    $output = & $Python $DbHelper status --live-supabase 2>&1
+    if ($LASTEXITCODE -ne 0) { throw "Cannot read Supabase live database status: $($output -join ' ')" }
     return ($output -join "`n") | ConvertFrom-Json
 }
 
@@ -63,6 +62,11 @@ function Test-LiveConfig {
     }
     if ($config.exchange.key -or $config.exchange.secret) {
         throw 'Live config must obtain API credentials from process environment only.'
+    }
+    $liveDbUrl = [Environment]::GetEnvironmentVariable('FREQTRADE__DB_URL', 'Process')
+    if (-not $liveDbUrl -or -not $liveDbUrl.StartsWith('postgresql+psycopg://') -or
+        -not $liveDbUrl.Contains('search_path%3Dfreqtrade')) {
+        throw 'Live Freqtrade database must be Supabase Postgres in the private freqtrade schema.'
     }
     $source = Get-Content -LiteralPath $StrategyPath -Raw
     foreach ($required in @('confirm_trade_entry', 'max_order_notional_usdt', 'live-enabled', 'daily_realized')) {
@@ -96,6 +100,11 @@ function Import-ProjectEnvironment {
     if (-not $apiKey -or -not $apiSecret) { throw 'Bybit credentials are absent from .env.' }
     [Environment]::SetEnvironmentVariable('FREQTRADE__EXCHANGE__KEY', $apiKey, 'Process')
     [Environment]::SetEnvironmentVariable('FREQTRADE__EXCHANGE__SECRET', $apiSecret, 'Process')
+    $databaseUrl = & $Python (Join-Path $Root 'scripts\freqtrade_supabase_url.py') 2>$null
+    if ($LASTEXITCODE -ne 0 -or -not $databaseUrl) {
+        throw 'SUPABASE_DB_URL is invalid; Freqtrade was not started.'
+    }
+    [Environment]::SetEnvironmentVariable('FREQTRADE__DB_URL', ($databaseUrl -join ''), 'Process')
 }
 
 function Start-LiveBot {
@@ -107,8 +116,7 @@ function Start-LiveBot {
     $startedAt = Get-Date
     Start-Process -FilePath $Freqtrade -ArgumentList @(
         'trade', '--config', 'data/live-pilot/freqtrade.live.json', '--userdir', 'user_data',
-        '--strategy', 'CryptoForgeSmallBalancePilotStrategy', '--db-url',
-        'sqlite:///./data/live-pilot/tradesv3.sqlite', '--logfile',
+        '--strategy', 'CryptoForgeSmallBalancePilotStrategy', '--logfile',
         'logs/freqtrade-live-local.log', '--no-color'
     ) -WorkingDirectory $Root -RedirectStandardOutput $stdout -RedirectStandardError $stderr -WindowStyle Hidden | Out-Null
 
@@ -139,6 +147,7 @@ function Start-LiveBot {
 try {
     New-Item -ItemType Directory -Force -Path $DataDir, $LogDir | Out-Null
     $LockStream = [System.IO.File]::Open($LockPath, [System.IO.FileMode]::CreateNew, [System.IO.FileAccess]::Write, [System.IO.FileShare]::None)
+    Import-ProjectEnvironment
 
     if ((Invoke-Git @('branch', '--show-current')) -ne 'main') {
         Write-UpdateStatus 'blocked_wrong_branch' 'Expected local branch main.'
@@ -196,8 +205,7 @@ try {
             Write-UpdateStatus 'waiting_for_flat' "open_trades=$($dbState.open_trades); open_orders=$($dbState.open_orders); new entries disabled"
             exit 0
         }
-        & $Python $DbHelper backup --database $Database --backup-dir (Join-Path $DataDir 'backups') | Out-Null
-        if ($LASTEXITCODE -ne 0) { throw 'Live database backup failed.' }
+        Add-Content -LiteralPath $LogPath -Value ("{0} Supabase Postgres is the live database; automatic source updates do not run schema migrations." -f [DateTime]::UtcNow.ToString('o'))
         Remove-Item -LiteralPath $LiveSwitch -ErrorAction SilentlyContinue
         foreach ($process in $processes) {
             Stop-Process -Id $process.ProcessId -ErrorAction SilentlyContinue

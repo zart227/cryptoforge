@@ -26,6 +26,7 @@ backups/
 freqtrade.sqlite*
 tradesv3.sqlite*
 .bybit-skill/
+supabase/.temp/
 
 # Research/cache outputs
 user_data/data/

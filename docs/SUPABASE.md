@@ -1,9 +1,16 @@
 # Supabase Persistent Backend
 
-CryptoForge uses Supabase for durable state that is valuable after a
-process restart or VPS replacement. It is not part of the critical path
-for managing an already-open position; the trading runtime must continue
-to make safe local decisions if Supabase is offline.
+CryptoForge uses Supabase as its durable backend. The live Freqtrade
+worker needs a database connection to start and persist trading state;
+Bybit remains authoritative for exchange balances and order execution.
+
+The Windows live Freqtrade runtime also uses Supabase Postgres as its
+operational database. Its SQLAlchemy connection is scoped to the private
+`freqtrade` schema so Freqtrade's ORM table named `trades` cannot collide
+with CryptoForge's canonical `public.trades` journal. The schema is not
+exposed through the Supabase Data API. Configure `SUPABASE_DB_URL` locally
+from the Session pooler connection details; never commit that value. The
+local SQLite database is retained only as an unused legacy file.
 
 ## Schema
 
@@ -78,8 +85,6 @@ to persist a curated subset.
 
 ## Current Verification Status
 
-The migration is authored in Git, but it has not been applied to a
-Supabase project in this environment because Supabase credentials and CLI
-configuration are not present. Local SQL/file checks cover the expected
-tables, RLS posture and storage exclusions until a real project is
-connected.
+The migrations are applied to the connected CryptoForge Supabase project.
+The Freqtrade schema migration grants access only to the Postgres owner role;
+`anon`, `authenticated`, `service_role`, and `public` have no schema access.

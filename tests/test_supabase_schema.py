@@ -6,6 +6,9 @@ SERVICE_ROLE_MIGRATION = Path(
     "supabase/migrations/20260925000200_grant_service_role_server_access.sql"
 )
 MARKET_DATA_MIGRATION = Path("supabase/migrations/20260927000100_market_data_cache.sql")
+FREQTRADE_MIGRATION = Path(
+    "supabase/migrations/20260929050754_freqtrade_operational_schema.sql"
+)
 
 
 EXPECTED_TABLES = {
@@ -96,3 +99,15 @@ def test_market_data_cache_migration_is_server_side_only() -> None:
     assert "create table public.raw_candles" not in sql
     assert "create table public.ticks" not in sql
     assert " bytea" not in sql
+
+
+def test_freqtrade_operational_schema_is_private_and_separate_from_public_trades() -> None:
+    sql = FREQTRADE_MIGRATION.read_text(encoding="utf-8").lower()
+
+    assert "create schema if not exists freqtrade authorization postgres" in sql
+    assert "revoke all on schema freqtrade from public" in sql
+    assert "revoke all on schema freqtrade from anon" in sql
+    assert "revoke all on schema freqtrade from authenticated" in sql
+    assert "revoke all on schema freqtrade from service_role" in sql
+    assert "grant usage, create on schema freqtrade to postgres" in sql
+    assert "create table public.trades" not in sql
