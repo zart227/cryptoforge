@@ -70,16 +70,26 @@ class BybitPrivateClient:
         self.clock_ms = clock_ms or (lambda: int(time.time() * 1000))
         self.time_offset_ms = 0
 
-    def synchronize_time(self) -> int:
+    def synchronize_time(self, *, max_attempts: int = 3) -> int:
         """Adjust request timestamps without changing the operating system clock."""
-        started = self.clock_ms()
-        payload = self.http_get(f"{self.base_url}/v5/market/time", {}, self.timeout_seconds)
-        finished = self.clock_ms()
-        if payload.get("retCode") != 0:
-            raise RuntimeError("Bybit server time request failed")
-        server_ms = int(payload["time"])
-        self.time_offset_ms = server_ms - (started + finished) // 2
-        return self.time_offset_ms
+        if max_attempts < 1:
+            raise ValueError("max_attempts must be at least 1")
+        last_error: Exception | None = None
+        for attempt in range(max_attempts):
+            try:
+                started = self.clock_ms()
+                payload = self.http_get(f"{self.base_url}/v5/market/time", {}, self.timeout_seconds)
+                finished = self.clock_ms()
+                if payload.get("retCode") != 0:
+                    raise RuntimeError("Bybit server time request failed")
+                server_ms = int(payload["time"])
+                self.time_offset_ms = server_ms - (started + finished) // 2
+                return self.time_offset_ms
+            except Exception as exc:  # public clock endpoint can fail transiently.
+                last_error = exc
+                if attempt + 1 < max_attempts:
+                    time.sleep(0.2)
+        raise RuntimeError("Bybit server time request failed after retries") from last_error
 
     @classmethod
     def from_env(cls) -> "BybitPrivateClient":
@@ -158,50 +168,60 @@ class BybitPrivateClient:
 
     def _private_get(self, path: str, params: dict[str, str]) -> dict[str, Any]:
         query = parse.urlencode(params)
-        timestamp = str(self.clock_ms() + self.time_offset_ms)
-        signature = sign_get(
-            api_secret=self.api_secret,
-            timestamp=timestamp,
-            api_key=self.api_key,
-            recv_window=self.recv_window,
-            query=query,
-        )
-        headers = {
-            "X-BAPI-API-KEY": self.api_key,
-            "X-BAPI-TIMESTAMP": timestamp,
-            "X-BAPI-RECV-WINDOW": self.recv_window,
-            "X-BAPI-SIGN": signature,
-            "Content-Type": "application/json",
-        }
         url = f"{self.base_url}{path}"
         if query:
             url = f"{url}?{query}"
-        payload = self.http_get(url, headers, self.timeout_seconds)
-        if payload.get("retCode") != 0:
-            raise RuntimeError(f"Bybit private API error {payload.get('retCode')}: {payload.get('retMsg')}")
-        return payload
+        for attempt in range(2):
+            timestamp = str(self.clock_ms() + self.time_offset_ms)
+            signature = sign_get(
+                api_secret=self.api_secret,
+                timestamp=timestamp,
+                api_key=self.api_key,
+                recv_window=self.recv_window,
+                query=query,
+            )
+            headers = {
+                "X-BAPI-API-KEY": self.api_key,
+                "X-BAPI-TIMESTAMP": timestamp,
+                "X-BAPI-RECV-WINDOW": self.recv_window,
+                "X-BAPI-SIGN": signature,
+                "Content-Type": "application/json",
+            }
+            payload = self.http_get(url, headers, self.timeout_seconds)
+            if payload.get("retCode") == 10002 and attempt == 0:
+                self.synchronize_time()
+                continue
+            if payload.get("retCode") != 0:
+                raise RuntimeError(f"Bybit private API error {payload.get('retCode')}: {payload.get('retMsg')}")
+            return payload
+        raise RuntimeError("Bybit private API timestamp retry exhausted")
 
     def _private_post(self, path: str, body: dict[str, Any]) -> dict[str, Any]:
         body_bytes = json.dumps(body, separators=(",", ":"), sort_keys=True).encode("utf-8")
-        timestamp = str(self.clock_ms() + self.time_offset_ms)
-        signature = sign_post(
-            api_secret=self.api_secret,
-            timestamp=timestamp,
-            api_key=self.api_key,
-            recv_window=self.recv_window,
-            body=body_bytes.decode("utf-8"),
-        )
-        headers = {
-            "X-BAPI-API-KEY": self.api_key,
-            "X-BAPI-TIMESTAMP": timestamp,
-            "X-BAPI-RECV-WINDOW": self.recv_window,
-            "X-BAPI-SIGN": signature,
-            "Content-Type": "application/json",
-        }
-        payload = self.http_post(f"{self.base_url}{path}", headers, body_bytes, self.timeout_seconds)
-        if payload.get("retCode") != 0:
-            raise RuntimeError(f"Bybit private API error {payload.get('retCode')}: {payload.get('retMsg')}")
-        return payload
+        for attempt in range(2):
+            timestamp = str(self.clock_ms() + self.time_offset_ms)
+            signature = sign_post(
+                api_secret=self.api_secret,
+                timestamp=timestamp,
+                api_key=self.api_key,
+                recv_window=self.recv_window,
+                body=body_bytes.decode("utf-8"),
+            )
+            headers = {
+                "X-BAPI-API-KEY": self.api_key,
+                "X-BAPI-TIMESTAMP": timestamp,
+                "X-BAPI-RECV-WINDOW": self.recv_window,
+                "X-BAPI-SIGN": signature,
+                "Content-Type": "application/json",
+            }
+            payload = self.http_post(f"{self.base_url}{path}", headers, body_bytes, self.timeout_seconds)
+            if payload.get("retCode") == 10002 and attempt == 0:
+                self.synchronize_time()
+                continue
+            if payload.get("retCode") != 0:
+                raise RuntimeError(f"Bybit private API error {payload.get('retCode')}: {payload.get('retMsg')}")
+            return payload
+        raise RuntimeError("Bybit private API timestamp retry exhausted")
 
 
 def sign_get(*, api_secret: str, timestamp: str, api_key: str, recv_window: str, query: str) -> str:

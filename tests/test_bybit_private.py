@@ -62,7 +62,7 @@ def test_failed_clock_sync_does_not_change_offset() -> None:
         http_get=lambda *args: {"retCode": 10000},
     )
     with pytest.raises(RuntimeError, match="server time"):
-        client.synchronize_time()
+        client.synchronize_time(max_attempts=1)
     assert client.time_offset_ms == 0
 
 
@@ -106,6 +106,64 @@ def test_server_clock_offset_is_applied_to_signed_post_requests() -> None:
     )
 
     assert captured["headers"]["X-BAPI-TIMESTAMP"] == "2000"
+
+
+def test_timestamp_error_resynchronizes_and_retries_private_get() -> None:
+    ticks = iter([5000, 5100, 5300, 5400])
+    private_timestamps = []
+
+    def fake_get(url, headers, timeout):
+        if url.endswith("/v5/market/time"):
+            return {"retCode": 0, "time": 3000}
+        private_timestamps.append(headers["X-BAPI-TIMESTAMP"])
+        if len(private_timestamps) == 1:
+            return {"retCode": 10002, "retMsg": "invalid request timestamp"}
+        return {"retCode": 0, "result": {}}
+
+    client = BybitPrivateClient(
+        api_key="key",
+        api_secret="secret",
+        clock_ms=lambda: next(ticks),
+        http_get=fake_get,
+    )
+
+    client._private_get("/v5/user/query-api", {})
+
+    assert private_timestamps == ["5000", "3200"]
+    assert client.time_offset_ms == -2200
+
+
+def test_timestamp_error_resynchronizes_and_retries_private_post() -> None:
+    ticks = iter([5000, 5100, 5300, 5400])
+    post_timestamps = []
+
+    def fake_get(url, headers, timeout):
+        return {"retCode": 0, "time": 3000}
+
+    def fake_post(url, headers, body, timeout):
+        post_timestamps.append(headers["X-BAPI-TIMESTAMP"])
+        if len(post_timestamps) == 1:
+            return {"retCode": 10002, "retMsg": "invalid request timestamp"}
+        return {"retCode": 0, "result": {"orderId": "abc"}}
+
+    client = BybitPrivateClient(
+        api_key="key",
+        api_secret="secret",
+        clock_ms=lambda: next(ticks),
+        http_get=fake_get,
+        http_post=fake_post,
+    )
+
+    response = client.create_spot_limit_order(
+        symbol="ETHUSDT",
+        side="Buy",
+        qty=Decimal("0.002"),
+        price=Decimal("3000"),
+        order_link_id="cf-timestamp-retry",
+    )
+
+    assert response["result"]["orderId"] == "abc"
+    assert post_timestamps == ["5000", "3200"]
 
 
 def test_private_client_parses_key_audit_and_balance() -> None:
