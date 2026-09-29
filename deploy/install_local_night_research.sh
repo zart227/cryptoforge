@@ -24,9 +24,8 @@ cat >"${SERVICE_DIR}/${SERVICE_NAME}.timer" <<UNIT
 Description=Run CryptoForge local night research daily
 
 [Timer]
-OnCalendar=*-*-* 02:15:00
-OnCalendar=*-*-* 10/3:15:00
-RandomizedDelaySec=20min
+OnCalendar=hourly
+RandomizedDelaySec=10min
 Persistent=true
 Unit=${SERVICE_NAME}.service
 

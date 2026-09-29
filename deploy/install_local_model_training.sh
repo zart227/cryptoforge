@@ -25,9 +25,8 @@ cat >"${SERVICE_DIR}/${SERVICE_NAME}.timer" <<UNIT
 Description=Run CryptoForge local model training during the day and night
 
 [Timer]
-OnCalendar=*-*-* 03:05:00
-OnCalendar=*-*-* 11/6:35:00
-RandomizedDelaySec=20min
+OnCalendar=*-*-* 01/2:35:00
+RandomizedDelaySec=10min
 Persistent=true
 Unit=${SERVICE_NAME}.service
 
