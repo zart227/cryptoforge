@@ -132,7 +132,17 @@ class SupabaseLiveExecutor:
             reasons.append("open order already exists")
             return self._record(pair, "reject_entry", reasons, candles, live=live)
         base_balance = self.bybit.get_unified_coin_wallet_balance(base_coin)
-        if base_balance > Decimal("0.0000001"):
+        instrument = self.bybit.get_spot_instrument(symbol)
+        sellable_quantity = quantize_down(base_balance, instrument.quantity_step)
+        has_material_position = (
+            sellable_quantity >= instrument.minimum_quantity
+            and base_balance * latest.close >= Decimal("1")
+        )
+        if base_balance > 0 and not has_material_position:
+            reasons.append(
+                f"ignored_dust={base_balance}; sellable_value={sellable_quantity * latest.close}"
+            )
+        if has_material_position:
             should_exit, exit_reasons = exit_signal(candles)
             reasons.extend(exit_reasons)
             buy_orders = self.bybit.get_order_history(symbol=symbol, limit=20)
@@ -160,8 +170,7 @@ class SupabaseLiveExecutor:
                 should_exit = should_exit or stop_loss
             if not should_exit:
                 return self._record(pair, "hold", reasons, candles, live=live)
-            instrument = self.bybit.get_spot_instrument(symbol)
-            qty = quantize_down(base_balance, instrument.quantity_step)
+            qty = sellable_quantity
             if qty < instrument.minimum_quantity or qty * latest.close < instrument.minimum_order_amount:
                 reasons.append("sell order below minimum notional")
                 return self._record(pair, "reject_entry", reasons, candles, live=live)
@@ -200,7 +209,6 @@ class SupabaseLiveExecutor:
             reasons.append("insufficient USDT balance")
             return self._record(pair, "reject_entry", reasons, candles, live=live)
 
-        instrument = self.bybit.get_spot_instrument(symbol)
         if self.stake_amount < instrument.minimum_order_amount:
             reasons.append("order below minimum notional")
             return self._record(pair, "reject_entry", reasons, candles, live=live)
