@@ -129,6 +129,35 @@ def emerging_momentum_candles() -> list[CandleRow]:
     return candles
 
 
+def early_emerging_momentum_candles() -> list[CandleRow]:
+    start = datetime(2026, 9, 29, tzinfo=UTC)
+    candles: list[CandleRow] = []
+    price = Decimal("100")
+    for index in range(70):
+        open_price = price
+        drift = Decimal("-0.01") if index % 3 == 0 else Decimal("0.02")
+        if index >= 58:
+            drift = Decimal("0.075")
+        close = price + drift
+        volume = Decimal("100")
+        if index == 69:
+            volume = Decimal("96")
+        candles.append(
+            CandleRow(
+                pair="INIT/USDT",
+                symbol="INITUSDT",
+                open_time=start + timedelta(minutes=5 * index),
+                open=open_price,
+                high=close + Decimal("0.08"),
+                low=open_price - Decimal("0.05"),
+                close=close,
+                volume=volume,
+            )
+        )
+        price = close
+    return candles
+
+
 def test_emerging_momentum_requires_explicit_research_mode() -> None:
     candles = emerging_momentum_candles()
 
@@ -139,3 +168,10 @@ def test_emerging_momentum_requires_explicit_research_mode() -> None:
     assert default_signal in {False, True}
     assert "emerging_momentum=False" in default_reasons
     assert "emerging_momentum=True" in research_reasons
+
+
+def test_early_emerging_momentum_can_enter_before_large_volume_spike() -> None:
+    signal, reasons = entry_signal(early_emerging_momentum_candles(), allow_emerging_momentum=True)
+
+    assert signal
+    assert "emerging_momentum=True" in reasons

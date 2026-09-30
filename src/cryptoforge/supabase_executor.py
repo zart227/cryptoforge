@@ -315,7 +315,7 @@ def entry_signal(
         and recent_momentum > prior_momentum
         and volume_ratio >= Decimal("0.55")
         and short_volume_ratio >= Decimal("0.80")
-        and Decimal("40") <= rsi_value <= Decimal("82")
+        and Decimal("40") <= rsi_value <= Decimal("99")
         and last.close >= ema_fast
     )
     intraday_reversion = (
@@ -323,7 +323,7 @@ def entry_signal(
         and bounce
         and Decimal("30") <= rsi_value <= Decimal("55")
         and volume_ratio >= Decimal("0.35")
-        and last.close < resistance * Decimal("0.997")
+        and last.close < resistance * Decimal("0.999")
     )
     reasons = [
         f"rsi={rsi_value:.2f}",

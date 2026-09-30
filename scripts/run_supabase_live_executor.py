@@ -33,7 +33,7 @@ def main() -> int:
         action="store_true",
         help="Prefer the latest fresh night research pair selection, falling back to --pair.",
     )
-    parser.add_argument("--night-research-limit", type=int, default=4)
+    parser.add_argument("--night-research-limit", type=int, default=12)
     parser.add_argument(
         "--allow-intraday-reversion",
         action="store_true",
