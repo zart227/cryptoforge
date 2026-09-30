@@ -16,6 +16,26 @@ def count_open_spot_positions(coins: list[dict[str, Any]], *, minimum_usd: Decim
     )
 
 
+def dynamic_entry_capacity(
+    *,
+    total_equity: Decimal,
+    free_usdt: Decimal,
+    stake_amount: Decimal,
+    open_positions: int,
+    hard_position_cap: int,
+) -> tuple[int, int, int]:
+    if stake_amount <= 0:
+        raise ValueError("stake_amount must be positive")
+    equity_capacity = int(total_equity // stake_amount)
+    effective_max_positions = min(max(hard_position_cap, 0), equity_capacity)
+    cash_entry_slots = int(free_usdt // stake_amount)
+    available_entry_slots = min(
+        max(effective_max_positions - max(open_positions, 0), 0),
+        cash_entry_slots,
+    )
+    return equity_capacity, effective_max_positions, available_entry_slots
+
+
 def daily_equity_blockers(
     *,
     current_equity: Decimal,

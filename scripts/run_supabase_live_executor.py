@@ -7,7 +7,7 @@ from pathlib import Path
 
 from cryptoforge.bybit_private import BybitPrivateClient
 from cryptoforge.model_registry import ActiveModelRegistry
-from cryptoforge.live_risk import count_open_spot_positions, daily_equity_blockers
+from cryptoforge.live_risk import count_open_spot_positions, daily_equity_blockers, dynamic_entry_capacity
 from cryptoforge.market_data import BybitPublicClient
 from cryptoforge.order_observer import BybitOrderObserver, executor_instance_id
 from cryptoforge.research_selection import NightResearchSelector
@@ -24,7 +24,12 @@ def main() -> int:
         help="Pair to evaluate, for example ETH/USDT. Can be repeated.",
     )
     parser.add_argument("--stake-amount", default="5")
-    parser.add_argument("--max-open-positions", type=int, default=3)
+    parser.add_argument(
+        "--max-open-positions",
+        type=int,
+        default=6,
+        help="Hard safety cap; the effective limit is reduced automatically from account equity.",
+    )
     parser.add_argument("--max-daily-loss", default="2")
     parser.add_argument("--stop-loss-percent", default="0.04")
     parser.add_argument("--live", action="store_true", help="Submit a real Bybit order when the signal and guards pass.")
@@ -104,6 +109,14 @@ def main() -> int:
 
     account = bybit.get_unified_usdt_balance()
     open_positions = count_open_spot_positions(bybit.get_unified_wallet_coins())
+    stake_amount = Decimal(args.stake_amount)
+    equity_capacity, effective_max_positions, available_entry_slots = dynamic_entry_capacity(
+        total_equity=account.total_equity_usd,
+        free_usdt=account.usdt_wallet_balance,
+        stake_amount=stake_amount,
+        open_positions=open_positions,
+        hard_position_cap=args.max_open_positions,
+    )
     entry_blockers = list(
         daily_equity_blockers(
             current_equity=account.total_equity_usd,
@@ -112,12 +125,18 @@ def main() -> int:
             now=datetime.now(UTC),
         )
     )
-    if open_positions >= args.max_open_positions:
+    if open_positions >= effective_max_positions:
         entry_blockers.append(
-            f"max open positions reached: {open_positions} >= {args.max_open_positions}"
+            f"dynamic position limit reached: {open_positions} >= {effective_max_positions}"
+        )
+    elif available_entry_slots <= 0:
+        entry_blockers.append(
+            f"no funded entry slots: free_usdt={account.usdt_wallet_balance} stake={stake_amount}"
         )
     print(
-        f"risk_state=checked equity={account.total_equity_usd} open_positions={open_positions} "
+        f"risk_state=checked equity={account.total_equity_usd} free_usdt={account.usdt_wallet_balance} "
+        f"open_positions={open_positions} equity_capacity={equity_capacity} "
+        f"effective_max_positions={effective_max_positions} entry_slots={available_entry_slots} "
         f"entry_blockers={entry_blockers}"
     )
 
@@ -125,7 +144,7 @@ def main() -> int:
         reader=SupabaseMarketReader(supabase),
         supabase=supabase,
         bybit=bybit,
-        stake_amount=Decimal(args.stake_amount),
+        stake_amount=stake_amount,
         allow_intraday_reversion=args.allow_intraday_reversion and pair_source == "night_research",
         allow_emerging_momentum=args.allow_emerging_momentum and pair_source == "night_research",
         active_model_registry=ActiveModelRegistry(supabase) if args.ml_mode != "off" else None,
@@ -133,7 +152,7 @@ def main() -> int:
         ml_threshold=args.ml_threshold,
         ml_max_age=timedelta(hours=args.ml_max_age_hours),
         entry_blockers=tuple(entry_blockers),
-        entry_slots=max(args.max_open_positions - open_positions, 0),
+        entry_slots=available_entry_slots,
         stop_loss_percent=Decimal(args.stop_loss_percent),
     )
     successes = 0
