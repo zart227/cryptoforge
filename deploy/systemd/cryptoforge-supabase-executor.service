@@ -10,7 +10,7 @@ Group=cryptoforge
 WorkingDirectory=/opt/cryptoforge/app/cryptoforge_repo
 Environment=PYTHONPATH=/opt/cryptoforge/app/cryptoforge_repo/src
 EnvironmentFile=/opt/cryptoforge/app/.env
-ExecStart=/opt/cryptoforge/app/venv/bin/python /opt/cryptoforge/app/cryptoforge_repo/scripts/run_supabase_live_executor.py --use-night-research --night-research-limit 12 --allow-intraday-reversion --allow-emerging-momentum --append-fallback-pairs --pair ETH/USDT --pair NEAR/USDT --pair ENA/USDT --pair HYPE/USDT --stake-amount 5 --max-open-positions 2 --max-daily-loss 2 --stop-loss-percent 0.04 --ml-mode gate --ml-threshold 0.50 --ml-max-age-hours 36 --live --timeout 25
+ExecStart=/opt/cryptoforge/app/venv/bin/python /opt/cryptoforge/app/cryptoforge_repo/scripts/run_supabase_live_executor.py --use-night-research --night-research-limit 12 --allow-intraday-reversion --allow-emerging-momentum --append-fallback-pairs --pair ETH/USDT --pair NEAR/USDT --pair ENA/USDT --pair HYPE/USDT --stake-amount 5 --max-open-positions 3 --max-daily-loss 2 --stop-loss-percent 0.04 --ml-mode gate --ml-threshold 0.50 --ml-max-age-hours 36 --live --timeout 25
 Nice=10
 IOSchedulingClass=best-effort
 IOSchedulingPriority=7

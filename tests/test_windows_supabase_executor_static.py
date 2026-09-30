@@ -9,7 +9,7 @@ def test_windows_executor_uses_research_emerging_and_ml_gate() -> None:
         "--allow-intraday-reversion",
         "--allow-emerging-momentum",
         "--stake-amount 5",
-        "--max-open-positions 2",
+        "--max-open-positions 3",
         "--max-daily-loss 2",
         "--stop-loss-percent 0.04",
         "--ml-mode gate",

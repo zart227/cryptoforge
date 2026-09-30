@@ -24,7 +24,7 @@ def main() -> int:
         help="Pair to evaluate, for example ETH/USDT. Can be repeated.",
     )
     parser.add_argument("--stake-amount", default="5")
-    parser.add_argument("--max-open-positions", type=int, default=2)
+    parser.add_argument("--max-open-positions", type=int, default=3)
     parser.add_argument("--max-daily-loss", default="2")
     parser.add_argument("--stop-loss-percent", default="0.04")
     parser.add_argument("--live", action="store_true", help="Submit a real Bybit order when the signal and guards pass.")

@@ -23,7 +23,7 @@ foreach ($name in $Required) {
     if (-not $Available.ContainsKey($name) -or -not $Available[$name]) { throw "$name is missing." }
 }
 
-$Arguments = '"{0}" executor --use-night-research --night-research-limit 12 --allow-intraday-reversion --allow-emerging-momentum --append-fallback-pairs --pair ETH/USDT --pair NEAR/USDT --pair ENA/USDT --pair HYPE/USDT --stake-amount 5 --max-open-positions 2 --max-daily-loss 2 --stop-loss-percent 0.04 --ml-mode gate --ml-threshold 0.50 --ml-max-age-hours 36 --live --timeout 25' -f $Script
+$Arguments = '"{0}" executor --use-night-research --night-research-limit 12 --allow-intraday-reversion --allow-emerging-momentum --append-fallback-pairs --pair ETH/USDT --pair NEAR/USDT --pair ENA/USDT --pair HYPE/USDT --stake-amount 5 --max-open-positions 3 --max-daily-loss 2 --stop-loss-percent 0.04 --ml-mode gate --ml-threshold 0.50 --ml-max-age-hours 36 --live --timeout 25' -f $Script
 $Action = New-ScheduledTaskAction -Execute $Python -Argument $Arguments -WorkingDirectory $Root
 $Trigger = New-ScheduledTaskTrigger -Once -At (Get-Date).AddMinutes(1) -RepetitionInterval (New-TimeSpan -Minutes 2)
 $Settings = New-ScheduledTaskSettingsSet -MultipleInstances IgnoreNew -StartWhenAvailable -ExecutionTimeLimit (New-TimeSpan -Minutes 2)
