@@ -95,6 +95,7 @@ class SupabaseLiveExecutor:
         entry_blockers: tuple[str, ...] = (),
         entry_slots: int | None = None,
         stop_loss_percent: Decimal = Decimal("0.04"),
+        max_dust_fraction: Decimal = Decimal("0.01"),
     ) -> None:
         if ml_mode not in {"off", "shadow", "gate"}:
             raise ValueError("ml_mode must be one of: off, shadow, gate")
@@ -113,6 +114,7 @@ class SupabaseLiveExecutor:
         self.entry_blockers = entry_blockers
         self.entry_slots = entry_slots
         self.stop_loss_percent = stop_loss_percent
+        self.max_dust_fraction = max_dust_fraction
 
     def run_once(self, pair: str, *, live: bool = False, now: datetime | None = None) -> ExecutorDecision:
         now = now or datetime.now(UTC)
@@ -199,6 +201,14 @@ class SupabaseLiveExecutor:
             return self._record(pair, "reject_entry", reasons, candles, live=live)
         if self.entry_slots is not None and self.entry_slots <= 0:
             reasons.append("no entry slots remaining in this cycle")
+            return self._record(pair, "reject_entry", reasons, candles, live=live)
+        maximum_residual_value = instrument.quantity_step * latest.close
+        maximum_allowed_residual = self.stake_amount * self.max_dust_fraction
+        if maximum_residual_value > maximum_allowed_residual:
+            reasons.append(
+                "dust risk too high: "
+                f"step_value={maximum_residual_value} > allowed={maximum_allowed_residual}"
+            )
             return self._record(pair, "reject_entry", reasons, candles, live=live)
         ml_allows_entry, ml_reasons = self._ml_entry_allows(candles)
         reasons.extend(ml_reasons)

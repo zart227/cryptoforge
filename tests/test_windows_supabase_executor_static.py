@@ -12,6 +12,7 @@ def test_windows_executor_uses_research_emerging_and_ml_gate() -> None:
         "--max-open-positions 6",
         "--max-daily-loss 2",
         "--stop-loss-percent 0.04",
+        "--max-dust-fraction 0.01",
         "--ml-mode gate",
         "--ml-threshold 0.50",
         "--ml-max-age-hours 36",

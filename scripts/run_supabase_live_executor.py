@@ -32,6 +32,7 @@ def main() -> int:
     )
     parser.add_argument("--max-daily-loss", default="2")
     parser.add_argument("--stop-loss-percent", default="0.04")
+    parser.add_argument("--max-dust-fraction", default="0.01")
     parser.add_argument("--live", action="store_true", help="Submit a real Bybit order when the signal and guards pass.")
     parser.add_argument(
         "--use-night-research",
@@ -154,6 +155,7 @@ def main() -> int:
         entry_blockers=tuple(entry_blockers),
         entry_slots=available_entry_slots,
         stop_loss_percent=Decimal(args.stop_loss_percent),
+        max_dust_fraction=Decimal(args.max_dust_fraction),
     )
     successes = 0
     failures = 0
