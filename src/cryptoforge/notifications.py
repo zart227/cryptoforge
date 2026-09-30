@@ -109,7 +109,12 @@ class TelegramNotificationSink:
         self.chat_id = chat_id
         self.proxy_url = proxy_url
         self.timeout_seconds = timeout_seconds
-        self.http_post = http_post or (proxied_post_json(proxy_url) if proxy_url else post_json)
+        if http_post is not None:
+            self.http_post = http_post
+        elif proxy_url:
+            self.http_post = fallback_post_json(proxied_post_json(proxy_url), post_json)
+        else:
+            self.http_post = post_json
 
     def send(self, message: str) -> None:
         url = f"https://api.telegram.org/bot{self.bot_token}/sendMessage"
@@ -272,6 +277,16 @@ def proxied_post_json(proxy_url: str) -> HttpPost:
             raise RuntimeError(f"Telegram HTTP {exc.code}: {body[:300]}") from exc
         except error.URLError as exc:
             raise RuntimeError(f"Telegram request failed: {exc}") from exc
+
+    return _post
+
+
+def fallback_post_json(primary: HttpPost, fallback: HttpPost) -> HttpPost:
+    def _post(url: str, payload: bytes, headers: dict[str, str], timeout_seconds: float) -> None:
+        try:
+            primary(url, payload, headers, timeout_seconds)
+        except Exception:
+            fallback(url, payload, headers, timeout_seconds)
 
     return _post
 

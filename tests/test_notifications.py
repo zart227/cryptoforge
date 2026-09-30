@@ -168,6 +168,29 @@ def test_telegram_sink_accepts_proxy_url() -> None:
     assert sink.proxy_url == "http://proxy.example:8080"
 
 
+def test_telegram_sink_falls_back_to_direct_post_when_proxy_fails() -> None:
+    calls: list[str] = []
+
+    def failing_proxy(url: str, payload: bytes, headers: dict[str, str], timeout: float) -> None:
+        calls.append("proxy")
+        raise RuntimeError("proxy requires auth")
+
+    def direct(url: str, payload: bytes, headers: dict[str, str], timeout: float) -> None:
+        calls.append("direct")
+
+    from cryptoforge.notifications import fallback_post_json
+
+    sink = TelegramNotificationSink(
+        bot_token="123456:secret-token",
+        chat_id="999",
+        http_post=fallback_post_json(failing_proxy, direct),
+    )
+
+    sink.send("hello")
+
+    assert calls == ["proxy", "direct"]
+
+
 def test_fallback_sink_uses_second_channel_after_first_failure() -> None:
     calls: list[str] = []
 

@@ -96,3 +96,34 @@ cryptoforge-telegram-relay --watch --interval-seconds 60
 
 The relay stores its cursor locally and keeps the most recent delivered
 event ids to avoid duplicates across restarts.
+
+## Freqtrade Position Monitor
+
+For actual Freqtrade paper/live positions, run the local trade monitor against
+the Freqtrade SQLite database. It sends one Telegram message when a position is
+first seen open and one message when it is closed, including realized PnL and
+PnL percent.
+
+Paper database:
+
+```bash
+cryptoforge-trade-monitor \
+  --db-path data/live-pilot/tradesv3.paper.sqlite \
+  --state-path data/freqtrade-trade-monitor-state.json \
+  --watch \
+  --interval-seconds 30
+```
+
+VPS dry-run database example:
+
+```bash
+cryptoforge-trade-monitor \
+  --db-path /opt/cryptoforge/data/tradesv3.dry_run.sqlite \
+  --state-path /opt/cryptoforge/data/freqtrade-trade-monitor-state.json \
+  --watch \
+  --interval-seconds 30
+```
+
+The monitor uses the same `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID` and optional
+`TELEGRAM_PROXY_URL` environment values as the relay. Its state file prevents
+duplicate alerts across restarts.

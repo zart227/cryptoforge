@@ -531,6 +531,7 @@ def process_telegram_commands(
     state_path: str | Path,
     bot_token: str,
     chat_id: str,
+    proxy_url: str = "",
     timeout_seconds: float,
 ) -> int:
     if not bot_token or not chat_id:
@@ -541,17 +542,20 @@ def process_telegram_commands(
     if state.telegram_update_offset is not None:
         params["offset"] = str(state.telegram_update_offset)
     url = f"https://api.telegram.org/bot{bot_token}/getUpdates?{parse.urlencode(params)}"
-    req = request.Request(url, method="GET")
     try:
-        with request.urlopen(req, timeout=timeout_seconds) as response:
-            payload = json.loads(response.read().decode("utf-8"))
+        payload = telegram_get_json(url, timeout_seconds=timeout_seconds, proxy_url=proxy_url)
     except (error.HTTPError, error.URLError, TimeoutError):
         return 0
 
     if not payload.get("ok"):
         return 0
 
-    sink = TelegramNotificationSink(bot_token=bot_token, chat_id=chat_id, timeout_seconds=timeout_seconds)
+    sink = TelegramNotificationSink(
+        bot_token=bot_token,
+        chat_id=chat_id,
+        proxy_url=proxy_url,
+        timeout_seconds=timeout_seconds,
+    )
     handled = 0
     update_offset = state.telegram_update_offset
     for update in payload.get("result", []):
@@ -580,6 +584,21 @@ def process_telegram_commands(
         ),
     )
     return handled
+
+
+def telegram_get_json(url: str, *, timeout_seconds: float, proxy_url: str = "") -> JsonObject:
+    req = request.Request(url, method="GET")
+    if not proxy_url:
+        with request.urlopen(req, timeout=timeout_seconds) as response:
+            return dict(json.loads(response.read().decode("utf-8")))
+
+    opener = request.build_opener(request.ProxyHandler({"http": proxy_url, "https": proxy_url}))
+    try:
+        with opener.open(req, timeout=timeout_seconds) as response:
+            return dict(json.loads(response.read().decode("utf-8")))
+    except (error.HTTPError, error.URLError, TimeoutError):
+        with request.urlopen(req, timeout=timeout_seconds) as response:
+            return dict(json.loads(response.read().decode("utf-8")))
 
 
 def watcher_once(
@@ -649,6 +668,7 @@ def main(argv: list[str] | None = None) -> int:
     notifier = telegram_notifier_from_env()
     bot_token = os.environ.get("TELEGRAM_BOT_TOKEN", "")
     chat_id = os.environ.get("TELEGRAM_CHAT_ID", "")
+    proxy_url = os.environ.get("TELEGRAM_PROXY_URL", "")
     timeout_seconds = float(os.environ.get("CRYPTOFORGE_RELAY_TIMEOUT_SECONDS", "10"))
 
     while True:
@@ -658,6 +678,7 @@ def main(argv: list[str] | None = None) -> int:
             state_path=args.state_path,
             bot_token=bot_token,
             chat_id=chat_id,
+            proxy_url=proxy_url,
             timeout_seconds=timeout_seconds,
         )
         alerts = watcher_once(client=client, notifier=notifier, state_path=args.state_path)

@@ -28,6 +28,7 @@ cryptoforge-model-training = "cryptoforge.model_training_cli:main"
 cryptoforge-model-registry = "cryptoforge.model_registry_cli:main"
 cryptoforge-night-research = "cryptoforge.night_research_cli:main"
 cryptoforge-telegram-relay = "cryptoforge.telegram_relay:main"
+cryptoforge-trade-monitor = "cryptoforge.freqtrade_trade_monitor:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
