@@ -311,18 +311,18 @@ def entry_signal(
     prior_momentum = (candles[-13].close - candles[-25].close) / candles[-25].close if candles[-25].close > 0 else Decimal("0")
     emerging_momentum = (
         allow_emerging_momentum
-        and recent_momentum >= Decimal("0.012")
+        and recent_momentum >= Decimal("0.008")
         and recent_momentum > prior_momentum
-        and volume_ratio >= Decimal("0.75")
-        and short_volume_ratio >= Decimal("1.05")
-        and Decimal("42") <= rsi_value <= Decimal("98.5")
+        and volume_ratio >= Decimal("0.55")
+        and short_volume_ratio >= Decimal("0.80")
+        and Decimal("40") <= rsi_value <= Decimal("82")
         and last.close >= ema_fast
     )
     intraday_reversion = (
         allow_intraday_reversion
         and bounce
         and Decimal("30") <= rsi_value <= Decimal("55")
-        and volume_ratio >= Decimal("0.45")
+        and volume_ratio >= Decimal("0.35")
         and last.close < resistance * Decimal("0.997")
     )
     reasons = [
@@ -337,7 +337,7 @@ def entry_signal(
         f"emerging_momentum={emerging_momentum}",
         f"intraday_reversion={intraday_reversion}",
     ]
-    trend_entry = trend and (breakout or bounce or pullback) and volume_ratio >= Decimal("0.85")
+    trend_entry = trend and (breakout or bounce or pullback) and volume_ratio >= Decimal("0.65")
     return bool(trend_entry or intraday_reversion or emerging_momentum), reasons
 
 

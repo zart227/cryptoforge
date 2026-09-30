@@ -108,7 +108,7 @@ def emerging_momentum_candles() -> list[CandleRow]:
         open_price = price
         drift = Decimal("-0.08") if index % 3 == 0 else Decimal("0.05")
         if index >= 58:
-            drift = Decimal("0.35")
+            drift = Decimal("-0.35") if index % 4 == 0 else Decimal("0.35")
         close = price + drift
         volume = Decimal("100")
         if index >= 64:

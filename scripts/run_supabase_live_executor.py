@@ -100,7 +100,7 @@ def main() -> int:
     if args.append_fallback_pairs:
         pairs = list(dict.fromkeys([*pairs, *fallback_pairs]))
     pairs = include_held_pairs(bybit, pairs=pairs, candidates=fallback_pairs)
-    refresh_held_market_data(bybit, supabase, pairs=pairs)
+    refresh_stale_market_data(supabase, pairs=pairs)
 
     account = bybit.get_unified_usdt_balance()
     open_positions = count_open_spot_positions(bybit.get_unified_wallet_coins())
@@ -184,31 +184,30 @@ def include_held_pairs(bybit: BybitPrivateClient, *, pairs: list[str], candidate
     return selected
 
 
-def refresh_held_market_data(
-    bybit: BybitPrivateClient,
+def refresh_stale_market_data(
     supabase: SupabaseRestClient,
     *,
     pairs: list[str],
+    maximum_age: timedelta = timedelta(minutes=9),
 ) -> None:
-    material_coins = {
-        str(coin.get("coin"))
-        for coin in bybit.get_unified_wallet_coins()
-        if str(coin.get("coin")) != "USDT"
-        and Decimal(str(coin.get("usdValue") or "0")) >= Decimal("1")
-    }
-    held_pairs = [pair for pair in pairs if pair.split("/", 1)[0] in material_coins]
-    if not held_pairs:
-        return
+    reader = SupabaseMarketReader(supabase)
     public = BybitPublicClient(timeout=15, max_retries=2, retry_backoff_seconds=1)
     writer = SupabaseMarketWriter(supabase)
-    for pair in held_pairs:
+    now = datetime.now(UTC)
+    for pair in pairs:
+        try:
+            candles = reader.read_candles(pair, limit=1)
+            if candles and now - candles[-1].open_time <= maximum_age:
+                continue
+        except Exception:  # noqa: BLE001 - public refresh below is the fallback.
+            pass
         symbol = pair.replace("/", "")
         try:
             writer.write_tickers(public.get_tickers(symbol))
             writer.write_candles(public.get_klines(symbol, interval="5", limit=120))
-            print(f"held_market_refresh=ok pair={pair}")
+            print(f"stale_market_refresh=ok pair={pair}")
         except Exception as exc:  # noqa: BLE001 - stale-data guard will safely reject this pair.
-            print(f"held_market_refresh=error pair={pair} error={exc}")
+            print(f"stale_market_refresh=error pair={pair} error={exc}")
 
 
 if __name__ == "__main__":

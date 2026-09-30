@@ -5,7 +5,7 @@ def test_windows_executor_uses_research_emerging_and_ml_gate() -> None:
     text = Path("deploy/install_windows_supabase_executor.ps1").read_text(encoding="utf-8")
     for required in (
         "--use-night-research",
-        "--night-research-limit 8",
+        "--night-research-limit 12",
         "--allow-intraday-reversion",
         "--allow-emerging-momentum",
         "--stake-amount 5",
@@ -13,7 +13,7 @@ def test_windows_executor_uses_research_emerging_and_ml_gate() -> None:
         "--max-daily-loss 2",
         "--stop-loss-percent 0.04",
         "--ml-mode gate",
-        "--ml-threshold 0.55",
+        "--ml-threshold 0.50",
         "--ml-max-age-hours 36",
         "--live",
     ):
