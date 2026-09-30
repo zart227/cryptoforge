@@ -298,3 +298,51 @@ def test_private_client_creates_signed_spot_limit_order() -> None:
     assert captured["url"].endswith("/v5/order/create")
     assert captured["headers"]["X-BAPI-SIGN"]
     assert '"orderLinkId":"cf-test"' in captured["body"]
+
+
+def test_private_client_reads_spot_instrument_filters() -> None:
+    client = BybitPrivateClient(
+        api_key="key",
+        api_secret="secret",
+        http_get=lambda *args: {
+            "retCode": 0,
+            "result": {
+                "list": [
+                    {
+                        "symbol": "GRASSUSDT",
+                        "lotSizeFilter": {
+                            "basePrecision": "0.1",
+                            "minOrderQty": "0.1",
+                            "minOrderAmt": "5",
+                        },
+                    }
+                ]
+            },
+        },
+    )
+
+    instrument = client.get_spot_instrument("GRASSUSDT")
+
+    assert instrument.quantity_step == Decimal("0.1")
+    assert instrument.minimum_quantity == Decimal("0.1")
+    assert instrument.minimum_order_amount == Decimal("5")
+
+
+def test_market_buy_uses_quote_coin_amount() -> None:
+    captured = {}
+
+    def fake_post(url, headers, body, timeout):  # type: ignore[no-untyped-def]
+        captured["body"] = body.decode()
+        return {"retCode": 0, "result": {"orderId": "market-1"}}
+
+    client = BybitPrivateClient(api_key="key", api_secret="secret", http_post=fake_post)
+    client.create_spot_market_order(
+        symbol="MOVRUSDT",
+        side="Buy",
+        qty=Decimal("5"),
+        order_link_id="cf-market-test",
+    )
+
+    assert '"orderType":"Market"' in captured["body"]
+    assert '"marketUnit":"quoteCoin"' in captured["body"]
+    assert '"qty":"5"' in captured["body"]

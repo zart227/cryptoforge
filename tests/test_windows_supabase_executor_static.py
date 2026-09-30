@@ -1,14 +1,18 @@
 from pathlib import Path
 
 
-def test_windows_executor_uses_research_emerging_and_ml_shadow() -> None:
+def test_windows_executor_uses_research_emerging_and_ml_gate() -> None:
     text = Path("deploy/install_windows_supabase_executor.ps1").read_text(encoding="utf-8")
     for required in (
         "--use-night-research",
         "--night-research-limit 8",
         "--allow-intraday-reversion",
         "--allow-emerging-momentum",
-        "--ml-mode shadow",
+        "--stake-amount 5",
+        "--max-open-positions 2",
+        "--max-daily-loss 2",
+        "--stop-loss-percent 0.04",
+        "--ml-mode gate",
         "--ml-threshold 0.55",
         "--ml-max-age-hours 36",
         "--live",

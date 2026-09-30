@@ -43,6 +43,14 @@ class BybitUnifiedBalance:
     usdt_wallet_balance: Decimal
 
 
+@dataclass(frozen=True)
+class BybitSpotInstrument:
+    symbol: str
+    quantity_step: Decimal
+    minimum_quantity: Decimal
+    minimum_order_amount: Decimal
+
+
 class BybitPrivateClient:
     def __init__(
         self,
@@ -143,14 +151,46 @@ class BybitPrivateClient:
         payload = self._private_get("/v5/order/realtime", {"category": category, "symbol": symbol})
         return list(payload.get("result", {}).get("list") or [])
 
-    def get_order_history(self, *, category: str = "spot", limit: int = 50) -> list[dict[str, Any]]:
+    def get_order_history(
+        self,
+        *,
+        category: str = "spot",
+        symbol: str | None = None,
+        limit: int = 50,
+    ) -> list[dict[str, Any]]:
         if not 1 <= limit <= 50:
             raise ValueError("limit must be between 1 and 50")
-        payload = self._private_get(
-            "/v5/order/history",
-            {"category": category, "limit": str(limit)},
-        )
+        params = {"category": category, "limit": str(limit)}
+        if symbol:
+            params["symbol"] = symbol
+        payload = self._private_get("/v5/order/history", params)
         return list(payload.get("result", {}).get("list") or [])
+
+    def get_spot_instrument(self, symbol: str) -> BybitSpotInstrument:
+        query = parse.urlencode({"category": "spot", "symbol": symbol})
+        payload = self.http_get(
+            f"{self.base_url}/v5/market/instruments-info?{query}",
+            {},
+            self.timeout_seconds,
+        )
+        if payload.get("retCode") != 0 or not payload.get("result", {}).get("list"):
+            raise RuntimeError(f"Bybit instrument metadata unavailable for {symbol}")
+        item = payload["result"]["list"][0]
+        lot = item.get("lotSizeFilter") or {}
+        step = lot.get("qtyStep") or lot.get("basePrecision")
+        if not step:
+            raise RuntimeError(f"Bybit quantity step unavailable for {symbol}")
+        return BybitSpotInstrument(
+            symbol=symbol,
+            quantity_step=Decimal(str(step)),
+            minimum_quantity=Decimal(str(lot.get("minOrderQty") or "0")),
+            minimum_order_amount=Decimal(str(lot.get("minOrderAmt") or "5")),
+        )
+
+    def get_unified_wallet_coins(self) -> list[dict[str, Any]]:
+        payload = self._private_get("/v5/account/wallet-balance", {"accountType": "UNIFIED"})
+        accounts = payload.get("result", {}).get("list") or []
+        return list(accounts[0].get("coin") or []) if accounts else []
 
     def create_spot_limit_order(
         self,
@@ -173,6 +213,28 @@ class BybitPrivateClient:
             "timeInForce": "GTC",
             "orderLinkId": order_link_id,
         }
+        return self._private_post("/v5/order/create", body)
+
+    def create_spot_market_order(
+        self,
+        *,
+        symbol: str,
+        side: str,
+        qty: Decimal,
+        order_link_id: str,
+    ) -> dict[str, Any]:
+        if side not in {"Buy", "Sell"}:
+            raise ValueError("side must be Buy or Sell")
+        body = {
+            "category": "spot",
+            "symbol": symbol,
+            "side": side,
+            "orderType": "Market",
+            "qty": format(qty, "f"),
+            "orderLinkId": order_link_id,
+        }
+        if side == "Buy":
+            body["marketUnit"] = "quoteCoin"
         return self._private_post("/v5/order/create", body)
 
     def _private_get(self, path: str, params: dict[str, str]) -> dict[str, Any]:

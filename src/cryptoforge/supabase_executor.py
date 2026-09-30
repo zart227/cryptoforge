@@ -92,6 +92,9 @@ class SupabaseLiveExecutor:
         ml_mode: str = "off",
         ml_threshold: float = 0.55,
         ml_max_age: timedelta = timedelta(hours=36),
+        entry_blockers: tuple[str, ...] = (),
+        entry_slots: int | None = None,
+        stop_loss_percent: Decimal = Decimal("0.04"),
     ) -> None:
         if ml_mode not in {"off", "shadow", "gate"}:
             raise ValueError("ml_mode must be one of: off, shadow, gate")
@@ -107,6 +110,9 @@ class SupabaseLiveExecutor:
         self.ml_mode = ml_mode
         self.ml_threshold = ml_threshold
         self.ml_max_age = ml_max_age
+        self.entry_blockers = entry_blockers
+        self.entry_slots = entry_slots
+        self.stop_loss_percent = stop_loss_percent
 
     def run_once(self, pair: str, *, live: bool = False, now: datetime | None = None) -> ExecutorDecision:
         now = now or datetime.now(UTC)
@@ -129,22 +135,44 @@ class SupabaseLiveExecutor:
         if base_balance > Decimal("0.0000001"):
             should_exit, exit_reasons = exit_signal(candles)
             reasons.extend(exit_reasons)
+            buy_orders = self.bybit.get_order_history(symbol=symbol, limit=20)
+            latest_buy = next(
+                (
+                    row
+                    for row in buy_orders
+                    if row.get("side") == "Buy"
+                    and row.get("orderStatus") == "Filled"
+                    and Decimal(str(row.get("avgPrice") or "0")) > 0
+                ),
+                None,
+            )
+            if latest_buy is not None:
+                entry_price = Decimal(str(latest_buy["avgPrice"]))
+                stop_price = entry_price * (Decimal("1") - self.stop_loss_percent)
+                stop_loss = latest.close <= stop_price
+                reasons.extend(
+                    [
+                        f"entry_price={entry_price}",
+                        f"stop_price={stop_price}",
+                        f"stop_loss={stop_loss}",
+                    ]
+                )
+                should_exit = should_exit or stop_loss
             if not should_exit:
                 return self._record(pair, "hold", reasons, candles, live=live)
-            price = quantize_down(latest.close * Decimal("1.001"), Decimal("0.01"))
-            qty = quantize_down(base_balance, quantity_step(symbol))
-            if qty * price < Decimal("5"):
+            instrument = self.bybit.get_spot_instrument(symbol)
+            qty = quantize_down(base_balance, instrument.quantity_step)
+            if qty < instrument.minimum_quantity or qty * latest.close < instrument.minimum_order_amount:
                 reasons.append("sell order below minimum notional")
                 return self._record(pair, "reject_entry", reasons, candles, live=live)
             order_link_id = order_id(f"{pair}:exit", latest.open_time)
             if not live:
                 reasons.append("shadow mode; exit order not submitted")
                 return self._record(pair, "approve_exit", reasons, candles, live=live)
-            order = self.bybit.create_spot_limit_order(
+            order = self.bybit.create_spot_market_order(
                 symbol=symbol,
                 side="Sell",
                 qty=qty,
-                price=price,
                 order_link_id=order_link_id,
             )
             return self._record(pair, "approve_exit", reasons, candles, live=live, order=order)
@@ -157,6 +185,12 @@ class SupabaseLiveExecutor:
         reasons.extend(signal_reasons)
         if not signal:
             return self._record(pair, "hold", reasons, candles, live=live)
+        if self.entry_blockers:
+            reasons.extend(self.entry_blockers)
+            return self._record(pair, "reject_entry", reasons, candles, live=live)
+        if self.entry_slots is not None and self.entry_slots <= 0:
+            reasons.append("no entry slots remaining in this cycle")
+            return self._record(pair, "reject_entry", reasons, candles, live=live)
         ml_allows_entry, ml_reasons = self._ml_entry_allows(candles)
         reasons.extend(ml_reasons)
         if not ml_allows_entry:
@@ -166,9 +200,8 @@ class SupabaseLiveExecutor:
             reasons.append("insufficient USDT balance")
             return self._record(pair, "reject_entry", reasons, candles, live=live)
 
-        price = quantize_down(latest.close * Decimal("0.999"), Decimal("0.01"))
-        qty = quantize_down(self.stake_amount / price, quantity_step(symbol))
-        if qty <= 0 or qty * price < Decimal("5"):
+        instrument = self.bybit.get_spot_instrument(symbol)
+        if self.stake_amount < instrument.minimum_order_amount:
             reasons.append("order below minimum notional")
             return self._record(pair, "reject_entry", reasons, candles, live=live)
 
@@ -177,13 +210,14 @@ class SupabaseLiveExecutor:
             reasons.append("shadow mode; order not submitted")
             return self._record(pair, "approve_entry", reasons, candles, live=live)
 
-        order = self.bybit.create_spot_limit_order(
+        order = self.bybit.create_spot_market_order(
             symbol=symbol,
             side="Buy",
-            qty=qty,
-            price=price,
+            qty=self.stake_amount,
             order_link_id=order_link_id,
         )
+        if self.entry_slots is not None:
+            self.entry_slots -= 1
         decision = self._record(pair, "approve_entry", reasons, candles, live=live, order=order)
         return decision
 
@@ -196,18 +230,19 @@ class SupabaseLiveExecutor:
             return True, ["ml_mode=off"]
         try:
             model = self.active_model_registry.latest(max_age=self.ml_max_age)
-        except Exception as exc:  # checksum/network/registry failures must fail open.
-            return True, [f"ml_fallback=registry_error:{type(exc).__name__}"]
+        except Exception as exc:
+            allowed = self.ml_mode != "gate"
+            return allowed, [f"ml_fallback=registry_error:{type(exc).__name__}"]
         if model is None:
-            return True, ["ml_fallback=no_fresh_model"]
+            return self.ml_mode != "gate", ["ml_fallback=no_fresh_model"]
         if model.feature_version != FEATURE_VERSION:
-            return True, [f"ml_fallback=unsupported_feature_version:{model.feature_version}"]
+            return self.ml_mode != "gate", [f"ml_fallback=unsupported_feature_version:{model.feature_version}"]
         try:
             probability = model.predict_probability(
                 extract_features(candles, [candle.volume for candle in candles])
             )
         except Exception as exc:
-            return True, [f"ml_fallback=prediction_error:{type(exc).__name__}"]
+            return self.ml_mode != "gate", [f"ml_fallback=prediction_error:{type(exc).__name__}"]
         reasons = [
             f"ml_mode={self.ml_mode}",
             f"ml_model={model.model_version}",

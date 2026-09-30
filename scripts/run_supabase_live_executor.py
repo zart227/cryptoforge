@@ -1,15 +1,18 @@
 from __future__ import annotations
 
 import argparse
-from datetime import timedelta
+from datetime import UTC, datetime, timedelta
 from decimal import Decimal
+from pathlib import Path
 
 from cryptoforge.bybit_private import BybitPrivateClient
 from cryptoforge.model_registry import ActiveModelRegistry
+from cryptoforge.live_risk import count_open_spot_positions, daily_equity_blockers
+from cryptoforge.market_data import BybitPublicClient
 from cryptoforge.order_observer import BybitOrderObserver, executor_instance_id
 from cryptoforge.research_selection import NightResearchSelector
 from cryptoforge.supabase_executor import SupabaseLiveExecutor, SupabaseMarketReader
-from cryptoforge.supabase_market import SupabaseRestClient
+from cryptoforge.supabase_market import SupabaseMarketWriter, SupabaseRestClient
 
 
 def main() -> int:
@@ -20,7 +23,10 @@ def main() -> int:
         default=[],
         help="Pair to evaluate, for example ETH/USDT. Can be repeated.",
     )
-    parser.add_argument("--stake-amount", default="10")
+    parser.add_argument("--stake-amount", default="5")
+    parser.add_argument("--max-open-positions", type=int, default=2)
+    parser.add_argument("--max-daily-loss", default="2")
+    parser.add_argument("--stop-loss-percent", default="0.04")
     parser.add_argument("--live", action="store_true", help="Submit a real Bybit order when the signal and guards pass.")
     parser.add_argument(
         "--use-night-research",
@@ -94,6 +100,26 @@ def main() -> int:
     if args.append_fallback_pairs:
         pairs = list(dict.fromkeys([*pairs, *fallback_pairs]))
     pairs = include_held_pairs(bybit, pairs=pairs, candidates=fallback_pairs)
+    refresh_held_market_data(bybit, supabase, pairs=pairs)
+
+    account = bybit.get_unified_usdt_balance()
+    open_positions = count_open_spot_positions(bybit.get_unified_wallet_coins())
+    entry_blockers = list(
+        daily_equity_blockers(
+            current_equity=account.total_equity_usd,
+            maximum_loss=Decimal(args.max_daily_loss),
+            state_path=Path(".local/state/live-equity-risk.json"),
+            now=datetime.now(UTC),
+        )
+    )
+    if open_positions >= args.max_open_positions:
+        entry_blockers.append(
+            f"max open positions reached: {open_positions} >= {args.max_open_positions}"
+        )
+    print(
+        f"risk_state=checked equity={account.total_equity_usd} open_positions={open_positions} "
+        f"entry_blockers={entry_blockers}"
+    )
 
     executor = SupabaseLiveExecutor(
         reader=SupabaseMarketReader(supabase),
@@ -106,6 +132,9 @@ def main() -> int:
         ml_mode=args.ml_mode,
         ml_threshold=args.ml_threshold,
         ml_max_age=timedelta(hours=args.ml_max_age_hours),
+        entry_blockers=tuple(entry_blockers),
+        entry_slots=max(args.max_open_positions - open_positions, 0),
+        stop_loss_percent=Decimal(args.stop_loss_percent),
     )
     successes = 0
     failures = 0
@@ -130,6 +159,18 @@ def main() -> int:
 
 def include_held_pairs(bybit: BybitPrivateClient, *, pairs: list[str], candidates: list[str]) -> list[str]:
     selected = list(dict.fromkeys(pairs))
+    try:
+        wallet_coins = bybit.get_unified_wallet_coins()
+    except Exception as exc:  # noqa: BLE001 - retain candidate fallback on API failure.
+        print(f"held_pair_inventory=error error={exc}")
+        wallet_coins = []
+    for coin in wallet_coins:
+        name = str(coin.get("coin") or "")
+        usd_value = Decimal(str(coin.get("usdValue") or "0"))
+        pair = f"{name}/USDT"
+        if name and name != "USDT" and usd_value >= Decimal("1") and pair not in selected:
+            selected.append(pair)
+            print(f"held_pair_included pair={pair} usd_value={usd_value}")
     for pair in candidates:
         base_coin = pair.split("/", 1)[0]
         try:
@@ -141,6 +182,33 @@ def include_held_pairs(bybit: BybitPrivateClient, *, pairs: list[str], candidate
             selected.append(pair)
             print(f"held_pair_included pair={pair} balance={balance}")
     return selected
+
+
+def refresh_held_market_data(
+    bybit: BybitPrivateClient,
+    supabase: SupabaseRestClient,
+    *,
+    pairs: list[str],
+) -> None:
+    material_coins = {
+        str(coin.get("coin"))
+        for coin in bybit.get_unified_wallet_coins()
+        if str(coin.get("coin")) != "USDT"
+        and Decimal(str(coin.get("usdValue") or "0")) >= Decimal("1")
+    }
+    held_pairs = [pair for pair in pairs if pair.split("/", 1)[0] in material_coins]
+    if not held_pairs:
+        return
+    public = BybitPublicClient(timeout=15, max_retries=2, retry_backoff_seconds=1)
+    writer = SupabaseMarketWriter(supabase)
+    for pair in held_pairs:
+        symbol = pair.replace("/", "")
+        try:
+            writer.write_tickers(public.get_tickers(symbol))
+            writer.write_candles(public.get_klines(symbol, interval="5", limit=120))
+            print(f"held_market_refresh=ok pair={pair}")
+        except Exception as exc:  # noqa: BLE001 - stale-data guard will safely reject this pair.
+            print(f"held_market_refresh=error pair={pair} error={exc}")
 
 
 if __name__ == "__main__":

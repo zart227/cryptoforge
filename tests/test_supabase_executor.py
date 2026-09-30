@@ -90,13 +90,13 @@ def test_ml_shadow_records_low_probability_without_blocking() -> None:
     assert "ml_shadow=observed" in reasons
 
 
-def test_ml_gate_blocks_low_probability_but_missing_model_falls_back() -> None:
+def test_ml_gate_blocks_low_probability_and_missing_model() -> None:
     blocked, reasons = make_ml_executor("gate", 0.40)._ml_entry_allows(support_bounce_candles())
     fallback, fallback_reasons = make_ml_executor("gate", None)._ml_entry_allows(support_bounce_candles())
 
     assert not blocked
     assert "ml_gate=reject" in reasons
-    assert fallback
+    assert not fallback
     assert fallback_reasons == ["ml_fallback=no_fresh_model"]
 
 
