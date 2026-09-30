@@ -143,6 +143,15 @@ class BybitPrivateClient:
         payload = self._private_get("/v5/order/realtime", {"category": category, "symbol": symbol})
         return list(payload.get("result", {}).get("list") or [])
 
+    def get_order_history(self, *, category: str = "spot", limit: int = 50) -> list[dict[str, Any]]:
+        if not 1 <= limit <= 50:
+            raise ValueError("limit must be between 1 and 50")
+        payload = self._private_get(
+            "/v5/order/history",
+            {"category": category, "limit": str(limit)},
+        )
+        return list(payload.get("result", {}).get("list") or [])
+
     def create_spot_limit_order(
         self,
         *,

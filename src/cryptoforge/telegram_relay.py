@@ -90,7 +90,7 @@ class SupabaseRelayClient:
             {
                 "select": "id,occurred_at,event_type,severity,payload",
                 "occurred_at": f"gte.{since_occurred_at}",
-                "event_type": "in.(trade.opened,trade.closed,performance.daily_summary,research.nightly_summary)",
+                "event_type": "in.(trade.opened,trade.closed,trade.buy_observed,performance.daily_summary,research.nightly_summary)",
                 "order": "occurred_at.asc,id.asc",
                 "limit": str(limit),
             }

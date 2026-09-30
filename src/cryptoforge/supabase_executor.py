@@ -3,12 +3,12 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from decimal import Decimal, ROUND_DOWN
-import hashlib
 import json
 from typing import TYPE_CHECKING, Any
 from urllib import parse, request
 
 from cryptoforge.bybit_private import BybitPrivateClient
+from cryptoforge.order_observer import instance_order_id
 from cryptoforge.supabase_market import SupabaseRestClient
 
 if TYPE_CHECKING:
@@ -364,5 +364,4 @@ def quantity_step(symbol: str) -> Decimal:
 
 
 def order_id(pair: str, open_time: datetime) -> str:
-    raw = f"{pair}:{open_time.isoformat()}"
-    return "cf-" + hashlib.sha256(raw.encode("utf-8")).hexdigest()[:28]
+    return instance_order_id(pair, open_time)

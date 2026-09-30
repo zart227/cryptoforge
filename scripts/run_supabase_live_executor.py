@@ -6,6 +6,7 @@ from decimal import Decimal
 
 from cryptoforge.bybit_private import BybitPrivateClient
 from cryptoforge.model_registry import ActiveModelRegistry
+from cryptoforge.order_observer import BybitOrderObserver, executor_instance_id
 from cryptoforge.research_selection import NightResearchSelector
 from cryptoforge.supabase_executor import SupabaseLiveExecutor, SupabaseMarketReader
 from cryptoforge.supabase_market import SupabaseRestClient
@@ -57,6 +58,25 @@ def main() -> int:
     bybit = BybitPrivateClient.from_env()
     clock_offset_ms = bybit.synchronize_time()
     print(f"bybit_clock_offset_ms={clock_offset_ms}")
+    instance_id = executor_instance_id()
+    try:
+        observed_buys = BybitOrderObserver(
+            bybit=bybit,
+            supabase=supabase,
+            instance_id=instance_id,
+        ).observe_filled_buys()
+        foreign_buys = [order for order in observed_buys if order.origin != "this_instance"]
+        print(
+            f"buy_observer=ok instance={instance_id} "
+            f"filled_buys={len(observed_buys)} foreign_or_legacy={len(foreign_buys)}"
+        )
+        for order in foreign_buys:
+            print(
+                f"buy_observer=warning symbol={order.symbol} order_id={order.order_id} "
+                f"origin={order.origin} occurred_at={order.occurred_at}"
+            )
+    except Exception as exc:  # noqa: BLE001 - monitoring failure must not stop risk/exit handling.
+        print(f"buy_observer=error instance={instance_id} error={exc}")
     fallback_pairs = args.pair or ["ETH/USDT"]
     pair_source = "cli"
     pair_reasons: tuple[str, ...] = ()
