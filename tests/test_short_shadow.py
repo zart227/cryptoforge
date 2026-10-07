@@ -9,6 +9,7 @@ from cryptoforge.short_shadow import (
     reason_value,
     short_return,
     summarize_outcomes,
+    ShortShadowOutcomeRunner,
 )
 from cryptoforge.supabase_executor import CandleRow
 
@@ -84,3 +85,44 @@ def test_summarize_outcomes_separates_signals_and_probability_thresholds() -> No
     assert summary["signaled"]["win_rate"] == 1
     assert summary["probability_ge_0_5"]["count"] == 1
     assert summary["all"]["win_rate"] == 0.5
+
+
+def test_costs_turn_small_gross_gain_into_net_loss() -> None:
+    candidate = ShortShadowCandidate(datetime(2026, 10, 7, tzinfo=UTC), "MINA/USDT", Decimal("100"), ())
+    outcome = evaluate_short_outcome(candidate, candles_from_prices(["99.9"] * 12))
+    assert outcome.as_payload()["net_return_12"] == pytest.approx(-0.002)
+    summary = summarize_outcomes([outcome])["all"]
+    assert summary["win_rate"] == 1
+    assert summary["net_win_rate"] == 0
+    assert summary["mean_net_return_12"] == pytest.approx(-0.002)
+
+
+@pytest.mark.parametrize("cost", [-0.1, float("nan"), float("inf")])
+def test_invalid_cost_is_rejected(cost: float) -> None:
+    candidate = ShortShadowCandidate(datetime(2026, 10, 7, tzinfo=UTC), "MINA/USDT", Decimal("100"), ())
+    with pytest.raises(ValueError):
+        evaluate_short_outcome(candidate, candles_from_prices(["99"] * 12), round_trip_cost=cost)
+
+
+@pytest.mark.parametrize("mode,complete,pending,gaps", [
+    ("complete", 1, 0, 0), ("unclosed", 0, 1, 0),
+    ("gap", 0, 0, 1), ("missing_first", 0, 0, 1),
+])
+def test_runner_excludes_gaps_and_unclosed_candles(monkeypatch, mode, complete, pending, gaps) -> None:
+    start = datetime(2026, 10, 7, tzinfo=UTC)
+    candidate = ShortShadowCandidate(start - timedelta(minutes=1), "MINA/USDT", Decimal("100"), ())
+    candles = candles_from_prices(["99"] * 13)
+    if mode == "gap":
+        candles.pop(5)
+    elif mode == "missing_first":
+        candles.pop(0)
+    candles = candles[:12]
+    runner = ShortShadowOutcomeRunner(None)
+    monkeypatch.setattr(runner, "fetch_candidates", lambda **kwargs: [candidate])
+    monkeypatch.setattr(runner, "fetch_future_candles", lambda *args, **kwargs: candles)
+    monkeypatch.setattr(runner, "publish_summary", lambda *args, **kwargs: None)
+    now = start + timedelta(minutes=59 if mode == "unclosed" else 70)
+    summary = runner.run(now=now)
+    assert summary["complete_12"] == complete
+    assert summary["pending"] == pending
+    assert summary["gaps"] == gaps

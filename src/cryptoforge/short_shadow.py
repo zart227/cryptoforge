@@ -5,6 +5,7 @@ from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 import hashlib
 import json
+import math
 from typing import Any
 from urllib import parse, request
 
@@ -47,6 +48,7 @@ class ShortShadowOutcome:
     return_12: float | None
     max_favorable: float | None
     max_adverse: float | None
+    round_trip_cost: float = 0.003
 
     def as_payload(self) -> dict[str, Any]:
         return {
@@ -60,6 +62,10 @@ class ShortShadowOutcome:
             "return_12": self.return_12,
             "max_favorable": self.max_favorable,
             "max_adverse": self.max_adverse,
+            "round_trip_cost": self.round_trip_cost,
+            "net_return_3": self.return_3 - self.round_trip_cost if self.return_3 is not None else None,
+            "net_return_6": self.return_6 - self.round_trip_cost if self.return_6 is not None else None,
+            "net_return_12": self.return_12 - self.round_trip_cost if self.return_12 is not None else None,
         }
 
 
@@ -86,7 +92,10 @@ def evaluate_short_outcome(
     future_candles: list[CandleRow],
     *,
     horizons: tuple[int, ...] = (3, 6, 12),
+    round_trip_cost: float = 0.003,
 ) -> ShortShadowOutcome:
+    if not math.isfinite(round_trip_cost) or round_trip_cost < 0:
+        raise ValueError("round_trip_cost must be finite and nonnegative")
     if not future_candles:
         raise ValueError("future_candles is required")
     entry = candidate.reference_price
@@ -111,6 +120,7 @@ def evaluate_short_outcome(
         return_12=returns.get(12),
         max_favorable=max_favorable,
         max_adverse=max_adverse,
+        round_trip_cost=round_trip_cost,
     )
 
 
@@ -141,12 +151,16 @@ def summarize_outcomes(outcomes: list[ShortShadowOutcome]) -> dict[str, Any]:
 
 def aggregate_outcomes(outcomes: list[ShortShadowOutcome]) -> dict[str, Any]:
     returns = [outcome.return_12 for outcome in outcomes if outcome.return_12 is not None]
+    net_returns = [outcome.return_12 - outcome.round_trip_cost for outcome in outcomes if outcome.return_12 is not None]
     if not returns:
-        return {"count": len(outcomes), "win_rate": 0.0, "mean_return_12": 0.0}
+        return {"count": len(outcomes), "win_rate": 0.0, "mean_return_12": 0.0,
+                "net_win_rate": 0.0, "mean_net_return_12": 0.0}
     return {
         "count": len(returns),
         "win_rate": sum(value > 0 for value in returns) / len(returns),
         "mean_return_12": sum(returns) / len(returns),
+        "net_win_rate": sum(value > 0 for value in net_returns) / len(net_returns),
+        "mean_net_return_12": sum(net_returns) / len(net_returns),
         "mean_max_favorable": mean([outcome.max_favorable for outcome in outcomes]),
         "mean_max_adverse": mean([outcome.max_adverse for outcome in outcomes]),
     }
@@ -167,24 +181,38 @@ class ShortShadowOutcomeRunner:
         lookback_hours: int = 24,
         limit: int = 500,
         now: datetime | None = None,
+        round_trip_cost: float = 0.003,
     ) -> dict[str, Any]:
+        if not math.isfinite(round_trip_cost) or round_trip_cost < 0:
+            raise ValueError("round_trip_cost must be finite and nonnegative")
         now = now or datetime.now(UTC)
         since = now - timedelta(hours=lookback_hours)
         candidates = self.fetch_candidates(since=since, limit=limit)
         outcomes: list[ShortShadowOutcome] = []
         pending = 0
+        gaps = 0
         for candidate in candidates:
             candles = self.fetch_future_candles(candidate, limit=12)
+            candles = [candle for candle in candles if candle.open_time + timedelta(minutes=5) <= now]
+            expected = candidate.decided_at.replace(second=0, microsecond=0)
+            expected = expected.replace(minute=expected.minute - expected.minute % 5) + timedelta(minutes=5)
+            if any(candle.open_time != expected + timedelta(minutes=5 * index)
+                   for index, candle in enumerate(candles)):
+                gaps += 1
+                continue
             if len(candles) < 12:
                 pending += 1
                 continue
-            outcomes.append(evaluate_short_outcome(candidate, candles))
+            outcomes.append(evaluate_short_outcome(candidate, candles, round_trip_cost=round_trip_cost))
         summary = summarize_outcomes(outcomes)
         summary.update(
             {
                 "generated_at": now.isoformat(),
                 "lookback_hours": lookback_hours,
                 "pending": pending,
+                "gaps": gaps,
+                "round_trip_cost": round_trip_cost,
+                "evaluation_version": 2,
                 "candidate_count": len(candidates),
                 "outcomes": [outcome.as_payload() for outcome in outcomes[-100:]],
             }

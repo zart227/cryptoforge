@@ -274,8 +274,18 @@ PYTHONPATH=src .venv/bin/python scripts/evaluate_short_shadow.py --lookback-hour
 
 Review checklist:
 
+- [x] Version 2 excludes unclosed candles and counts missing first or intermediate
+  5m candles as `gaps`, separately from `pending`.
+- [x] Gross returns remain available; `net_return_3/6/12`, `net_win_rate` and
+  `mean_net_return_12` subtract an assumed round-trip cost (default 0.003).
+  Override with `--round-trip-cost`. Borrowing and funding costs are not modeled.
+- [ ] Compare net results over different days and pairs with a baseline.
+- [ ] Tune short features and thresholds on validation and evaluate on untouched test data.
+- [ ] Confirm improvement with forward paper observations before promotion.
+
 - `candidate_count` is nonzero.
 - `pending` is low enough that most candidates have 12 future candles.
 - `signaled.count` and `probability_ge_0_5.count` are large enough to matter.
 - `mean_return_12` is positive after repeated runs, not just one sample.
+  Use `mean_net_return_12` for evaluation after assumed costs.
 - `mean_max_adverse` is acceptable relative to the expected take-profit/stop.
