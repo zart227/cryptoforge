@@ -204,8 +204,7 @@ class SupabaseLiveExecutor:
         reasons.extend(signal_reasons)
         short_shadow, short_reasons = short_shadow_signal(candles)
         reasons.extend(short_reasons)
-        if short_shadow:
-            reasons.extend(self._ml_shadow_research_reasons(candles))
+        reasons.extend(self._ml_shadow_research_reasons(candles))
         if not signal:
             return self._record(pair, "hold", reasons, candles, live=live)
         if self.entry_blockers:
@@ -319,7 +318,9 @@ class SupabaseLiveExecutor:
         if self.active_model_registry is None:
             return ["short_ml_shadow=unavailable:no_registry"]
         try:
-            model = self.active_model_registry.latest(max_age=self.ml_max_age)
+            latest_candidate = getattr(self.active_model_registry, "latest_candidate", None)
+            model = latest_candidate(max_age=self.ml_max_age) if latest_candidate is not None else None
+            model = model or self.active_model_registry.latest(max_age=self.ml_max_age)
         except Exception as exc:
             return [f"short_ml_shadow=registry_error:{type(exc).__name__}"]
         if model is None:
@@ -453,6 +454,8 @@ def short_shadow_signal(candles: list[CandleRow]) -> tuple[bool, list[str]]:
     support = min(c.low for c in candles[-31:-1])
     last = candles[-1]
     previous = candles[-2]
+    recent_momentum = (last.close - candles[-13].close) / candles[-13].close if candles[-13].close > 0 else Decimal("0")
+    prior_momentum = (candles[-13].close - candles[-25].close) / candles[-25].close if candles[-25].close > 0 else Decimal("0")
     resistance_reject = (
         last.high >= resistance * Decimal("0.997")
         and last.close < last.open
@@ -463,13 +466,22 @@ def short_shadow_signal(candles: list[CandleRow]) -> tuple[bool, list[str]]:
         and previous.close >= support
         and volume_ratio >= Decimal("0.85")
     )
+    emerging_short_momentum = (
+        recent_momentum <= Decimal("-0.008")
+        and recent_momentum < prior_momentum
+        and volume_ratio >= Decimal("0.35")
+        and last.close <= ema_fast
+        and rsi_value <= Decimal("60")
+    )
     trend_down = ema_fast < ema_slow and rsi_value <= Decimal("52")
-    short_shadow = trend_down and (resistance_reject or support_breakdown)
+    short_shadow = (trend_down and (resistance_reject or support_breakdown)) or emerging_short_momentum
     reasons = [
         f"short_shadow_signal={short_shadow}",
         f"short_trend_down={trend_down}",
         f"short_resistance_reject={resistance_reject}",
         f"short_support_breakdown={support_breakdown}",
+        f"short_recent_momentum={recent_momentum:.4f}",
+        f"short_emerging_momentum={emerging_short_momentum}",
     ]
     return bool(short_shadow), reasons
 

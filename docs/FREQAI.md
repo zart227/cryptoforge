@@ -177,3 +177,49 @@ ML cannot autonomously increase live exposure, edit hard risk limits,
 enable leverage, enable futures/margin, enable withdrawals, or deploy
 itself to live trading. Any such change requires a separate audited plan
 revision and explicit human approval.
+
+## Lightweight model promotion
+
+Training saves every run, but emits `model.active` only after a quality screen;
+rejected runs emit `model.candidate` and leave the registry unchanged. Split
+boundaries group equal timestamps and purge labels extending into the next split.
+The common comparison set must be later than both models' training labels
+(legacy artifacts conservatively use their training timestamp). At least 200
+unseen examples and 30 candidate signals are required. The candidate must beat
+majority-class accuracy, have positive mean signal return after round-trip costs,
+and achieve strictly better net return per example without worse accuracy than
+the incumbent. Registry errors abort publication rather than bypassing the screen.
+
+`--round-trip-cost` defaults to 0.003 (0.2% round-trip fees plus 0.1% slippage).
+`--min-label-return` defaults to the same value, so long and short heads are
+trained only on moves large enough to clear the assumed round-trip cost. Smaller
+future moves remain negative examples for both directions instead of teaching the
+model to chase noise.
+This is an assumed signal-level screen, not a portfolio backtest: signals can
+overlap and actual fees, fills, exits, and capital constraints differ. Promotion
+is not evidence of statistically significant or realized profitability. No
+existing model is automatically rolled back or trading configuration changed.
+
+## Bounded strategy discovery and regularization
+
+The hourly night-research runner now stores `strategy_experiments` in its existing
+report event. It searches 18 Spot-only variants: reversion (RSI 35/45 with a
+bounce), breakout (volume multiplier 1/1.5), and trend (3-bar return 0.1%/0.3%),
+each with 3/6/12-bar holding periods. These experiments do not change live pair
+selection, executor strategies, stakes, or risk limits.
+
+Each pair uses the first 70% of candles for selection; only that winner is checked
+on the last 30%. Entry and exit use subsequent candle opens, with one position
+per pair and no overlapping positions. Costs default to 0.3% round-trip; the
+holdout must also remain positive at double costs and in both halves, have at
+least 10 trades, and drawdown <=5%. Passing means candidate for paper research,
+never permission for live trading. Reports retain all selection trials and the
+winner's holdout metrics. Gap-containing histories are rejected. OHLC simulation
+cannot account for order book depth, exact fills, and intrabar drawdown; current
+short histories and repeatedly reused holdouts need longer forward paper
+validation before any deployment decision.
+
+The long logistic head now searches L2 values 0/0.01/0.1 using validation log loss.
+The chosen weights, L2, and search metrics are saved in the artifact. Test data
+never selects the regularization. Changing the target-return threshold does not
+relax exclusion of data seen by the incumbent.

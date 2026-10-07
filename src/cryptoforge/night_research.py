@@ -54,6 +54,7 @@ class NightResearchReport:
     timeframe: str
     lookback_candles: int
     results: tuple[PairResearch, ...]
+    strategy_experiments: tuple[dict[str, Any], ...] = ()
 
     def as_event_payload(self) -> dict[str, Any]:
         return {
@@ -61,6 +62,7 @@ class NightResearchReport:
             "timeframe": self.timeframe,
             "lookback_candles": self.lookback_candles,
             "results": [result.as_payload() for result in self.results],
+            "strategy_experiments": list(self.strategy_experiments),
             "top_pairs": [result.pair for result in self.results[:5]],
         }
 
@@ -88,10 +90,13 @@ class NightResearchRunner:
         generated_at = now or datetime.now(UTC)
         results: list[PairResearch] = []
         failures: dict[str, str] = {}
+        experiments: list[dict[str, Any]] = []
+        from cryptoforge.strategy_search import search_strategies
         for pair in pairs:
             try:
                 candles = self.reader.read_candles(pair, timeframe=timeframe, limit=lookback_candles)
                 results.append(analyze_pair(pair, candles, min_candles=self.min_candles))
+                experiments.append({"pair": pair, **search_strategies(candles)})
             except Exception as exc:  # noqa: BLE001 - research should keep scanning other pairs.
                 failures[pair] = str(exc)
 
@@ -100,6 +105,7 @@ class NightResearchRunner:
             timeframe=timeframe,
             lookback_candles=lookback_candles,
             results=tuple(sorted(results, key=lambda result: result.score, reverse=True)),
+            strategy_experiments=tuple(experiments),
         )
         self._write_report(report, pairs=pairs, failures=failures)
         return report

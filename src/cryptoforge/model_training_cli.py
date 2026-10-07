@@ -27,6 +27,14 @@ def main() -> int:
         default=Path(".local/models"),
         help="Local directory where model artifacts are stored.",
     )
+    parser.add_argument("--round-trip-cost", type=float, default=0.003,
+                        help="Round-trip fee and slippage fraction (default 0.003).")
+    parser.add_argument(
+        "--min-label-return",
+        type=float,
+        default=None,
+        help="Minimum future move to label long/short as positive; defaults to round-trip cost.",
+    )
     parser.add_argument("--supabase-timeout", type=float, default=30.0)
     args = parser.parse_args()
 
@@ -41,13 +49,21 @@ def main() -> int:
         min_examples=args.min_examples,
         learning_rate=args.learning_rate,
         epochs=args.epochs,
+        round_trip_cost=args.round_trip_cost,
+        min_label_return=args.min_label_return,
     )
     model = runner.run(pairs, timeframe=args.timeframe)
     metric_text = ", ".join(
         f"{metric.split}:n={metric.count}:acc={metric.accuracy:.3f}:precision={metric.precision:.3f}:recall={metric.recall:.3f}"
         for metric in model.metrics
     )
+    short_metric_text = ", ".join(
+        f"{metric.split}:n={metric.count}:acc={metric.accuracy:.3f}:precision={metric.precision:.3f}:recall={metric.recall:.3f}"
+        for metric in model.short_metrics
+    )
+    print(f"promotion={runner.last_promotion}")
     print(f"model_training version={model.model_version} pairs={len(pairs)} {metric_text}")
+    print(f"short_training version={model.model_version} pairs={len(pairs)} {short_metric_text}")
     return 0
 
 

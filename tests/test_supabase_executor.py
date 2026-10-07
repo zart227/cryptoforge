@@ -156,6 +156,43 @@ def test_short_ml_shadow_records_probability() -> None:
     assert "ml_short_probability=0.720000" in reasons
 
 
+def short_emerging_momentum_candles() -> list[CandleRow]:
+    start = datetime(2026, 9, 29, tzinfo=UTC)
+    candles: list[CandleRow] = []
+    price = Decimal("100")
+    for index in range(70):
+        open_price = price
+        drift = Decimal("0.02") if index % 4 == 0 else Decimal("-0.01")
+        if index >= 58:
+            drift = Decimal("-0.12")
+        close = price + drift
+        volume = Decimal("100")
+        if index == 69:
+            volume = Decimal("115")
+        candles.append(
+            CandleRow(
+                pair="TEST/USDT",
+                symbol="TESTUSDT",
+                open_time=start + timedelta(minutes=5 * index),
+                open=open_price,
+                high=max(open_price, close) + Decimal("0.05"),
+                low=min(open_price, close) - Decimal("0.05"),
+                close=close,
+                volume=volume,
+            )
+        )
+        price = close
+    return candles
+
+
+def test_short_shadow_signal_tracks_early_downside_momentum() -> None:
+    signal, reasons = short_shadow_signal(short_emerging_momentum_candles())
+
+    assert signal
+    assert "short_shadow_signal=True" in reasons
+    assert "short_emerging_momentum=True" in reasons
+
+
 def emerging_momentum_candles() -> list[CandleRow]:
     start = datetime(2026, 9, 29, tzinfo=UTC)
     candles: list[CandleRow] = []

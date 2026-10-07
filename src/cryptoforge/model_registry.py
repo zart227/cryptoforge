@@ -54,8 +54,25 @@ class ActiveModelRegistry:
         max_age: timedelta = timedelta(hours=36),
         now: datetime | None = None,
     ) -> ActiveModel | None:
+        return self._latest_by_event_type("model.active", max_age=max_age, now=now)
+
+    def latest_candidate(
+        self,
+        *,
+        max_age: timedelta = timedelta(hours=36),
+        now: datetime | None = None,
+    ) -> ActiveModel | None:
+        return self._latest_by_event_type("model.candidate", max_age=max_age, now=now)
+
+    def _latest_by_event_type(
+        self,
+        event_type: str,
+        *,
+        max_age: timedelta,
+        now: datetime | None,
+    ) -> ActiveModel | None:
         now = now or datetime.now(UTC)
-        row = self._latest_event()
+        row = self._latest_event(event_type=event_type)
         if row is None:
             return None
         occurred_at = parse_dt(str(row.get("occurred_at") or ""))
@@ -79,10 +96,10 @@ class ActiveModelRegistry:
             artifact=artifact,
         )
 
-    def _latest_event(self) -> dict[str, Any] | None:
+    def _latest_event(self, *, event_type: str = "model.active") -> dict[str, Any] | None:
         query = parse.urlencode(
             {
-                "event_type": "eq.model.active",
+                "event_type": f"eq.{event_type}",
                 "select": "occurred_at,payload",
                 "order": "occurred_at.desc",
                 "limit": "1",
