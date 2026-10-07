@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 import argparse
+import json
 from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 from pathlib import Path
 
 from cryptoforge.bybit_private import BybitPrivateClient
 from cryptoforge.model_registry import ActiveModelRegistry
+from cryptoforge.live_trade_journal import sync_live_journal
 from cryptoforge.live_risk import count_open_spot_positions, daily_equity_blockers, dynamic_entry_capacity
 from cryptoforge.market_data import BybitPublicClient
 from cryptoforge.order_observer import BybitOrderObserver, executor_instance_id
@@ -70,6 +72,7 @@ def main() -> int:
     bybit = BybitPrivateClient.from_env()
     clock_offset_ms = bybit.synchronize_time()
     print(f"bybit_clock_offset_ms={clock_offset_ms}")
+    journal_ok = reconcile_journal(bybit, supabase)
     instance_id = executor_instance_id()
     try:
         observed_buys = BybitOrderObserver(
@@ -126,6 +129,8 @@ def main() -> int:
             now=datetime.now(UTC),
         )
     )
+    if not journal_ok:
+        entry_blockers.append("live trade journal unavailable; new entries paused")
     if open_positions >= effective_max_positions:
         entry_blockers.append(
             f"dynamic position limit reached: {open_positions} >= {effective_max_positions}"
@@ -140,6 +145,23 @@ def main() -> int:
         f"effective_max_positions={effective_max_positions} entry_slots={available_entry_slots} "
         f"entry_blockers={entry_blockers}"
     )
+
+    risk_snapshot = Path(".local/state/live-risk-snapshot.json")
+    risk_snapshot.parent.mkdir(parents=True, exist_ok=True)
+    risk_temp = risk_snapshot.with_suffix(".tmp")
+    risk_temp.write_text(json.dumps({
+        "observed_at": datetime.now(UTC).isoformat(),
+        "live": args.live,
+        "stake_amount": str(stake_amount),
+        "max_open_positions": args.max_open_positions,
+        "effective_max_positions": effective_max_positions,
+        "open_positions": open_positions,
+        "available_entry_slots": available_entry_slots,
+        "max_daily_loss": args.max_daily_loss,
+        "stop_loss_percent": args.stop_loss_percent,
+        "entry_blockers": entry_blockers,
+    }, ensure_ascii=False) + "\n", encoding="utf-8")
+    risk_temp.replace(risk_snapshot)
 
     executor = SupabaseLiveExecutor(
         reader=SupabaseMarketReader(supabase),
@@ -175,7 +197,25 @@ def main() -> int:
                 order=decision.order or {},
             )
         )
-    return 0 if successes else min(failures, 1)
+    journal_ok = reconcile_journal(bybit, supabase)
+    return 0 if successes and journal_ok else 1
+
+
+def reconcile_journal(bybit: BybitPrivateClient, supabase: SupabaseRestClient) -> bool:
+    try:
+        result = sync_live_journal(bybit=bybit, supabase=supabase)
+        print(f"live_journal=ok {result}")
+        return True
+    except Exception as exc:
+        print(f"live_journal=error error_type={type(exc).__name__}")
+        try:
+            SupabaseMarketWriter(supabase).write_bot_health(
+                "live_trade_journal", "error", "Journal reconciliation failed; new entries paused",
+                {"error_type": type(exc).__name__},
+            )
+        except Exception:
+            pass
+        return False
 
 
 def include_held_pairs(bybit: BybitPrivateClient, *, pairs: list[str], candidates: list[str]) -> list[str]:

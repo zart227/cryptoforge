@@ -99,6 +99,8 @@ class SupabaseLiveExecutor:
     ) -> None:
         if ml_mode not in {"off", "shadow", "gate"}:
             raise ValueError("ml_mode must be one of: off, shadow, gate")
+        if not Decimal("0") <= stop_loss_percent < Decimal("1"):
+            raise ValueError("stop_loss_percent must be between zero and one")
         self.reader = reader
         self.supabase = supabase
         self.bybit = bybit
@@ -174,8 +176,14 @@ class SupabaseLiveExecutor:
                 return self._record(pair, "hold", reasons, candles, live=live)
             qty = sellable_quantity
             if qty < instrument.minimum_quantity or qty * latest.close < instrument.minimum_order_amount:
-                reasons.append("sell order below minimum notional")
-                return self._record(pair, "reject_entry", reasons, candles, live=live)
+                reasons.append(
+                    "exit_blocked_by_exchange_minimum: "
+                    f"sellable_quantity={qty}; value={qty * latest.close}; "
+                    f"minimum_quantity={instrument.minimum_quantity}; "
+                    f"minimum_notional={instrument.minimum_order_amount}; "
+                    "position remains open; no automatic top-up"
+                )
+                return self._record(pair, "hold", reasons, candles, live=live)
             order_link_id = order_id(f"{pair}:exit", latest.open_time)
             if not live:
                 reasons.append("shadow mode; exit order not submitted")
@@ -194,6 +202,10 @@ class SupabaseLiveExecutor:
             allow_emerging_momentum=self.allow_emerging_momentum,
         )
         reasons.extend(signal_reasons)
+        short_shadow, short_reasons = short_shadow_signal(candles)
+        reasons.extend(short_reasons)
+        if short_shadow:
+            reasons.extend(self._ml_shadow_research_reasons(candles))
         if not signal:
             return self._record(pair, "hold", reasons, candles, live=live)
         if self.entry_blockers:
@@ -201,6 +213,30 @@ class SupabaseLiveExecutor:
             return self._record(pair, "reject_entry", reasons, candles, live=live)
         if self.entry_slots is not None and self.entry_slots <= 0:
             reasons.append("no entry slots remaining in this cycle")
+            return self._record(pair, "reject_entry", reasons, candles, live=live)
+        # Buying at the exchange minimum can leave an unsellable position
+        # after fees or a stop loss. Keep the operator's stake cap unchanged.
+        # Reserve 0.2% for acquisition fees and 1% adverse price movement on
+        # each side; this is a bounded estimate, not a guarantee across gaps.
+        estimated_quantity = quantize_down(
+            self.stake_amount * Decimal("0.998") / (latest.close * Decimal("1.01")),
+            instrument.quantity_step,
+        )
+        estimated_exit_value = (
+            estimated_quantity * latest.close
+            * (Decimal("1") - self.stop_loss_percent) * Decimal("0.99")
+        )
+        if (
+            estimated_quantity < instrument.minimum_quantity
+            or estimated_exit_value < instrument.minimum_order_amount
+        ):
+            reasons.append(
+                "entry rejected: exit would be below exchange minimum at stop: "
+                f"estimated_exit_value={estimated_exit_value}; "
+                f"minimum_notional={instrument.minimum_order_amount}; "
+                f"estimated_quantity={estimated_quantity}; "
+                f"minimum_quantity={instrument.minimum_quantity}"
+            )
             return self._record(pair, "reject_entry", reasons, candles, live=live)
         maximum_residual_value = instrument.quantity_step * latest.close
         maximum_allowed_residual = self.stake_amount * self.max_dust_fraction
@@ -256,15 +292,19 @@ class SupabaseLiveExecutor:
         if model.feature_version != FEATURE_VERSION:
             return self.ml_mode != "gate", [f"ml_fallback=unsupported_feature_version:{model.feature_version}"]
         try:
-            probability = model.predict_probability(
-                extract_features(candles, [candle.volume for candle in candles])
-            )
+            features = extract_features(candles, [candle.volume for candle in candles])
+            probability = model.predict_probability(features)
+            short_predictor = getattr(model, "predict_short_probability", None)
+            short_probability = short_predictor(features) if short_predictor is not None else None
         except Exception as exc:
             return self.ml_mode != "gate", [f"ml_fallback=prediction_error:{type(exc).__name__}"]
         reasons = [
             f"ml_mode={self.ml_mode}",
             f"ml_model={model.model_version}",
             f"ml_probability={probability:.6f}",
+            "ml_short_probability=unavailable"
+            if short_probability is None
+            else f"ml_short_probability={short_probability:.6f}",
             f"ml_threshold={self.ml_threshold:.6f}",
         ]
         if self.ml_mode == "gate" and probability < self.ml_threshold:
@@ -272,6 +312,28 @@ class SupabaseLiveExecutor:
             return False, reasons
         reasons.append("ml_gate=pass" if self.ml_mode == "gate" else "ml_shadow=observed")
         return True, reasons
+
+    def _ml_shadow_research_reasons(self, candles: list[CandleRow]) -> list[str]:
+        from cryptoforge.model_training import FEATURE_VERSION, extract_features
+
+        if self.active_model_registry is None:
+            return ["short_ml_shadow=unavailable:no_registry"]
+        try:
+            model = self.active_model_registry.latest(max_age=self.ml_max_age)
+        except Exception as exc:
+            return [f"short_ml_shadow=registry_error:{type(exc).__name__}"]
+        if model is None:
+            return ["short_ml_shadow=unavailable:no_fresh_model"]
+        if model.feature_version != FEATURE_VERSION:
+            return [f"short_ml_shadow=unsupported_feature_version:{model.feature_version}"]
+        try:
+            features = extract_features(candles, [candle.volume for candle in candles])
+            probability = model.predict_short_probability(features)
+        except Exception as exc:
+            return [f"short_ml_shadow=prediction_error:{type(exc).__name__}"]
+        if probability is None:
+            return ["short_ml_shadow=unavailable:legacy_model"]
+        return [f"short_ml_shadow=observed", f"ml_short_probability={probability:.6f}"]
 
     def _record(
         self,
@@ -377,6 +439,39 @@ def exit_signal(candles: list[CandleRow]) -> tuple[bool, list[str]]:
         f"exit_support_breakdown={support_breakdown}",
     ]
     return bool(trend_down or overbought or support_breakdown), reasons
+
+
+def short_shadow_signal(candles: list[CandleRow]) -> tuple[bool, list[str]]:
+    closes = [c.close for c in candles]
+    volumes = [c.volume for c in candles]
+    ema_fast = ema(closes, 12)
+    ema_slow = ema(closes, 36)
+    rsi_value = rsi(closes, 14)
+    volume_mean = sum(volumes[-20:]) / Decimal("20")
+    volume_ratio = volumes[-1] / volume_mean if volume_mean > 0 else Decimal("0")
+    resistance = max(c.high for c in candles[-31:-1])
+    support = min(c.low for c in candles[-31:-1])
+    last = candles[-1]
+    previous = candles[-2]
+    resistance_reject = (
+        last.high >= resistance * Decimal("0.997")
+        and last.close < last.open
+        and last.close < previous.close
+    )
+    support_breakdown = (
+        last.close < support
+        and previous.close >= support
+        and volume_ratio >= Decimal("0.85")
+    )
+    trend_down = ema_fast < ema_slow and rsi_value <= Decimal("52")
+    short_shadow = trend_down and (resistance_reject or support_breakdown)
+    reasons = [
+        f"short_shadow_signal={short_shadow}",
+        f"short_trend_down={trend_down}",
+        f"short_resistance_reject={resistance_reject}",
+        f"short_support_breakdown={support_breakdown}",
+    ]
+    return bool(short_shadow), reasons
 
 
 def ema(values: list[Decimal], period: int) -> Decimal:

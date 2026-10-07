@@ -206,3 +206,100 @@ def test_status_snapshot_renders_alerts_for_stale_executor() -> None:
 
     assert "executor:stale" in snapshot.alert_keys()
     assert "CryptoForge status" in snapshot.render()
+
+
+class ReportClient:
+    def __init__(self, rows=None):
+        self.rows = rows or {}
+        self.paths = []
+
+    def _get_rows(self, path):
+        self.paths.append(path)
+        return self.rows.get(path.split('?')[0], [])
+
+
+def test_menu_commands_respond_with_empty_sources(monkeypatch):
+    from cryptoforge import telegram_relay as relay
+    from cryptoforge.bybit_private import BybitPrivateClient
+
+    class Exchange:
+        def get_unified_wallet_coins(self):
+            return [{'coin': 'ETH', 'walletBalance': '0.1', 'usdValue': '200'}]
+
+        def get_open_orders(self, *, symbol):
+            assert symbol == ''
+            return [{'symbol': 'ETHUSDT', 'side': 'Buy', 'qty': '1'}]
+
+        def get_order_history(self, *, limit):
+            return [{'symbol': 'ETHUSDT', 'side': 'Sell', 'orderStatus': 'Filled', 'cumExecQty': '1', 'avgPrice': '2000'}]
+
+    monkeypatch.setattr(BybitPrivateClient, 'from_env', lambda: Exchange())
+    client = ReportClient()
+    for command in ['/open', '/closed', '/pnl', '/summary', '/risk', '/help']:
+        assert relay.render_command(client, command)
+    assert 'ETHUSDT' in relay.render_command(client, '/open')
+    assert 'без расчёта PnL' in relay.render_command(client, '/closed')
+    assert 'не означает нулевую' in relay.render_command(client, '/pnl')
+    assert 'closed_at=gte.' in client.paths[-3] or any('closed_at=gte.' in p for p in client.paths)
+
+
+def test_pnl_keeps_live_and_dry_run_separate():
+    from cryptoforge.telegram_relay import render_command
+    client = ReportClient({'trades': [
+        {'mode': 'live', 'realized_pnl': '1.2', 'fee_amount': '0.1'},
+        {'mode': 'dry_run', 'realized_pnl': '900', 'fee_amount': None},
+    ]})
+    reply = render_command(client, '/pnl')
+    assert 'live: сделок=1, PnL=1.20000000, комиссии=0.10000000' in reply
+    assert 'dry_run: сделок=1, PnL=900.00000000' in reply
+    assert 'неполных записей=1' in reply
+
+
+def test_command_backend_failure_does_not_stop_help(monkeypatch, tmp_path):
+    from cryptoforge import telegram_relay as relay
+    replies = []
+    monkeypatch.setattr(relay, 'telegram_get_json', lambda *a, **kw: {'ok': True, 'result': [
+        {'update_id': 1, 'message': {'chat': {'id': 42}, 'text': '/status@Bot'}},
+        {'update_id': 2, 'message': {'chat': {'id': 42}, 'text': '/help'}},
+        {'update_id': 3, 'message': {'chat': {'id': 99}, 'text': '/help'}},
+    ]})
+    monkeypatch.setattr(relay.TelegramNotificationSink, 'send', lambda self, text: replies.append(text))
+    monkeypatch.setattr(relay, 'fetch_status', lambda c: (_ for _ in ()).throw(RuntimeError('secret-token')))
+    path = tmp_path / 'state.json'
+    assert relay.process_telegram_commands(client=ReportClient(), state_path=path, bot_token='token', chat_id='42', timeout_seconds=1) == 2
+    assert 'Не удалось' in replies[0]
+    assert 'secret-token' not in replies[0]
+    assert '/risk' in replies[1]
+    assert relay.load_state(path).telegram_update_offset == 4
+
+
+def test_command_send_failure_keeps_update_pending(monkeypatch, tmp_path):
+    from cryptoforge import telegram_relay as relay
+    monkeypatch.setattr(relay, 'telegram_get_json', lambda *a, **kw: {'ok': True, 'result': [
+        {'update_id': 10, 'message': {'chat': {'id': 42}, 'text': '/help'}},
+    ]})
+    monkeypatch.setattr(relay.TelegramNotificationSink, 'send', lambda *a: (_ for _ in ()).throw(RuntimeError('offline')))
+    path = tmp_path / 'state.json'
+    assert relay.process_telegram_commands(client=ReportClient(), state_path=path, bot_token='token', chat_id='42', timeout_seconds=1) == 0
+    assert relay.load_state(path).telegram_update_offset == 10
+
+
+def test_command_reply_splits_long_text():
+    from cryptoforge.telegram_relay import send_command_reply
+    class Sink:
+        def __init__(self): self.messages = []
+        def send(self, text): self.messages.append(text)
+    sink = Sink()
+    send_command_reply(sink, 'a' * 9000)
+    assert ''.join(sink.messages) == 'a' * 9000
+    assert max(map(len, sink.messages)) <= 1800
+
+
+def test_relay_retains_cursor_event_even_with_many_old_ids(tmp_path):
+    path = tmp_path / 'state.json'
+    save_state(path, RelayState('2026-09-26T00:00:00+00:00', tuple(f'z-{i}' for i in range(600))))
+    client = FakeClient([event('trade.opened', {'pair': 'ETH/USDT'}, event_id='a-current')])
+    notifier = RecordingNotifier()
+    assert relay_once(client=client, notifier=notifier, state_path=path).sent == 1
+    assert load_state(path).delivered_event_ids == ('a-current',)
+    assert relay_once(client=client, notifier=notifier, state_path=path).sent == 0

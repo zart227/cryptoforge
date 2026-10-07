@@ -166,6 +166,24 @@ class BybitPrivateClient:
         payload = self._private_get("/v5/order/history", params)
         return list(payload.get("result", {}).get("list") or [])
 
+    def get_spot_executions(self, *, start_ms: int, end_ms: int) -> list[dict[str, Any]]:
+        """Fetch every page in one of Bybit's at-most-seven-day windows."""
+        if end_ms < start_ms or end_ms - start_ms > 7 * 24 * 60 * 60 * 1000:
+            raise ValueError("execution range must be between zero and seven days")
+        params = {"category": "spot", "startTime": str(start_ms), "endTime": str(end_ms), "limit": "100"}
+        rows: list[dict[str, Any]] = []
+        cursors: set[str] = set()
+        while True:
+            result = self._private_get("/v5/execution/list", params).get("result", {})
+            rows.extend(result.get("list") or [])
+            cursor = str(result.get("nextPageCursor") or "")
+            if not cursor:
+                return rows
+            if cursor in cursors:
+                raise RuntimeError("Bybit repeated an execution cursor")
+            cursors.add(cursor)
+            params["cursor"] = cursor
+
     def get_spot_instrument(self, symbol: str) -> BybitSpotInstrument:
         query = parse.urlencode({"category": "spot", "symbol": symbol})
         payload = self.http_get(

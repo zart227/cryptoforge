@@ -63,6 +63,7 @@ def test_build_examples_uses_future_label_without_losing_order():
     assert examples == sorted(examples, key=lambda example: example.open_time)
     assert len(examples[0].features) == 7
     assert {example.label for example in examples} <= {0, 1}
+    assert {example.short_label for example in examples} <= {0, 1}
 
 
 def test_train_logistic_model_produces_split_metrics():
@@ -80,7 +81,9 @@ def test_train_logistic_model_produces_split_metrics():
 
     assert model.model_version.startswith("pure-python-logistic-candle-v1-20260929-")
     assert [metric.split for metric in model.metrics] == ["train", "validation", "test"]
+    assert [metric.split for metric in model.short_metrics] == ["train", "validation", "test"]
     assert all(0 <= metric.accuracy <= 1 for metric in model.metrics)
+    assert all(0 <= metric.accuracy <= 1 for metric in model.short_metrics)
 
 
 def test_model_training_runner_writes_artifact_and_registry(tmp_path):
@@ -105,6 +108,8 @@ def test_model_training_runner_writes_artifact_and_registry(tmp_path):
     assert event["event_type"] == "model.active"
     assert event["payload"]["artifact_sha256"]
     assert event["payload"]["artifact"]["model_version"] == model.model_version
+    assert "short_weights" in event["payload"]["artifact"]
+    assert event["payload"]["artifact"]["short_metrics"]
 
 
 class FakeRegistry(ActiveModelRegistry):
@@ -138,3 +143,6 @@ def test_active_model_registry_reads_embedded_artifact(tmp_path):
     assert active is not None
     assert active.model_version == event["payload"]["model_version"]
     assert 0 <= active.predict_probability(tuple([0.0] * 7)) <= 1
+    short_probability = active.predict_short_probability(tuple([0.0] * 7))
+    assert short_probability is not None
+    assert 0 <= short_probability <= 1

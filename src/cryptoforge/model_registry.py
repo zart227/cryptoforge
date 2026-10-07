@@ -31,6 +31,18 @@ class ActiveModel:
             list(self.artifact["stds"]),
         )
 
+    def predict_short_probability(self, features: tuple[float, ...]) -> float | None:
+        short_weights = self.artifact.get("short_weights")
+        if short_weights is None or "short_bias" not in self.artifact:
+            return None
+        return predict_probability(
+            features,
+            list(short_weights),
+            float(self.artifact["short_bias"]),
+            list(self.artifact["means"]),
+            list(self.artifact["stds"]),
+        )
+
 
 class ActiveModelRegistry:
     def __init__(self, client: SupabaseRestClient) -> None:

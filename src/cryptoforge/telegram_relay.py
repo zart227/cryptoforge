@@ -6,6 +6,7 @@ import os
 import time
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
+from decimal import Decimal
 from pathlib import Path
 from typing import Any, Protocol
 from urllib import error, parse, request
@@ -347,11 +348,16 @@ def relay_once(
             failed += 1
             break
 
+    # Only IDs at the cursor timestamp are needed for the inclusive next fetch.
+    # Sorting UUIDs and keeping 500 could evict the current event and replay it forever.
+    cursor_ids = {event.id for event in events if event.id in delivered_ids and parse_iso(event.occurred_at) == parse_iso(last_occurred_at)}
+    if parse_iso(last_occurred_at) == parse_iso(state.last_occurred_at):
+        cursor_ids.update(state.delivered_event_ids)
     save_state(
         state_file,
         RelayState(
             last_occurred_at=last_occurred_at,
-            delivered_event_ids=tuple(sorted(delivered_ids)[-500:]),
+            delivered_event_ids=tuple(sorted(cursor_ids)),
             telegram_update_offset=state.telegram_update_offset,
             active_alert_keys=state.active_alert_keys,
         ),
@@ -431,7 +437,6 @@ def notification_from_event(event: RelayEvent) -> Notification | None:
                 "timeframe",
                 "lookback_candles",
                 "top_pairs",
-                "results",
                 "failures",
             ),
         )
@@ -525,6 +530,100 @@ def parse_optional_iso(value: str) -> datetime | None:
     return parse_iso(value)
 
 
+COMMAND_HELP = """CryptoForge — команды:
+/status — состояние исполнителя и данных
+/open — открытые ордера и Spot-балансы Bybit
+/closed — последние закрытые сделки
+/pnl — PnL и комиссии из журнала сделок
+/summary — торговая сводка за сегодня (UTC)
+/risk — последние решения и причины блокировок
+/help — список команд"""
+
+
+def report_rows(client: SupabaseRelayClient, table: str, **filters: str) -> list[JsonObject]:
+    return client._get_rows(table + "?" + parse.urlencode({"select": "*", **filters}))
+
+
+def render_command(client: SupabaseRelayClient, command: str) -> str:
+    if command in {"/help", "/start"}:
+        return COMMAND_HELP
+    if command in {"/status", "/статус"}:
+        return fetch_status(client).render()
+    if command == "/open":
+        from cryptoforge.bybit_private import BybitPrivateClient
+
+        bybit = BybitPrivateClient.from_env()
+        coins = bybit.get_unified_wallet_coins()
+        # Spot realtime supports a request without a symbol, including unfilled buys.
+        orders = bybit.get_open_orders(symbol="")
+        lines = ["Bybit Spot: открытые ордера и балансы (весь аккаунт)"]
+        lines += [f"{r.get('symbol')} {r.get('side')} qty={r.get('qty')} price={r.get('price')} status={r.get('orderStatus')}" for r in orders]
+        if not orders:
+            lines.append("Открытых ордеров нет.")
+        lines.append("Балансы активов; это не журнал позиций CryptoForge:")
+        lines += [f"{r.get('coin')}: {r.get('walletBalance')} (~{r.get('usdValue')} USD)" for r in coins if Decimal(str(r.get('walletBalance') or 0)) > 0]
+        return "\n".join(lines)
+    if command == "/closed":
+        rows = report_rows(client, "trades", status="eq.closed", order="closed_at.desc", limit="10")
+        if rows:
+            return "Последние закрытые сделки:\n" + "\n".join(
+                f"{r.get('closed_at')} {r.get('mode')} {r.get('pair')}: PnL={r.get('realized_pnl')} fee={r.get('fee_amount')}" for r in rows
+            )
+        from cryptoforge.bybit_private import BybitPrivateClient
+
+        orders = BybitPrivateClient.from_env().get_order_history(limit=50)
+        sells = [r for r in orders if r.get("side") == "Sell" and r.get("orderStatus") == "Filled"][:10]
+        return "В журнале закрытых сделок нет. Последние исполненные продажи Bybit (весь аккаунт, без расчёта PnL):\n" + (
+            "\n".join(f"{bybit_order_time(r)} {r.get('symbol')} qty={r.get('cumExecQty')} price={r.get('avgPrice')}" for r in sells)
+            or "В последних 50 ордерах продаж нет."
+        )
+    if command in {"/pnl", "/summary"}:
+        day = datetime.now(UTC).date().isoformat()
+        filters = {"status": "eq.closed", "order": "closed_at.asc,id.asc", "limit": "500", "offset": "0"}
+        if command == "/summary":
+            filters["closed_at"] = f"gte.{day}T00:00:00+00:00"
+        rows: list[JsonObject] = []
+        while True:
+            batch = report_rows(client, "trades", **filters)
+            rows.extend(batch)
+            if len(batch) < 500:
+                break
+            filters["offset"] = str(len(rows))
+        title = f"Сводка за {day} (UTC)" if command == "/summary" else "PnL за всё время"
+        if not rows:
+            return title + "\nВ журнале нет закрытых сделок за этот период. PnL и комиссии недоступны; это не означает нулевую прибыль."
+        lines = [title, "Источник: журнал CryptoForge. Live PnL после комиссий; комиссии отдельно, повторно не вычитаются. FIFO-записи могут быть частями сделки."]
+        for mode in sorted({str(r.get("mode")) for r in rows}):
+            group = [r for r in rows if str(r.get("mode")) == mode]
+            pnl = sum((Decimal(str(r["realized_pnl"])) for r in group if r.get("realized_pnl") is not None), Decimal(0))
+            fees = sum((Decimal(str(r["fee_amount"])) for r in group if r.get("fee_amount") is not None), Decimal(0))
+            missing = sum(r.get("realized_pnl") is None or r.get("fee_amount") is None for r in group)
+            lines.append(f"{mode}: сделок={len(group)}, PnL={pnl:.8f}, комиссии={fees:.8f}, неполных записей={missing}")
+        return "\n".join(lines)
+    if command == "/risk":
+        rows = report_rows(client, "trade_decisions", mode="eq.live", order="decided_at.desc", limit="10")
+        snapshot_path = Path(".local/state/live-risk-snapshot.json")
+        limits = "Текущие лимиты исполнителя ещё не опубликованы.\n"
+        if snapshot_path.exists():
+            snapshot = json.loads(snapshot_path.read_text(encoding="utf-8"))
+            limits = "Последний снимок лимитов исполнителя:\n" + "\n".join(f"{key}: {value}" for key, value in snapshot.items()) + "\n"
+        return limits + "Последние live-решения и причины:\n" + (
+            "\n".join(f"{r.get('decided_at')} {r.get('pair')} {r.get('decision')} risk={r.get('risk_decision')} stake={r.get('stake_amount')}: " + "; ".join(str(x) for x in (r.get('reasons') or [])) for r in rows)
+            or "Live-решений пока нет."
+        )
+    return "Неизвестная команда. Доступные команды: /help"
+
+
+def bybit_order_time(row: JsonObject) -> str:
+    return datetime.fromtimestamp(int(row.get("updatedTime") or row.get("createdTime") or 0) / 1000, UTC).isoformat()
+
+
+def send_command_reply(sink: TelegramNotificationSink, message: str) -> None:
+    # Leave room below Telegram's 4096-character limit, including Unicode pairs.
+    for start in range(0, len(message), 1800):
+        sink.send(message[start:start + 1800])
+
+
 def process_telegram_commands(
     *,
     client: SupabaseRelayClient,
@@ -567,12 +666,19 @@ def process_telegram_commands(
             continue
         text = str(message.get("text") or "").strip()
         command = text.split()[0].split("@")[0].lower() if text else ""
-        if command in {"/status", "/статус"}:
-            sink.send(fetch_status(client).render())
-            handled += 1
-        elif command in {"/help", "/start"}:
-            sink.send("CryptoForge commands:\n/status - current trading and server status")
-            handled += 1
+        if not command.startswith("/"):
+            continue
+        try:
+            reply = render_command(client, command)
+        except Exception:  # A backend failure must not terminate polling or expose credentials.
+            reply = f"Не удалось получить данные для {command}. Попробуйте позже."
+        try:
+            send_command_reply(sink, reply)
+        except Exception:
+            # Keep the failed update pending for the next poll.
+            update_offset = update_id
+            break
+        handled += 1
 
     save_state(
         state_file,
@@ -672,7 +778,6 @@ def main(argv: list[str] | None = None) -> int:
     timeout_seconds = float(os.environ.get("CRYPTOFORGE_RELAY_TIMEOUT_SECONDS", "10"))
 
     while True:
-        result = relay_once(client=client, notifier=notifier, state_path=args.state_path, limit=args.limit)
         commands = process_telegram_commands(
             client=client,
             state_path=args.state_path,
@@ -681,6 +786,7 @@ def main(argv: list[str] | None = None) -> int:
             proxy_url=proxy_url,
             timeout_seconds=timeout_seconds,
         )
+        result = relay_once(client=client, notifier=notifier, state_path=args.state_path, limit=args.limit)
         alerts = watcher_once(client=client, notifier=notifier, state_path=args.state_path)
         print(
             "telegram relay: "

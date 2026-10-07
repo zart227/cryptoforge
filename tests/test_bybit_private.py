@@ -346,3 +346,26 @@ def test_market_buy_uses_quote_coin_amount() -> None:
     assert '"orderType":"Market"' in captured["body"]
     assert '"marketUnit":"quoteCoin"' in captured["body"]
     assert '"qty":"5"' in captured["body"]
+
+
+def test_spot_execution_history_follows_all_cursors():
+    from urllib.parse import parse_qs, urlparse
+    requests = []
+    def get(url, headers, timeout):
+        query = parse_qs(urlparse(url).query)
+        requests.append(query)
+        return {'retCode': 0, 'result': {'list': [{'execId': str(len(requests))}], 'nextPageCursor': 'page2' if len(requests) == 1 else ''}}
+    client = BybitPrivateClient(api_key='key', api_secret='secret', http_get=get)
+    assert len(client.get_spot_executions(start_ms=0, end_ms=100)) == 2
+    assert requests[1]['cursor'] == ['page2']
+    assert requests[0]['category'] == ['spot']
+    with pytest.raises(ValueError):
+        client.get_spot_executions(start_ms=0, end_ms=8 * 86400000)
+
+
+def test_spot_execution_history_rejects_repeated_cursor():
+    client = BybitPrivateClient(api_key='key', api_secret='secret', http_get=lambda *a: {
+        'retCode': 0, 'result': {'list': [], 'nextPageCursor': 'stuck'},
+    })
+    with pytest.raises(RuntimeError, match='repeated'):
+        client.get_spot_executions(start_ms=0, end_ms=100)

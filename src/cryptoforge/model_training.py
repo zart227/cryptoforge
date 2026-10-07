@@ -25,6 +25,7 @@ class TrainingExample:
     open_time: datetime
     features: tuple[float, ...]
     label: int
+    short_label: int
 
 
 @dataclass(frozen=True)
@@ -45,8 +46,11 @@ class TrainedModel:
     stds: tuple[float, ...]
     weights: tuple[float, ...]
     bias: float
+    short_weights: tuple[float, ...]
+    short_bias: float
     threshold: float
     metrics: tuple[SplitMetrics, ...]
+    short_metrics: tuple[SplitMetrics, ...] = ()
 
     def as_artifact(self, *, pairs: list[str], trained_at: datetime, config: dict[str, Any]) -> dict[str, Any]:
         return {
@@ -60,8 +64,11 @@ class TrainedModel:
             "stds": list(self.stds),
             "weights": list(self.weights),
             "bias": self.bias,
+            "short_weights": list(self.short_weights),
+            "short_bias": self.short_bias,
             "threshold": self.threshold,
             "metrics": [metric.__dict__ for metric in self.metrics],
+            "short_metrics": [metric.__dict__ for metric in self.short_metrics],
             "config": config,
         }
 
@@ -232,6 +239,7 @@ def build_examples(pair: str, candles: list[CandleRow], *, horizon_candles: int)
                 open_time=candles[index].open_time,
                 features=extract_features(window, volumes[: index + 1]),
                 label=1 if future_return > 0 else 0,
+                short_label=1 if future_return < 0 else 0,
             )
         )
     return examples
@@ -295,9 +303,75 @@ def train_logistic_model(
         "candle_body",
     )
     means, stds = fit_standardizer([example.features for example in train])
+    weights, bias = fit_logistic_head(
+        train,
+        means,
+        stds,
+        learning_rate=learning_rate,
+        epochs=epochs,
+        label_attr="label",
+    )
+    short_weights, short_bias = fit_logistic_head(
+        train,
+        means,
+        stds,
+        learning_rate=learning_rate,
+        epochs=epochs,
+        label_attr="short_label",
+    )
+
+    metrics = (
+        evaluate_split("train", train, weights, bias, means, stds, label_attr="label"),
+        evaluate_split("validation", validation, weights, bias, means, stds, label_attr="label"),
+        evaluate_split("test", test, weights, bias, means, stds, label_attr="label"),
+    )
+    short_metrics = (
+        evaluate_split("train", train, short_weights, short_bias, means, stds, label_attr="short_label"),
+        evaluate_split("validation", validation, short_weights, short_bias, means, stds, label_attr="short_label"),
+        evaluate_split("test", test, short_weights, short_bias, means, stds, label_attr="short_label"),
+    )
+    model_hash = hashlib.sha256(
+        json.dumps(
+            {
+                "trained_at": trained_at.isoformat(),
+                "weights": weights,
+                "bias": bias,
+                "short_weights": short_weights,
+                "short_bias": short_bias,
+                "metrics": [metric.__dict__ for metric in metrics],
+                "short_metrics": [metric.__dict__ for metric in short_metrics],
+            },
+            separators=(",", ":"),
+            sort_keys=True,
+        ).encode()
+    ).hexdigest()[:10]
+    return TrainedModel(
+        model_version=f"{MODEL_FAMILY}-{FEATURE_VERSION}-{trained_at:%Y%m%d}-{model_hash}",
+        feature_names=feature_names,
+        means=tuple(means),
+        stds=tuple(stds),
+        weights=tuple(weights),
+        bias=bias,
+        short_weights=tuple(short_weights),
+        short_bias=short_bias,
+        threshold=0.5,
+        metrics=metrics,
+        short_metrics=short_metrics,
+    )
+
+
+def fit_logistic_head(
+    train: list[TrainingExample],
+    means: list[float],
+    stds: list[float],
+    *,
+    learning_rate: float,
+    epochs: int,
+    label_attr: str,
+) -> tuple[list[float], float]:
     train_x = [standardize(example.features, means, stds) for example in train]
-    train_y = [example.label for example in train]
-    weights = [0.0 for _ in feature_names]
+    train_y = [int(getattr(example, label_attr)) for example in train]
+    weights = [0.0 for _ in means]
     bias = 0.0
     for _ in range(epochs):
         grad_w = [0.0 for _ in weights]
@@ -311,34 +385,7 @@ def train_logistic_model(
         scale = learning_rate / max(len(train_x), 1)
         weights = [weight - scale * grad for weight, grad in zip(weights, grad_w)]
         bias -= scale * grad_b
-
-    metrics = (
-        evaluate_split("train", train, weights, bias, means, stds),
-        evaluate_split("validation", validation, weights, bias, means, stds),
-        evaluate_split("test", test, weights, bias, means, stds),
-    )
-    model_hash = hashlib.sha256(
-        json.dumps(
-            {
-                "trained_at": trained_at.isoformat(),
-                "weights": weights,
-                "bias": bias,
-                "metrics": [metric.__dict__ for metric in metrics],
-            },
-            separators=(",", ":"),
-            sort_keys=True,
-        ).encode()
-    ).hexdigest()[:10]
-    return TrainedModel(
-        model_version=f"{MODEL_FAMILY}-{FEATURE_VERSION}-{trained_at:%Y%m%d}-{model_hash}",
-        feature_names=feature_names,
-        means=tuple(means),
-        stds=tuple(stds),
-        weights=tuple(weights),
-        bias=bias,
-        threshold=0.5,
-        metrics=metrics,
-    )
+    return weights, bias
 
 
 def evaluate_split(
@@ -348,6 +395,8 @@ def evaluate_split(
     bias: float,
     means: list[float],
     stds: list[float],
+    *,
+    label_attr: str = "label",
 ) -> SplitMetrics:
     if not examples:
         return SplitMetrics(split, 0, 0.0, 0.0, 0.0, 0.0)
@@ -355,12 +404,13 @@ def evaluate_split(
     for example in examples:
         probability = predict_probability(example.features, weights, bias, means, stds)
         predicted = 1 if probability >= 0.5 else 0
+        label = int(getattr(example, label_attr))
         positives += predicted
-        if predicted == 1 and example.label == 1:
+        if predicted == 1 and label == 1:
             true_positive += 1
-        elif predicted == 1 and example.label == 0:
+        elif predicted == 1 and label == 0:
             false_positive += 1
-        elif predicted == 0 and example.label == 0:
+        elif predicted == 0 and label == 0:
             true_negative += 1
         else:
             false_negative += 1

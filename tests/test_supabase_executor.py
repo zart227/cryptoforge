@@ -3,7 +3,7 @@ from decimal import Decimal
 
 from types import SimpleNamespace
 
-from cryptoforge.supabase_executor import CandleRow, SupabaseLiveExecutor, entry_signal
+from cryptoforge.supabase_executor import CandleRow, SupabaseLiveExecutor, entry_signal, short_shadow_signal
 
 
 def support_bounce_candles() -> list[CandleRow]:
@@ -58,8 +58,9 @@ def test_intraday_reversion_requires_explicit_research_mode() -> None:
 
 
 class FakeRegistry:
-    def __init__(self, probability: float | None = None) -> None:
+    def __init__(self, probability: float | None = None, short_probability: float | None = None) -> None:
         self.probability = probability
+        self.short_probability = short_probability
 
     def latest(self, **kwargs):
         if self.probability is None:
@@ -68,6 +69,7 @@ class FakeRegistry:
             feature_version="candle-v1",
             model_version="test-model",
             predict_probability=lambda features: self.probability,
+            predict_short_probability=lambda features: self.short_probability,
         )
 
 
@@ -87,6 +89,7 @@ def test_ml_shadow_records_low_probability_without_blocking() -> None:
 
     assert allowed
     assert "ml_probability=0.400000" in reasons
+    assert "ml_short_probability=unavailable" in reasons
     assert "ml_shadow=observed" in reasons
 
 
@@ -98,6 +101,59 @@ def test_ml_gate_blocks_low_probability_and_missing_model() -> None:
     assert "ml_gate=reject" in reasons
     assert not fallback
     assert fallback_reasons == ["ml_fallback=no_fresh_model"]
+
+
+def short_breakdown_candles() -> list[CandleRow]:
+    start = datetime(2026, 9, 29, tzinfo=UTC)
+    candles: list[CandleRow] = []
+    price = Decimal("105")
+    for index in range(70):
+        open_price = price
+        drift = Decimal("-0.10")
+        close = price + drift
+        low = min(open_price, close) - Decimal("0.10")
+        volume = Decimal("100")
+        if index == 69:
+            close = price - Decimal("1.30")
+            low = close - Decimal("0.20")
+            volume = Decimal("160")
+        candles.append(
+            CandleRow(
+                pair="TEST/USDT",
+                symbol="TESTUSDT",
+                open_time=start + timedelta(minutes=5 * index),
+                open=open_price,
+                high=max(open_price, close) + Decimal("0.10"),
+                low=low,
+                close=close,
+                volume=volume,
+            )
+        )
+        price = close
+    return candles
+
+
+def test_short_shadow_signal_tracks_breakdowns_without_live_entry() -> None:
+    signal, reasons = short_shadow_signal(short_breakdown_candles())
+
+    assert signal
+    assert "short_shadow_signal=True" in reasons
+    assert "short_support_breakdown=True" in reasons
+
+
+def test_short_ml_shadow_records_probability() -> None:
+    executor = SupabaseLiveExecutor(
+        reader=SimpleNamespace(),
+        supabase=SimpleNamespace(),
+        bybit=SimpleNamespace(),
+        active_model_registry=FakeRegistry(0.20, short_probability=0.72),  # type: ignore[arg-type]
+        ml_mode="shadow",
+    )
+
+    reasons = executor._ml_shadow_research_reasons(short_breakdown_candles())
+
+    assert "short_ml_shadow=observed" in reasons
+    assert "ml_short_probability=0.720000" in reasons
 
 
 def emerging_momentum_candles() -> list[CandleRow]:
