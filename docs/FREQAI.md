@@ -223,3 +223,59 @@ The long logistic head now searches L2 values 0/0.01/0.1 using validation log lo
 The chosen weights, L2, and search metrics are saved in the artifact. Test data
 never selects the regularization. Changing the target-return threshold does not
 relax exclusion of data seen by the incumbent.
+
+## Historical archive experiments
+
+Bybit Spot history can be downloaded locally without duplicating it in the live
+Supabase database:
+
+```sh
+PYTHONPATH=src .venv/bin/python scripts/download_market_archive.py --pair BTC/USDT --pair ETH/USDT --days 90 --interval 5
+PYTHONPATH=src .venv/bin/python scripts/train_archive_model.py --pair BTC/USDT --pair ETH/USDT --timeframe 5m --max-candles 26000 --epochs 50
+```
+
+Downloads paginate backward in batches of 1000, save atomically after each page,
+reuse cached complete ranges, exclude unclosed candles, and report missing
+candles. History availability depends on a symbol's listing and Bybit's retained
+data. Training refuses gaps and writes an offline model with chronological
+70/15/15 splits and purged label boundaries to `.local/archive/models`. Artifacts
+record the actual train/validation/test boundaries and never publish `model.active`.
+The feature builder computes EMA prefixes once and only uses bounded windows for
+other features, preserving the same values without quadratic history processing.
+For production use, archive experiments still need forward paper validation and
+comparison against the current champion; changing universe membership can create
+survivorship bias. The scheduled live trainer continues using its existing data
+source; archive experiments are a separate explicit command.
+
+## Short Shadow Outcome Checklist
+
+Short research remains shadow-only. Live Spot execution must not open margin,
+futures or borrowed-asset shorts.
+
+Implementation checklist:
+
+- `trade_decisions.reasons` records `short_shadow_signal`, `short_emerging_momentum`
+  and `ml_short_probability` for every evaluated pair.
+- `scripts/evaluate_short_shadow.py` reads those decisions, waits until at least
+  12 later 5m candles exist, computes virtual short outcomes at 3/6/12 candles,
+  max favorable excursion and max adverse excursion, then writes
+  `research.short_shadow_outcomes` to `system_events`.
+- The analyzer uses existing Supabase tables only; no schema migration is needed.
+- A useful short candidate should improve `probability_ge_0_5.mean_return_12`
+  and `signaled.mean_return_12` after costs before any threshold is tightened.
+- Live-short remains blocked until a separate derivatives plan exists.
+
+Manual verification:
+
+```sh
+set -a; source .env; set +a
+PYTHONPATH=src .venv/bin/python scripts/evaluate_short_shadow.py --lookback-hours 24 --limit 500
+```
+
+Review checklist:
+
+- `candidate_count` is nonzero.
+- `pending` is low enough that most candidates have 12 future candles.
+- `signaled.count` and `probability_ge_0_5.count` are large enough to matter.
+- `mean_return_12` is positive after repeated runs, not just one sample.
+- `mean_max_adverse` is acceptable relative to the expected take-profit/stop.

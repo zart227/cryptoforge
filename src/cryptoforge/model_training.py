@@ -286,18 +286,27 @@ def build_examples(
         return examples
     closes = [candle.close for candle in candles]
     volumes = [candle.volume for candle in candles]
+    ema_fast = closes[0]
+    ema_slow = closes[0]
+    ema_gaps = []
+    for value in closes:
+        ema_fast = value * (Decimal(2)/Decimal(13)) + ema_fast * (Decimal(1)-Decimal(2)/Decimal(13))
+        ema_slow = value * (Decimal(2)/Decimal(37)) + ema_slow * (Decimal(1)-Decimal(2)/Decimal(37))
+        ema_gaps.append(float((ema_fast-ema_slow)/value) if value > 0 else 0.0)
     for index in range(36, len(candles) - horizon_candles):
-        window = candles[: index + 1]
+        window = candles[index-35:index+1]
         close = closes[index]
         future_close = closes[index + horizon_candles]
         if close <= 0:
             continue
         future_return = float((future_close - close) / close)
+        features = list(extract_features(window, volumes[max(0,index-35):index+1]))
+        features[4] = ema_gaps[index]
         examples.append(
             TrainingExample(
                 pair=pair,
                 open_time=candles[index].open_time,
-                features=extract_features(window, volumes[: index + 1]),
+                features=tuple(features),
                 label=1 if future_return > min_label_return else 0,
                 short_label=1 if future_return < -min_label_return else 0,
                 future_return=future_return,

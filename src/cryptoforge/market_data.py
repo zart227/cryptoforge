@@ -116,11 +116,19 @@ class BybitPublicClient:
         payload = self._get_json("/v5/market/tickers", params)
         return [parse_ticker(item) for item in payload["result"]["list"]]
 
-    def get_klines(self, symbol: str, interval: str = PRIMARY_TIMEFRAME, limit: int = 200) -> list[Candle]:
+    def get_klines(self, symbol: str, interval: str = PRIMARY_TIMEFRAME, limit: int = 200,
+                   *, start_ms: int | None = None, end_ms: int | None = None) -> list[Candle]:
         if interval not in SUPPORTED_TIMEFRAMES:
             raise ValueError(f"Unsupported timeframe {interval!r}; expected one of {SUPPORTED_TIMEFRAMES}")
         if not 1 <= limit <= 1000:
             raise ValueError("Bybit kline limit must be between 1 and 1000")
+        bounds = {}
+        if start_ms is not None:
+            bounds["start"] = str(start_ms)
+        if end_ms is not None:
+            bounds["end"] = str(end_ms)
+        if start_ms is not None and end_ms is not None and start_ms > end_ms:
+            raise ValueError("start_ms must not exceed end_ms")
         payload = self._get_json(
             "/v5/market/kline",
             {
@@ -128,6 +136,7 @@ class BybitPublicClient:
                 "symbol": symbol,
                 "interval": interval,
                 "limit": str(limit),
+                **bounds,
             },
         )
         candles = [parse_candle(symbol, interval, row) for row in payload["result"]["list"]]
