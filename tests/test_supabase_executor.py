@@ -268,3 +268,64 @@ def test_early_emerging_momentum_can_enter_before_large_volume_spike() -> None:
 
     assert signal
     assert "emerging_momentum=True" in reasons
+
+
+def test_ml_gate_cannot_pass_nan_or_out_of_range_probability():
+    for value in (float('nan'),float('inf'),-.1,1.1):
+        allowed,reasons=make_ml_executor('gate',value)._ml_entry_allows(support_bounce_candles())
+        assert not allowed and 'ml_fallback=prediction_error:ValueError' in reasons
+
+
+def test_bounded_live_features_match_training_window_and_short_shadow_contract():
+    from cryptoforge.model_training import extract_features
+    rows=support_bounce_candles();executor=make_ml_executor('gate',.9)
+    executor._feature_snapshot_time=rows[-1].open_time+timedelta(minutes=5)
+    config={'feature_lookback_candles':36,'input_candle_state':'closed_only'}
+    features,state,_=executor._model_input_features(rows,config)
+    assert features==extract_features(rows[-36:],[row.volume for row in rows[-36:]])
+    assert state=='closed_only'
+    assert executor._resolved_model_input_contract['lookback_candles']==36
+    assert executor._resolved_model_input_contract['calculation_contract']=='bounded-window-candle-v1'
+
+
+def test_market_reader_scopes_prices_to_bybit_spot_and_keeps_observation_time():
+    from cryptoforge.supabase_executor import SupabaseMarketReader
+    from urllib.parse import parse_qs,urlsplit
+    class Reader(SupabaseMarketReader):
+        def _get(self,path):self.path=path;return []
+    reader=Reader(SimpleNamespace());assert reader.read_candles('ETH/USDT')==[]
+    query=parse_qs(reader.path.split('?',1)[1])
+    assert query['exchange']==['eq.bybit'] and query['market_type']==['eq.spot']
+    assert 'ingested_at' in query['select'][0]
+
+
+def test_rejected_entry_keeps_exact_probability_and_immutable_first_snapshot():
+    executor=make_ml_executor('gate',.23456789);rows=support_bounce_candles();records=[]
+    executor.supabase=SimpleNamespace(upsert=lambda table,values,**kwargs:records.append((values[0],kwargs)))
+    executor._feature_snapshot_pair=rows[-1].pair
+    executor._feature_snapshot_time=rows[-1].open_time+timedelta(minutes=1)
+    allowed,reasons=executor._ml_entry_allows(rows)
+    assert not allowed
+    executor._record(rows[-1].pair,'reject_entry',reasons,rows,live=True)
+    record,options=records[-1];features=record['features']
+    assert features['long_model_probability']==.23456789 and features['long_model_version']=='test-model'
+    assert features['model_feature_values']==executor._last_model_input['values']
+    assert features['opportunity_only'] and ':snapshot-v1:' in record['idempotency_key']
+    assert options['resolution']=='ignore-duplicates' and not record['features']['order']
+    executor._feature_snapshot_time+=timedelta(seconds=10)
+    executor._record(rows[-1].pair,'reject_entry',reasons,rows,live=True)
+    assert records[-1][0]['idempotency_key']==record['idempotency_key']
+
+
+def test_candidate_forecast_recording_error_does_not_change_buy_gate():
+    class Recorder:
+        def record(self,forecast):raise OSError('diagnostic storage unavailable')
+    executor=make_ml_executor('gate',.9);executor.forecast_recorder=Recorder()
+    model=executor.active_model_registry.latest();model.artifact_sha256='a'*64
+    executor.active_model_registry=SimpleNamespace(latest=lambda **kwargs:model)
+    rows=support_bounce_candles()
+    reasons=executor._ml_shadow_research_reasons(rows,baseline_entry_signal=True)
+    assert 'primary_forecast_memory_error=OSError' in reasons
+    assert executor._last_candidate_forecast['long_probability']==.9
+    assert not executor._last_candidate_forecast['counts_as_real_executed_buys']
+    assert executor._ml_entry_allows(rows)[0]

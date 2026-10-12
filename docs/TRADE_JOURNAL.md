@@ -94,3 +94,31 @@ Stable execution-based idempotency keys make retries and restarts safe.
 All reconstructed trade rows are upserted in one REST transaction before
 advancing the local cursor; a failed write is retried on the next cycle.
 Telegram `/closed`, `/pnl` and `/summary` read these live records directly.
+
+
+## Read-only feedback audit
+
+`analyze_live_feedback.py` groups execution-to-lot segments by pair and exit order.
+Percentages use summed allocated acquisition cost, not unweighted segment returns.
+The feedback report already uses net PnL and reports fees separately. Old contexts
+without a retained exact order decision are marked missing. Future executor
+contexts use an order-specific idempotency key and capture as-of feature values,
+so subsequent same-candle evaluations cannot replace the submitted order record.
+Feedback observes entry/exit rule conflicts without changing trading decisions.
+
+
+## Verified small-balance conversions (accounting v2)
+
+Spot execution history does not contain `CURRENCY_SELL` conversions. Reconciliation
+now reads Unified transaction logs plus small-balance conversion history and
+verifies per-coin debit and actual USDT credit before inserting a namespaced
+`conversion:` accounting event. It is not an exchange order. Gross value includes
+reported fee/tax; allocated net proceeds subtract them exactly once. Unknown
+cross-currency amounts or unsupported balance movements fail accounting checks.
+
+Corrections can reassign subsequent sales to the proper acquisition lot. Old
+derived segments are cancelled in the same REST transaction as new rows; previous
+payload is retained locally for audit. Bot exits and external conversions remain
+separate in feedback/training. The authenticated data endpoints used are
+[transaction logs](https://bybit-exchange.github.io/docs/v5/account/transaction-log) and
+[small-balance exchange history](https://bybit-exchange.github.io/docs/v5/asset/convert-small-balance/exchange-history).

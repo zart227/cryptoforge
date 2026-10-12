@@ -1,0 +1,85 @@
+{
+  "protocol_version": "live-cash-recovery-v1.0",
+  "status": "frozen_collection_only",
+  "frozen_at": "2026-10-08T05:14:44+00:00",
+  "target_version": "spot-long-real-cash-recovery-dust-zero-v1",
+  "feature_version": "candle-v1",
+  "input_candle_state": "legacy_asof_snapshot",
+  "market": "bybit_global_spot",
+  "maximum_residual_cost_fraction": "0.01",
+  "windows": {
+    "train": {
+      "start": "2026-10-08T05:14:44+00:00",
+      "end_exclusive": "2026-11-05T05:14:44+00:00"
+    },
+    "validation": {
+      "start": "2026-11-05T05:14:44+00:00",
+      "end_exclusive": "2026-11-19T05:14:44+00:00"
+    },
+    "sealed_test": {
+      "start": "2026-11-19T05:14:44+00:00",
+      "end_exclusive": "2026-12-17T05:14:44+00:00"
+    },
+    "paper": {
+      "start": "2026-12-17T05:14:44+00:00",
+      "end_exclusive": "2027-01-14T05:14:44+00:00"
+    }
+  },
+  "embargo_seconds": 86400,
+  "minimums": {
+    "train": {
+      "buy_orders": 100,
+      "entry_days": 14,
+      "pairs": 6,
+      "positive": 20,
+      "negative": 20
+    },
+    "validation": {
+      "buy_orders": 40,
+      "entry_days": 7,
+      "pairs": 4,
+      "positive": 5,
+      "negative": 5
+    },
+    "sealed_test": {
+      "buy_orders": 60,
+      "entry_days": 14,
+      "pairs": 4
+    },
+    "paper": {
+      "buy_orders": 60,
+      "entry_days": 14,
+      "pairs": 4
+    }
+  },
+  "maximum_pair_fraction": "0.35",
+  "maximum_entry_day_fraction": "0.25",
+  "development_buy_keys": [
+    "82ab9d48e642c59fa5b1fbfd9b7417aed22b2bd38037a3194ad6b2d6812a5e9e",
+    "86e784c2f478527ba5489f57b0c83a5c2c6940ec48ddd81c8d663e00f7087971",
+    "ba22900c70714ccfba7cfffb0b1a612657d278d60afedd450cb3903b8a4edb98",
+    "ec262f45d218f0171561cd07aaef94f1839b08b15d5335efda7e214dbc163e3d"
+  ],
+  "development_snapshot_sha256": "74b3744b974843a4970a2aa4d1bbfb28ba7bc0e0f9248ed097983b8ae748a75d",
+  "development_policy": "seen_buys_train_only_all_later_corrections_same_group",
+  "assignment_policy": "actual_entry_time_and_label_known_before_split_boundary",
+  "sealed_test_policy": "no_outcome_statistics_or_selection_before_test_end",
+  "configuration_budget": {
+    "model_family": "pure-python-logistic",
+    "maximum_configurations": 3,
+    "thresholds": [
+      "0.50"
+    ],
+    "l2_values": [
+      "0.001",
+      "0.01",
+      "0.1"
+    ]
+  },
+  "evaluation_policy": "compare_on_same_prospective_buy_opportunities_no_counterfactual_fill_claim",
+  "minimum_example_snapshot_freshness_seconds": 2700,
+  "automatic_training_allowed": false,
+  "live_promotion_allowed": false,
+  "historical_reserved_final_compatible": false,
+  "note": "collection readiness is not evidence of profitability; future paper harness and acceptance gates required"
+}

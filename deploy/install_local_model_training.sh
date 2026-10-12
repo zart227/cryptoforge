@@ -4,7 +4,7 @@ set -euo pipefail
 PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 SERVICE_DIR="${HOME}/.config/systemd/user"
 SERVICE_NAME="cryptoforge-model-training"
-UNIVERSE_FILE="${PROJECT_DIR}/.local/state/live-universe.json"
+UNIVERSE_FILE="${PROJECT_DIR}/.local/state/model-training-universe.json"
 ARTIFACT_DIR="${PROJECT_DIR}/.local/models"
 
 mkdir -p "$SERVICE_DIR"

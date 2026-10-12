@@ -326,6 +326,8 @@ def test_private_client_reads_spot_instrument_filters() -> None:
     assert instrument.quantity_step == Decimal("0.1")
     assert instrument.minimum_quantity == Decimal("0.1")
     assert instrument.minimum_order_amount == Decimal("5")
+    assert instrument.raw_metadata["lotSizeFilter"]["basePrecision"]=="0.1"
+    assert "maxMarketOrderQty" not in instrument.raw_metadata["lotSizeFilter"]
 
 
 def test_market_buy_uses_quote_coin_amount() -> None:
@@ -369,3 +371,22 @@ def test_spot_execution_history_rejects_repeated_cursor():
     })
     with pytest.raises(RuntimeError, match='repeated'):
         client.get_spot_executions(start_ms=0, end_ms=100)
+
+
+def test_wrong_instrument_cannot_supply_order_filters():
+    client=BybitPrivateClient(api_key='key',api_secret='secret',http_get=lambda *args: {
+        'retCode':0,'result':{'list':[{'symbol':'BTCUSDT','lotSizeFilter':{'basePrecision':'.001'}}]}})
+    with pytest.raises(RuntimeError,match='symbol mismatch'):
+        client.get_spot_instrument('ETHUSDT')
+
+
+def test_raw_instrument_observation_preserves_independent_limits():
+    raw={'symbol':'ETHUSDT','lotSizeFilter':{'basePrecision':'.000001','minOrderAmt':'5',
+         'maxMarketOrderQty':'6000','maxLimitOrderQty':'9000','postOnlyMaxLimitOrderSize':'40000'},
+         'priceFilter':{'tickSize':'.01'}}
+    client=BybitPrivateClient(api_key='key',api_secret='secret',http_get=lambda *args: {
+        'retCode':0,'result':{'list':[raw]}})
+    observed=client.get_spot_instrument('ETHUSDT')
+    raw['lotSizeFilter']['maxMarketOrderQty']='999999'
+    assert observed.raw_metadata['lotSizeFilter']['maxMarketOrderQty']=='6000'
+    assert observed.raw_metadata['lotSizeFilter']['postOnlyMaxLimitOrderSize']=='40000'

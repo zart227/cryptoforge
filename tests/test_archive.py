@@ -37,3 +37,26 @@ def test_linear_feature_builder_preserves_full_history_features():
     for index in (36,100,300,396):
         expected=extract_features(candles[:index+1],[c.volume for c in candles[:index+1]])
         assert examples[index-36].features == pytest.approx(expected,abs=1e-14)
+
+
+def test_interrupted_download_resumes_without_duplicate_or_manifest_rewrite(tmp_path):
+    class Client:
+        calls=0
+        fail=True
+        def get_klines(self,symbol,interval,limit,*,start_ms,end_ms):
+            self.calls+=1
+            if self.calls==2 and self.fail:
+                self.fail=False
+                raise RuntimeError('interrupted')
+            stamps=[i*300000 for i in range(1200) if start_ms<=i*300000<=end_ms][-1000:]
+            return [Candle(symbol,interval,t,*(Decimal(1) for _ in range(6))) for t in stamps]
+    client=Client()
+    with pytest.raises(RuntimeError,match='interrupted'):
+        download_archive(client,'BTCUSDT','5',0,1200*300000,tmp_path,pause=0)
+    report=download_archive(client,'BTCUSDT','5',0,1200*300000,tmp_path,pause=0)
+    assert report['candles']==1200 and report['missing_candles']==0
+    from pathlib import Path
+    manifest=Path(report['manifest_path']);original=manifest.read_bytes()
+    download_archive(client,'BTCUSDT','5',0,1200*300000,tmp_path,pause=0)
+    assert manifest.read_bytes()==original
+    assert len(json.loads(Path(report['path']).read_text()))==1200

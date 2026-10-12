@@ -80,9 +80,6 @@ class SupabaseRelayClient:
         events.extend(self._fetch_system_events(since_occurred_at=since_occurred_at, limit=limit))
         remaining = max(limit - len(events), 0)
         if remaining:
-            events.extend(self._fetch_trade_decisions(since_occurred_at=since_occurred_at, limit=remaining))
-        remaining = max(limit - len(events), 0)
-        if remaining:
             events.extend(self._fetch_bot_health(since_occurred_at=since_occurred_at, limit=remaining))
         return sorted(events, key=lambda event: (parse_iso(event.occurred_at), event.id))[:limit]
 
@@ -91,7 +88,7 @@ class SupabaseRelayClient:
             {
                 "select": "id,occurred_at,event_type,severity,payload",
                 "occurred_at": f"gte.{since_occurred_at}",
-                "event_type": "in.(trade.opened,trade.closed,trade.buy_observed,performance.daily_summary,research.nightly_summary)",
+                "event_type": "in.(trade.opened,trade.closed,trade.buy_observed,performance.daily_summary)",
                 "order": "occurred_at.asc,id.asc",
                 "limit": str(limit),
             }
@@ -157,7 +154,7 @@ class SupabaseRelayClient:
             {
                 "select": "id,observed_at,component,status,message,payload",
                 "observed_at": f"gte.{since_occurred_at}",
-                "status": "in.(warning,error,critical)",
+                "status": "in.(error,critical)",
                 "order": "observed_at.asc,id.asc",
                 "limit": str(limit),
             }
@@ -373,6 +370,26 @@ def relay_once(
 
 def notification_from_event(event: RelayEvent) -> Notification | None:
     payload = event.payload
+    if payload.get("journal_notice") and event.event_type in {"trade.opened", "trade.closed"}:
+        closed = event.event_type == "trade.closed"
+        lines = [f"Цена {'продажи' if closed else 'покупки'}: {payload.get('exit_price' if closed else 'entry_price')}",
+                 f"Количество: {payload.get('amount')}"]
+        if closed:
+            pnl = payload.get("realized_pnl")
+            if pnl is None:
+                lines.append("Прибыль/убыток: пока недоступны — неполные данные стоимости или комиссий.")
+            else:
+                value = Decimal(str(pnl))
+                label = "Прибыль" if value >= 0 else "Убыток"
+                lines.append(f"{label} после комиссий: {value:+.6f} USDT")
+                lines.append(f"Доходность: {Decimal(str(payload['realized_pnl_pct'])) * 100:+.2f}%")
+            fee = payload.get("fee_amount")
+            lines.append(f"Комиссии покупки и продажи: {Decimal(str(fee)):.6f} USDT" if fee is not None else "Комиссии: расчёт недоступен")
+        return Notification(
+            kind=NotificationKind.TRADE_CLOSED if closed else NotificationKind.TRADE_OPENED,
+            title=f"CryptoForge: {'исполнена продажа' if closed else 'открыта сделка'} — {payload.get('pair')}",
+            body="\n".join(lines),
+        )
     if event.event_type == "trade.opened":
         return Notification(
             kind=NotificationKind.TRADE_OPENED,
@@ -428,37 +445,14 @@ def notification_from_event(event: RelayEvent) -> Notification | None:
         )
 
     if event.event_type == "research.nightly_summary":
-        return Notification(
-            kind=NotificationKind.STARTED,
-            title="CryptoForge: night research",
-            body=", ".join(str(pair) for pair in payload.get("top_pairs", [])[:5]) or "no candidates",
-            fields=compact_fields(
-                payload,
-                "timeframe",
-                "lookback_candles",
-                "top_pairs",
-                "failures",
-            ),
-        )
+        return None
 
     if event.event_type == "trade.decision":
-        return Notification(
-            kind=NotificationKind.STARTED,
-            title="CryptoForge: trade decision",
-            body=str(payload.get("pair", "unknown pair")),
-            fields=compact_fields(
-                payload,
-                "mode",
-                "decision",
-                "risk_decision",
-                "timeframe",
-                "stake_amount",
-                "reference_price",
-                "reasons",
-            ),
-        )
+        return None
 
     if event.event_type == "system.health":
+        if payload.get("status", event.severity) not in {"error", "critical"}:
+            return None
         return Notification(
             kind=NotificationKind.CRITICAL_ERROR,
             title="CryptoForge: health alert",
@@ -718,7 +712,7 @@ def watcher_once(
     status = fetch_status(client)
     alert_keys = status.alert_keys()
     previous = set(state.active_alert_keys)
-    new_alerts = [key for key in alert_keys if key not in previous]
+    new_alerts = [key for key in alert_keys if key not in previous and key != "feeder:warning"]
     sent = 0
     if new_alerts:
         result = notifier.notify(
@@ -772,12 +766,18 @@ def main(argv: list[str] | None = None) -> int:
 
     client = client_from_env()
     notifier = telegram_notifier_from_env()
+    notifier.per_kind_interval_seconds[NotificationKind.TRADE_OPENED] = 0.0
+    notifier.per_kind_interval_seconds[NotificationKind.TRADE_CLOSED] = 0.0
     bot_token = os.environ.get("TELEGRAM_BOT_TOKEN", "")
     chat_id = os.environ.get("TELEGRAM_CHAT_ID", "")
     proxy_url = os.environ.get("TELEGRAM_PROXY_URL", "")
     timeout_seconds = float(os.environ.get("CRYPTOFORGE_RELAY_TIMEOUT_SECONDS", "10"))
 
+    from cryptoforge.telegram_daily_summary import daily_summary_once
+
     while True:
+        daily = daily_summary_once(client=client, notifier=notifier,
+            state_path=Path(args.state_path).with_name("telegram-daily-summary-state.json"))
         commands = process_telegram_commands(
             client=client,
             state_path=args.state_path,
@@ -791,7 +791,7 @@ def main(argv: list[str] | None = None) -> int:
         print(
             "telegram relay: "
             f"scanned={result.scanned} sent={result.sent} skipped={result.skipped} "
-            f"failed={result.failed} commands={commands} alerts={alerts} "
+            f"failed={result.failed} commands={commands} alerts={alerts} daily={daily} "
             f"cursor={result.last_occurred_at}",
             flush=True,
         )

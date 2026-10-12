@@ -1,0 +1,75 @@
+{
+  "schema_version": "strategy-hypothesis-catalog-v1",
+  "written_at": "2026-10-10T06:58:07.024658+00:00",
+  "scope": "descriptive_catalog_of_existing_development_families",
+  "preregistered_before_prior_results": false,
+  "strategy_source_sha256": "fee9ee74c8ff375c533ecf047d0cf0a37a6393639e2574db28060025e712b6ae",
+  "timeframe": "5m",
+  "entry_information": "36 complete bars through signal; next open fill in existing offline simulator",
+  "exit_policy": "separately declared stop/target/hold and execution assumptions; not inferred from favorable outcomes",
+  "hypotheses": [
+    {
+      "id": "trend-v1",
+      "family": "trend",
+      "entry_conditions": [
+        "last volume >= 0.5 * mean volume of last20 bars including last",
+        "SMA8 > SMA24",
+        "close / close3barsEarlier - 1 > declared sensitivity"
+      ],
+      "existing_development_sensitivity": 0.001,
+      "mechanism": "short-term continuation during sustained directional movement",
+      "suitable_regime_hypothesis": "persistent upward drift with adequate liquidity",
+      "expected_failures": [
+        "sideways whipsaw",
+        "late entry after exhaustion",
+        "abrupt reversal or downside gap",
+        "small movement erased by fees/spread"
+      ],
+      "profitability_established": false
+    },
+    {
+      "id": "breakout-v1",
+      "family": "breakout",
+      "entry_conditions": [
+        "close > maximum high of previous20 bars excluding current",
+        "last volume >= declared sensitivity * mean volume of last20 bars including last"
+      ],
+      "existing_development_sensitivity": 1.0,
+      "mechanism": "continuation after leaving a past range with volume participation",
+      "suitable_regime_hypothesis": "range exit followed by persistent buying",
+      "expected_failures": [
+        "false breakout/re-entry into range",
+        "spike and reversal",
+        "thin book and adverse execution",
+        "fees exceed follow-through"
+      ],
+      "profitability_established": false
+    },
+    {
+      "id": "reversion-v1",
+      "family": "reversion",
+      "entry_conditions": [
+        "last volume >= 0.5 * mean volume of last20 bars including last",
+        "RSI14 < declared sensitivity",
+        "close > preceding close"
+      ],
+      "existing_development_sensitivity": 45.0,
+      "mechanism": "a temporary downside dislocation followed by initial recovery",
+      "suitable_regime_hypothesis": "range or recoverable pullback rather than persistent collapse",
+      "expected_failures": [
+        "falling knife and repeated lower lows",
+        "news-driven permanent repricing",
+        "weak bounce smaller than round-trip costs",
+        "rapid signal/exit conflict"
+      ],
+      "profitability_established": false
+    }
+  ],
+  "future_unregistered_extensions": [
+    "support bounce as a separate hypothesis",
+    "compression breakout as a separate hypothesis",
+    "ATR-scaled exits and causally observed liquidity filters"
+  ],
+  "new_validation_required": true,
+  "live_promotion_allowed": false
+}

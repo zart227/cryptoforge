@@ -159,3 +159,20 @@ def test_bybit_public_market_data_live() -> None:
     assert snapshot.ticker.symbol == "BTCUSDT"
     assert len(snapshot.candles) > 0
     assert snapshot.candles[-1].interval == PRIMARY_TIMEFRAME
+
+
+def test_temporary_server_error_retries_only_bounded_public_get(monkeypatch):
+    import json
+    from unittest.mock import Mock
+    class Response:
+        def __init__(self,payload): self.payload=payload
+        def __enter__(self): return self
+        def __exit__(self,*args): pass
+        def read(self): return json.dumps(self.payload).encode()
+    responses=Mock(side_effect=[Response({'retCode':10016,'retMsg':'internal error'}),
+                               Response({'retCode':0,'result':{'list':[]}})])
+    monkeypatch.setattr(market_data,'urlopen',responses)
+    monkeypatch.setattr(market_data.time,'sleep',lambda delay:None)
+    client=BybitPublicClient(max_retries=1)
+    assert client.get_klines('BTCUSDT',interval='1')==[]
+    assert responses.call_count==2

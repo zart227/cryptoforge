@@ -1,0 +1,120 @@
+{
+  "protocol_version": "net-return-research-v1.0",
+  "status": "frozen_development_only",
+  "market": "bybit_spot",
+  "execution": "offline_or_paper",
+  "live_eligible": false,
+  "baseline_pairs": [
+    "BTC/USDT",
+    "ETH/USDT"
+  ],
+  "primary_timeframe": "5m",
+  "history_target_months": 12,
+  "split_policy": {
+    "train_days": 120,
+    "validation_days": 30,
+    "test_days": 30,
+    "step_days": 30,
+    "test_windows_overlap": false,
+    "purge_by_label_end": true,
+    "exclude_all_previous_selection_data": true,
+    "minimum_test_windows": 6
+  },
+  "cost_assumptions": {
+    "round_trip_fraction": 0.003,
+    "stress_multiplier": 2,
+    "status": "assumption_not_verified_account_fee",
+    "verified": false,
+    "policy": "conservative scenario assumption; cannot establish live profitability"
+  },
+  "search_limits": {
+    "max_configurations_per_family": 3,
+    "max_parallel_experiments": 1
+  },
+  "paper_candidate_gates": {
+    "min_out_of_sample_trades": 200,
+    "min_profit_factor": 1.2,
+    "max_portfolio_drawdown": 0.05,
+    "confidence_level": 0.95,
+    "min_paper_days": 30,
+    "min_paper_closed_trades": 100
+  },
+  "required_before_execution": [
+    "verify_dataset_sha256",
+    "enforce_development_range",
+    "enforce_resource_caps"
+  ],
+  "frozen_at": "2026-10-09T19:03:04.108942+00:00",
+  "datasets": [
+    {
+      "pair": "BTC/USDT",
+      "path": ".local/archive/BTCUSDT-5.json",
+      "sha256": "58a9c45366f5acf27abc66dcf901f46a0517c8ffa487f96f37f839f26d2a658b",
+      "candles": 25919,
+      "start": "2026-07-09T03:15:00+00:00",
+      "end": "2026-10-07T03:05:00+00:00"
+    },
+    {
+      "pair": "ETH/USDT",
+      "path": ".local/archive/ETHUSDT-5.json",
+      "sha256": "394fed482428666108c43edf5070ba1f5dc66610af6b5e3ec4f1de4d769210df",
+      "candles": 25919,
+      "start": "2026-07-09T03:15:00+00:00",
+      "end": "2026-10-07T03:05:00+00:00"
+    }
+  ],
+  "portfolio": {
+    "capital": "100",
+    "stake": "6",
+    "max_positions": 3,
+    "fee": "0.001",
+    "slippage": "0.0005",
+    "stop_fraction": "0.02",
+    "target_fraction": "0.04",
+    "hold_bars": 12,
+    "entry_delay_bars": 1,
+    "min_notional": "5",
+    "quantity_step": "0.000001",
+    "max_volume_fraction": "0.01"
+  },
+  "data_policy": {
+    "development_end": "2026-10-07T08:37:38.045457+00:00",
+    "previously_viewed_policy": "all history through freeze is development; no retrospective final test",
+    "final_reserved_start": "2026-10-08T00:00:00+00:00",
+    "final_reserved_end": "2026-11-08T00:00:00+00:00",
+    "final_reserved_status": "future_not_available_do_not_evaluate_during_search"
+  },
+  "resources": {
+    "max_parallel_experiments": 1,
+    "worker_nice": 10,
+    "max_wall_seconds": 120,
+    "max_worker_memory_mb": 768,
+    "min_available_memory_mb": 1536,
+    "min_free_disk_mb": 2048,
+    "max_output_file_mb": 128
+  },
+  "runtime_snapshot_path": ".local/state/research-v1-runtime.json",
+  "resource_readiness": {
+    "ready": false,
+    "reason": "snapshot_peak_rss_654_MB_exceeds_previous_budget_and_current_available_memory_below_1536_MB",
+    "measurement_scope": "snapshot_process_including_full_archive_loading_not_isolated_label_worker"
+  },
+  "parent_protocol_sha256": "d8cb5535972979ac9331f0ff17f474dc024797d9c3383a04898a5bdb27c28a46",
+  "net_head_policy": {
+    "model_family": "experimental-ridge-net-return-v1",
+    "target_version": "spot-long-trade-net-v2",
+    "ridge_values": [
+      "0.001",
+      "0.01",
+      "0.1"
+    ],
+    "selection": "minimum_validation_rmse",
+    "refit_on_validation": false,
+    "max_candles_per_pair": 2000,
+    "train_fraction": "0.70",
+    "validation_end_fraction": "0.85",
+    "historical_reserved_final_compatible": false,
+    "live_eligible": false,
+    "scope": "development_numeric_target_diagnostics_not_portfolio_profit"
+  }
+}

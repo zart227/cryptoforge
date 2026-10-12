@@ -1,0 +1,53 @@
+{
+  "actual_data_evaluations": 0,
+  "catalog_version": "strategy-extensions-v1",
+  "families": [
+    {
+      "conditions": [
+        "support=min(previous30 lows), excluding current bar",
+        "current low<=support*1.001",
+        "current close>support and previous close",
+        "current volume>=1.5*previous20 mean volume"
+      ],
+      "expected_regime": "range or local recovery; unvalidated",
+      "failure_modes": [
+        "persistent downtrend",
+        "false rebound",
+        "wide spread and adverse fills"
+      ],
+      "family": "support_bounce",
+      "mechanism": "test recovery from previously visible local support with current closed-volume confirmation"
+    },
+    {
+      "conditions": [
+        "past5 true-range mean / past30 true-range mean<=0.5, excluding current bar",
+        "current close>previous20 high",
+        "current volume>=1.5*previous20 mean volume"
+      ],
+      "expected_regime": "transition from compression; unvalidated",
+      "failure_modes": [
+        "fake breakout",
+        "news gap",
+        "late entry and fee drag"
+      ],
+      "family": "compression_breakout",
+      "mechanism": "test expansion after previously visible range compression"
+    }
+  ],
+  "historical_reserved_final_compatible": false,
+  "live_eligible": false,
+  "next_requirements": [
+    "register immutable source-bound study before actual evaluation",
+    "consume persistent attempt budget",
+    "use independent future final range",
+    "preserve shared wallet and execution assumptions"
+  ],
+  "observed_at": "2026-10-10T14:41:16.038475+00:00",
+  "preregistered_experiment": false,
+  "source_sha256": {
+    "src/cryptoforge/candle_contract.py": "31d8e205bcf37d56b82939a6e0c96e3f4bcc251ee8344a95c2c4e0cdd23b9ca4",
+    "src/cryptoforge/entry_risk.py": "fd2a9ebe80201b565373ca729b6ddb1f04bc8d36e472b1963ef29c1cea3c01bb",
+    "src/cryptoforge/strategy_extensions.py": "4bb4f35fdac84a6d5c15acfe5484465576f7b9daa34168c3c1d68d5a59a2a41b"
+  },
+  "status": "draft_hypotheses_not_frozen_experiment"
+}

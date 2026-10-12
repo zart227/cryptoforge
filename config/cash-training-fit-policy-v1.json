@@ -1,0 +1,8 @@
+{
+  "version": "cash-logistic-fit-v1",
+  "epochs": 100,
+  "learning_rate": 0.08,
+  "selection": "minimum_validation_log_loss_then_original_l2_order",
+  "normalization": "train_only",
+  "refit_on_validation": false
+}

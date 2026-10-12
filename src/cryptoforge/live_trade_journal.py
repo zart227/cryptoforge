@@ -42,6 +42,7 @@ class JournalResult:
     open_lots: int
     unmatched_sells: int
     incomplete_fees: int
+    conversion_events: int = 0
 
 
 def decimal(row: JsonObject, key: str) -> Decimal:
@@ -90,7 +91,7 @@ def record(lot: Lot, *, suffix: str, quantity: Decimal, cost: Decimal,
         "realized_pnl": str(pnl) if pnl is not None else None,
         "realized_pnl_pct": str(pnl / cost) if pnl is not None and cost > 0 else None,
         "entry_reason": f"FIFO execution={fill['execId']} order={fill.get('orderId')} origin={'cryptoforge' if lot.owned else 'external'}",
-        "exit_reason": (f"FIFO execution={closed['execId']} order={closed.get('orderId')} origin={'cryptoforge' if owned(closed) else 'external'}" if closed else None),
+        "exit_reason": (f"FIFO execution={closed['execId']} order={closed.get('orderId')} origin={'cryptoforge' if owned(closed) else 'external'} source={closed.get('journalSource', 'spot_execution')}" if closed else None),
     }
 
 
@@ -152,15 +153,69 @@ def reconstruct_trades(fills: list[JsonObject]) -> tuple[list[JsonObject], Journ
                                   cost=lot.cost * fraction,
                                   fees=lot.fee * fraction if lot.fee is not None else None))
     return records, JournalResult(
-        executions=len(seen), closed_segments=sum(r["status"] == "closed" for r in records),
+        executions=sum(not identity.startswith("conversion:") for identity in seen),
+        conversion_events=sum(identity.startswith("conversion:") for identity in seen), closed_segments=sum(r["status"] == "closed" for r in records),
         open_lots=sum(r["status"] == "open" for r in records), unmatched_sells=unmatched,
         incomplete_fees=sum(r["status"] == "closed" and r["realized_pnl"] is None for r in records),
     )
 
 
+def trade_notice_events(fills: list[JsonObject], trades: list[JsonObject], pending: set[str], *, now: datetime) -> list[JsonObject]:
+    groups: dict[tuple[str, str], list[JsonObject]] = defaultdict(list)
+    for fill in fills:
+        if str(fill["execId"]) in pending and fill.get("execType", "Trade") == "Trade" and str(fill.get("symbol")).endswith("USDT"):
+            groups[(str(fill.get("orderId") or fill["execId"]), str(fill["side"]))].append(fill)
+    events = []
+    for (order_id, side), group in groups.items():
+        ids = {str(f["execId"]) for f in group}
+        segments = [r for r in trades if r["status"] == "closed" and r["idempotency_key"].rsplit(":", 1)[-1] in ids]
+        if side == "Buy" and not any(owned(f) for f in group):
+            continue
+        if side == "Sell" and not segments and not any(owned(f) for f in group):
+            continue
+        qty = sum((decimal(f, "execQty") for f in group), ZERO)
+        value = sum((decimal(f, "execQty") * decimal(f, "execPrice") for f in group), ZERO)
+        payload = {"journal_notice": True, "mode": "live", "pair": bybit_symbol_to_pair(str(group[0]["symbol"])),
+                   "amount": str(qty), "entry_price" if side == "Buy" else "exit_price": str(value / qty)}
+        if side == "Sell":
+            expected = sum((decimal(f, "execQty") + (decimal(f, "execFee") if f.get("feeCurrency") == str(f["symbol"])[:-4] else ZERO) for f in group), ZERO)
+            matched = sum((Decimal(r["amount"]) for r in segments), ZERO)
+            known = bool(segments) and abs(matched - expected) < Decimal("0.000000000001") and all(r["realized_pnl"] is not None for r in segments)
+            cost = sum((Decimal(r["stake_amount"]) for r in segments), ZERO)
+            pnl = sum((Decimal(r["realized_pnl"]) for r in segments), ZERO) if known else None
+            fees = sum((Decimal(r["fee_amount"]) for r in segments), ZERO) if known else None
+            payload.update(realized_pnl=str(pnl) if pnl is not None else None,
+                           realized_pnl_pct=str(pnl / cost) if pnl is not None and cost > 0 else None,
+                           fee_amount=str(fees) if fees is not None else None)
+        digest = hashlib.sha256(",".join(sorted(ids)).encode()).hexdigest()[:24]
+        events.append({"occurred_at": now.isoformat(), "source": "cryptoforge.live_trade_journal", "severity": "info",
+                       "event_type": "trade.opened" if side == "Buy" else "trade.closed",
+                       "idempotency_key": f"bybit:spot:notice:{order_id}:{digest}", "payload": payload})
+    return events
+
+
 def default_cache_path(bybit: BybitPrivateClient) -> Path:
     identity = hashlib.sha256(bybit.api_key.encode()).hexdigest()[:16]
     return Path(os.environ.get("CRYPTOFORGE_DATA_DIR", "data")) / f"live-journal-{identity}.sqlite"
+
+
+def read_existing_journal_rows(client, fills):
+    from urllib import parse,request
+    buyers=[str(fill["execId"]) for fill in fills if fill.get("side")=="Buy" and owned(fill)]
+    found={}
+    for start in range(0,len(buyers),20):
+        prefixes=buyers[start:start+20]
+        if not prefixes:continue
+        condition="("+",".join("idempotency_key.like.bybit:spot:fifo:"+identity+":*" for identity in prefixes)+")"
+        for offset in range(0,10000,500):
+            query=parse.urlencode({"mode":"eq.live","or":condition,"select":"*","limit":"500","offset":str(offset)})
+            req=request.Request(client.supabase_url.rstrip("/")+"/rest/v1/trades?"+query,
+                                headers={"apikey":client.service_role_key,"authorization":"Bearer "+client.service_role_key})
+            with request.urlopen(req,timeout=client.timeout_seconds) as response:rows=json.loads(response.read())
+            found.update((row["idempotency_key"],row) for row in rows)
+            if len(rows)<500:break
+        else:raise ValueError("existing journal namespace read exceeded limit")
+    return found
 
 
 def sync_live_journal(*, bybit: BybitPrivateClient, supabase: SupabaseRestClient,
@@ -170,9 +225,18 @@ def sync_live_journal(*, bybit: BybitPrivateClient, supabase: SupabaseRestClient
     end_ms = int(now.timestamp() * 1000)
     path = cache_path or default_cache_path(bybit)
     path.parent.mkdir(parents=True, exist_ok=True)
+    if path.exists():path.chmod(0o600)
     with sqlite3.connect(path, timeout=30) as db:
+        path.chmod(0o600)
         db.execute("create table if not exists executions (exec_id text primary key, payload text not null)")
         db.execute("create table if not exists journal_state (id integer primary key check (id=1), start_ms integer not null, cursor_ms integer not null)")
+        db.execute("create table if not exists notification_executions (exec_id text primary key)")
+        db.execute("create table if not exists notification_state (id integer primary key check(id=1))")
+        db.execute("create table if not exists conversion_records (quote_id text primary key, payload text not null)")
+        db.execute("create table if not exists account_transactions (id text primary key, payload text not null)")
+        db.execute("create table if not exists accounting_version (id integer primary key, version integer not null)")
+        db.execute("create table if not exists published_trade_rows (idempotency_key text primary key, payload text not null)")
+        db.execute("create table if not exists superseded_trade_rows (idempotency_key text primary key, previous_payload text not null)")
         db.commit()
         # Serialize standalone reconciliation and executor reconciliation on this cache.
         db.execute("begin immediate")
@@ -192,14 +256,82 @@ def sync_live_journal(*, bybit: BybitPrivateClient, supabase: SupabaseRestClient
                 db.execute("insert into executions values (?, ?) on conflict(exec_id) do update set payload=excluded.payload",
                            (str(fill["execId"]), json.dumps(fill, sort_keys=True)))
             start_ms = window_end + 1
+        if hasattr(bybit, "get_small_conversion_history") and hasattr(bybit, "get_unified_transactions"):
+            conversion_version = db.execute("select version from accounting_version where id=1").fetchone()
+            flow_start = (max(state[0], state[1]-DAY_MS) if state and conversion_version else
+                          state[0] if state else initial_ms)
+            conversions = bybit.get_small_conversion_history(start_ms=flow_start, end_ms=end_ms)
+            for conversion in conversions:
+                db.execute("insert into conversion_records values (?,?) on conflict(quote_id) do update set payload=excluded.payload",
+                           (str(conversion["exchangeTxId"]), json.dumps(conversion, sort_keys=True)))
+            cursor = flow_start
+            while cursor <= end_ms:
+                until = min(cursor+7*DAY_MS-1,end_ms)
+                for transaction in bybit.get_unified_transactions(start_ms=cursor,end_ms=until):
+                    db.execute("insert into account_transactions values (?,?) on conflict(id) do update set payload=excluded.payload",
+                               (str(transaction["id"]), json.dumps(transaction, sort_keys=True)))
+                cursor = until+1
+            from cryptoforge.conversion_journal import conversion_fills
+            transactions=[json.loads(row[0]) for row in db.execute("select payload from account_transactions")]
+            conversion_events = conversion_fills(
+                [json.loads(row[0]) for row in db.execute("select payload from conversion_records")], transactions)
+            raw_fills=[json.loads(row[0]) for row in db.execute("select payload from executions")]
+            tracked_coins={str(fill["symbol"])[:-4] for fill in raw_fills if owned(fill)}
+            covered_debits={event["sourceDebitId"] for event in conversion_events}
+            unknown_movements=[t for t in transactions if t.get("currency") in tracked_coins
+                and t.get("type")!="TRADE" and decimal(t,"change")!=0 and t.get("id") not in covered_debits]
+            if unknown_movements:
+                raise ValueError("unmodeled non-trade balance movements invalidate FIFO cost basis")
+            for event in conversion_events:
+                db.execute("insert into executions values (?,?) on conflict(exec_id) do update set payload=excluded.payload",
+                           (event["execId"],json.dumps(event,sort_keys=True)))
+            db.execute("insert into accounting_version values (1,2) on conflict(id) do update set version=2")
         fills = [json.loads(row[0]) for row in db.execute("select payload from executions")]
+
         trades, result = reconstruct_trades(fills)
-        # One transaction at the REST endpoint prevents partially published lot balances.
-        supabase.upsert("trades", trades, on_conflict="idempotency_key")
+        inventory_verified = False
+        if hasattr(bybit,"get_unified_wallet_coins") and hasattr(bybit,"get_unified_transactions"):
+            from cryptoforge.inventory_audit import verify_inventory
+            audit=verify_inventory(fills,
+                [json.loads(row[0]) for row in db.execute("select payload from account_transactions")],
+                bybit.get_unified_wallet_coins())
+            inventory_verified=audit["consistent"]
+            if not inventory_verified:
+                raise ValueError("wallet inventory or opening balance does not reconcile with the journal")
+        # Corrections can move a sale to a different lot after a conversion.
+        # Cancel stale derived segments, retain their previous payload locally.
+        previous = {row[0]:json.loads(row[1]) for row in db.execute("select idempotency_key,payload from published_trade_rows")}
+        if not previous and result.conversion_events and hasattr(supabase,"supabase_url"):
+            previous = read_existing_journal_rows(supabase, fills)
+        current_keys = {row["idempotency_key"] for row in trades}
+        superseded=[]
+        for key,row in previous.items():
+            if key in current_keys:continue
+            db.execute("insert into superseded_trade_rows values (?,?) on conflict(idempotency_key) do nothing",
+                       (key,json.dumps(row,sort_keys=True)))
+            keys=set(trades[0]) if trades else set(row)
+            patch={name:row.get(name) for name in keys}
+            patch.update(status="cancelled",amount="0",stake_amount="0",realized_pnl=None,
+                         realized_pnl_pct=None,fee_amount=None,closed_at=None,
+                         exit_reason="superseded FIFO segment after verified balance conversion")
+            superseded.append(patch)
+        # Uniform columns permit one REST transaction for all corrections and lots.
+        supabase.upsert("trades", trades+superseded, on_conflict="idempotency_key")
+        db.execute("delete from published_trade_rows")
+        db.executemany("insert into published_trade_rows values (?,?)",
+                       [(row["idempotency_key"],json.dumps(row,sort_keys=True)) for row in trades])
+        seeded = db.execute("select id from notification_state where id=1").fetchone()
+        notified = {row[0] for row in db.execute("select exec_id from notification_executions")}
+        pending = {str(f["execId"]) for f in fills} - notified
+        # The first run enables notices from now onward, without replaying historical trades.
+        events = trade_notice_events(fills, trades, pending, now=now) if seeded else []
+        supabase.upsert("system_events", events, on_conflict="idempotency_key", resolution="ignore-duplicates")
+        db.executemany("insert or ignore into notification_executions values (?)", [(identity,) for identity in pending])
+        db.execute("insert or ignore into notification_state values (1)")
         health = {
             "component": "live_trade_journal", "status": "warning" if result.unmatched_sells or result.incomplete_fees else "ok",
             "observed_at": now.isoformat(), "message": "Bybit Spot FIFO journal reconciled",
-            "payload": {**result.__dict__, "history_start": datetime.fromtimestamp((state[0] if state else initial_ms) / 1000, UTC).isoformat()},
+            "payload": {**result.__dict__, "accounting_version": (db.execute("select version from accounting_version where id=1").fetchone() or (1,))[0], "inventory_verified": inventory_verified, "history_start": datetime.fromtimestamp((state[0] if state else initial_ms) / 1000, UTC).isoformat()},
         }
         supabase.upsert("bot_health", [health], on_conflict="component")
         db.execute("insert into journal_state values (1, ?, ?) on conflict(id) do update set cursor_ms=excluded.cursor_ms",

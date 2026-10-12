@@ -14,11 +14,15 @@ BYBIT_MAINNET_BASE_URL = "https://api.bybit.com"
 SPOT_CATEGORY = "spot"
 PRIMARY_TIMEFRAME = "5"
 INFORMATIVE_TIMEFRAMES = ("15", "60")
-SUPPORTED_TIMEFRAMES = (PRIMARY_TIMEFRAME, *INFORMATIVE_TIMEFRAMES)
+SUPPORTED_TIMEFRAMES = ("1", PRIMARY_TIMEFRAME, *INFORMATIVE_TIMEFRAMES)
 
 
 class MarketDataError(RuntimeError):
     """Base error for recoverable market-data failures."""
+
+
+class MarketDataTemporary(MarketDataError):
+    """Transient public-data server error; bounded retry is safe for GET."""
 
 
 class MarketDataRateLimited(MarketDataError):
@@ -169,7 +173,7 @@ class BybitPublicClient:
         for attempt in range(self.max_retries + 1):
             try:
                 return self._get_json_once(request)
-            except (MarketDataTimeout, MarketDataRateLimited) as exc:
+            except (MarketDataTimeout, MarketDataRateLimited, MarketDataTemporary) as exc:
                 last_error = exc
                 if attempt >= self.max_retries:
                     break
@@ -193,6 +197,8 @@ class BybitPublicClient:
         ret_code = payload.get("retCode")
         if ret_code != 0:
             message = payload.get("retMsg", "unknown Bybit error")
+            if ret_code == 10016:
+                raise MarketDataTemporary(f"Bybit server error {ret_code}: {message}")
             if ret_code in {10006, 10429} or "rate" in str(message).lower():
                 raise MarketDataRateLimited(f"Bybit rate-limit response {ret_code}: {message}")
             raise MarketDataError(f"Bybit response {ret_code}: {message}")

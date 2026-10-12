@@ -1,0 +1,18 @@
+{
+  "policy_version": "paper-execution-v1.0",
+  "status": "draft_execution_disabled",
+  "enabled": false,
+  "protocol_version": "live-cash-recovery-v1.0",
+  "wallet": {
+    "capital": "100", "stake": "6", "entry_fee": "0.0018", "exit_fee": "0.0018",
+    "slippage": "0.0005", "cost_assumption_id": "unverified_fee_scenario_requires_preregistration",
+    "max_positions": 6, "max_daily_loss": "2", "delay_seconds": 1,
+    "signal_expiry_seconds": 30, "quote_max_age_seconds": 10, "filter_max_age_seconds": 300,
+    "max_depth_fraction": "0.01", "max_dust_basis_fraction": "0.01", "entry_stop_reserve_fraction": "0.04"
+  },
+  "exits": {"stop_fraction": "0.04", "maximum_hold_seconds": 3600, "shared_exit_signal": true},
+  "runtime": {"poll_seconds": 5, "maximum_new_signals_per_tick": 6, "wall_budget_seconds": 20},
+  "source_scope": "approved_baseline_buy_opportunity_stream_only",
+  "fees_verified": false,
+  "live_promotion_allowed": false
+}

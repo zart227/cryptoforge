@@ -172,3 +172,40 @@ def test_reconciliation_failure_records_health_without_logging_credentials(monke
     assert health['status'] == 'error'
     assert 'secret-token' not in str(health)
     assert 'secret-token' not in capsys.readouterr().out
+
+
+def test_notices_skip_history_and_publish_new_trades_once_with_net_pnl(tmp_path):
+    history = [fill('b', 'Buy', '10', '2', fee='.1', currency='ETH')]
+    bybit = SimpleNamespace(get_spot_executions=lambda **kw: history)
+    store = Store()
+    path = tmp_path / 'journal.sqlite'
+    now = datetime(1970, 1, 2, tzinfo=UTC)
+    sync_live_journal(bybit=bybit, supabase=store, cache_path=path, now=now)
+    assert not [v for (t, _), v in store.rows.items() if t == 'system_events']
+    history.append(fill('s', 'Sell', '9.9', '3', fee='.3', time=2000))
+    sync_live_journal(bybit=bybit, supabase=store, cache_path=path, now=now)
+    events = [v for (t, _), v in store.rows.items() if t == 'system_events']
+    assert len(events) == 1
+    assert events[0]['event_type'] == 'trade.closed'
+    assert Decimal(events[0]['payload']['fee_amount']) == Decimal('.5')
+    assert Decimal(events[0]['payload']['realized_pnl']) == Decimal('9.4')
+    sync_live_journal(bybit=bybit, supabase=store, cache_path=path, now=now)
+    assert len([v for (t, _), v in store.rows.items() if t == 'system_events']) == 1
+
+
+def test_notices_group_multiple_fifo_lots_in_one_sell_message():
+    from cryptoforge.live_trade_journal import trade_notice_events
+    fills = [fill('b1', 'Buy', '2', '10'), fill('b2', 'Buy', '3', '20', time=1100), fill('s', 'Sell', '5', '30', time=2000)]
+    rows, _ = reconstruct_trades(fills)
+    events = trade_notice_events(fills, rows, {'s'}, now=datetime.now(UTC))
+    assert len(events) == 1
+    assert Decimal(events[0]['payload']['realized_pnl']) == 70
+    assert Decimal(events[0]['payload']['realized_pnl_pct']) == Decimal('0.875')
+
+
+def test_notices_show_unknown_result_for_unmatched_sale():
+    from cryptoforge.live_trade_journal import trade_notice_events
+    fills = [fill('s', 'Sell', '1', '2')]
+    rows, _ = reconstruct_trades(fills)
+    events = trade_notice_events(fills, rows, {'s'}, now=datetime.now(UTC))
+    assert events[0]['payload']['realized_pnl'] is None

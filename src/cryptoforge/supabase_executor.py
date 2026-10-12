@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from decimal import Decimal, ROUND_DOWN
 import json
+from math import isfinite
 from typing import TYPE_CHECKING, Any
 from urllib import parse, request
 
@@ -25,6 +26,7 @@ class CandleRow:
     low: Decimal
     close: Decimal
     volume: Decimal
+    cache_observed_at: datetime | None = None
 
 
 @dataclass(frozen=True)
@@ -43,8 +45,10 @@ class SupabaseMarketReader:
         query = parse.urlencode(
             {
                 "pair": f"eq.{pair}",
+                "exchange": "eq.bybit",
+                "market_type": "eq.spot",
                 "timeframe": f"eq.{timeframe}",
-                "select": "pair,symbol,open_time,open,high,low,close,volume",
+                "select": "pair,symbol,open_time,open,high,low,close,volume,ingested_at",
                 "order": "open_time.desc",
                 "limit": str(limit),
             }
@@ -60,6 +64,7 @@ class SupabaseMarketReader:
                 low=Decimal(str(row["low"])),
                 close=Decimal(str(row["close"])),
                 volume=Decimal(str(row["volume"])),
+                cache_observed_at=datetime.fromisoformat(str(row["ingested_at"]).replace("Z","+00:00")) if row.get("ingested_at") else None,
             )
             for row in rows
         ]
@@ -96,6 +101,8 @@ class SupabaseLiveExecutor:
         entry_slots: int | None = None,
         stop_loss_percent: Decimal = Decimal("0.04"),
         max_dust_fraction: Decimal = Decimal("0.01"),
+        shadow_observer: Any = None,
+        forecast_recorder: Any = None,
     ) -> None:
         if ml_mode not in {"off", "shadow", "gate"}:
             raise ValueError("ml_mode must be one of: off, shadow, gate")
@@ -117,10 +124,27 @@ class SupabaseLiveExecutor:
         self.entry_slots = entry_slots
         self.stop_loss_percent = stop_loss_percent
         self.max_dust_fraction = max_dust_fraction
+        if shadow_observer is None:
+            from cryptoforge.prospective_shadow import LocalShadowObserver
+            shadow_observer=LocalShadowObserver.from_env()
+        self.shadow_observer=shadow_observer
+        if forecast_recorder is None:
+            import os
+            from pathlib import Path
+            from cryptoforge.primary_forecast_memory import PrimaryForecastMemory
+            ledger=os.environ.get('CRYPTOFORGE_PRIMARY_FORECAST_LEDGER')
+            forecast_recorder=PrimaryForecastMemory(Path(ledger)) if ledger else None
+        self.forecast_recorder=forecast_recorder
 
     def run_once(self, pair: str, *, live: bool = False, now: datetime | None = None) -> ExecutorDecision:
         now = now or datetime.now(UTC)
         candles = self.reader.read_candles(pair, limit=120)
+        self._feature_snapshot_time = datetime.now(UTC)
+        self._feature_snapshot_pair = pair
+        self._last_model_input = None
+        self._last_candidate_forecast = None
+        self._last_cash_shadow_receipt = None
+        self._last_instrument_snapshot = None
         reasons: list[str] = []
         if len(candles) < self.min_candles:
             reasons.append("not enough candles")
@@ -137,6 +161,13 @@ class SupabaseLiveExecutor:
             return self._record(pair, "reject_entry", reasons, candles, live=live)
         base_balance = self.bybit.get_unified_coin_wallet_balance(base_coin)
         instrument = self.bybit.get_spot_instrument(symbol)
+        raw_metadata=getattr(instrument,"raw_metadata",None)
+        if isinstance(raw_metadata,dict):
+            from copy import deepcopy
+            self._last_instrument_snapshot={"pair":pair,"category":"spot","symbol":symbol,
+                "observed_at":datetime.now(UTC).isoformat(),
+                "source":"GET /v5/market/instruments-info", "raw":deepcopy(raw_metadata),
+                "history_policy":"observation_only_no_backdating_or_continuity_claim"}
         sellable_quantity = quantize_down(base_balance, instrument.quantity_step)
         has_material_position = (
             sellable_quantity >= instrument.minimum_quantity
@@ -204,7 +235,7 @@ class SupabaseLiveExecutor:
         reasons.extend(signal_reasons)
         short_shadow, short_reasons = short_shadow_signal(candles)
         reasons.extend(short_reasons)
-        reasons.extend(self._ml_shadow_research_reasons(candles))
+        reasons.extend(self._ml_shadow_research_reasons(candles,baseline_entry_signal=signal))
         if not signal:
             return self._record(pair, "hold", reasons, candles, live=live)
         if self.entry_blockers:
@@ -263,18 +294,30 @@ class SupabaseLiveExecutor:
             reasons.append("shadow mode; order not submitted")
             return self._record(pair, "approve_entry", reasons, candles, live=live)
 
+        receipt=None
+        try:
+            receipt=self.shadow_observer.before_buy(pair=pair,opportunity=order_link_id,
+                model_input=self._last_model_input,feature_observed_at=self._feature_snapshot_time)
+        except Exception as exc:
+            reasons.append(f"cash_shadow_recording_error={type(exc).__name__}")
+        self._last_cash_shadow_receipt=receipt
         order = self.bybit.create_spot_market_order(
             symbol=symbol,
             side="Buy",
             qty=self.stake_amount,
             order_link_id=order_link_id,
         )
+        try:
+            self.shadow_observer.after_buy(receipt,order)
+        except Exception as exc:
+            reasons.append(f"cash_shadow_binding_error={type(exc).__name__}")
         if self.entry_slots is not None:
             self.entry_slots -= 1
         decision = self._record(pair, "approve_entry", reasons, candles, live=live, order=order)
         return decision
 
     def _ml_entry_allows(self, candles: list[CandleRow]) -> tuple[bool, list[str]]:
+        self._last_model_input=None
         # Local import avoids the model-training module's CandleRow dependency
         # forming a runtime import cycle.
         from cryptoforge.model_training import FEATURE_VERSION, extract_features
@@ -290,11 +333,22 @@ class SupabaseLiveExecutor:
             return self.ml_mode != "gate", ["ml_fallback=no_fresh_model"]
         if model.feature_version != FEATURE_VERSION:
             return self.ml_mode != "gate", [f"ml_fallback=unsupported_feature_version:{model.feature_version}"]
+        config=(getattr(model,"artifact",{}) or {}).get("config",{})
+        if config.get("timeframe","5m")!="5m" or config.get("horizon_candles",3)!=3 or config.get("target_version","fixed-future-return-v1")!="fixed-future-return-v1":
+            return self.ml_mode!="gate",["ml_fallback=incompatible_timeframe_horizon_or_target"]
         try:
-            features = extract_features(candles, [candle.volume for candle in candles])
+            features,state,observed=self._model_input_features(candles,config)
+            self._feature_snapshot_time=observed
             probability = model.predict_probability(features)
+            if not isfinite(probability) or not 0<=probability<=1:raise ValueError('invalid ML probability')
+            self._last_model_input={"pair":candles[-1].pair,"values":list(features),"state":state,
+                'input_contract':self._resolved_model_input_contract,'probability':probability,
+                'model_version':model.model_version,'artifact_sha256':getattr(model,'artifact_sha256',None),
+                'bar_open_time':self._resolved_model_input_bar_open_time}
             short_predictor = getattr(model, "predict_short_probability", None)
             short_probability = short_predictor(features) if short_predictor is not None else None
+            if short_probability is not None and (not isfinite(short_probability) or not 0<=short_probability<=1):
+                raise ValueError('invalid short ML probability')
         except Exception as exc:
             return self.ml_mode != "gate", [f"ml_fallback=prediction_error:{type(exc).__name__}"]
         reasons = [
@@ -312,7 +366,32 @@ class SupabaseLiveExecutor:
         reasons.append("ml_gate=pass" if self.ml_mode == "gate" else "ml_shadow=observed")
         return True, reasons
 
-    def _ml_shadow_research_reasons(self, candles: list[CandleRow]) -> list[str]:
+    def _model_input_features(self,candles,config):
+        from cryptoforge.model_training import extract_features
+        from cryptoforge.candle_contract import closed_snapshot
+        state=config.get('input_candle_state','legacy_asof_snapshot')
+        if state not in {'legacy_asof_snapshot','closed_only'}:raise ValueError('unsupported model candle input state')
+        observed=getattr(self,'_feature_snapshot_time',datetime.now(UTC))
+        input_candles=closed_snapshot(candles,timeframe='5m',as_of=observed) if state=='closed_only' else candles
+        width=config.get('feature_lookback_candles')
+        if width is not None:
+            if type(width) is not int or not 36<=width<=1000:raise ValueError('unsupported feature lookback')
+            if len(input_candles)<width:
+                input_candles=self.reader.read_candles(candles[-1].pair,timeframe='5m',limit=width+3)
+                observed=datetime.now(UTC)
+                if state=='closed_only':input_candles=closed_snapshot(input_candles,timeframe='5m',as_of=observed)
+            if len(input_candles)<width:raise ValueError('incomplete model feature window')
+            input_candles=input_candles[-width:]
+        if len(input_candles)<36:raise ValueError('insufficient model input history')
+        self._resolved_model_input_contract={'feature_version':'candle-v1','timeframe':'5m',
+            'input_candle_state':state,'calculation_contract':'bounded-window-candle-v1',
+            'lookback_candles':len(input_candles)}
+        self._resolved_model_input_bar_open_time=input_candles[-1].open_time.isoformat()
+        self._resolved_model_input_reference_close=str(input_candles[-1].close)
+        return extract_features(input_candles,[c.volume for c in input_candles]),state,observed
+
+    def _ml_shadow_research_reasons(self, candles: list[CandleRow],*,baseline_entry_signal=None) -> list[str]:
+        self._last_candidate_forecast=None
         from cryptoforge.model_training import FEATURE_VERSION, extract_features
 
         if self.active_model_registry is None:
@@ -327,14 +406,65 @@ class SupabaseLiveExecutor:
             return ["short_ml_shadow=unavailable:no_fresh_model"]
         if model.feature_version != FEATURE_VERSION:
             return [f"short_ml_shadow=unsupported_feature_version:{model.feature_version}"]
+        config=(getattr(model,"artifact",{}) or {}).get("config",{})
+        if config.get("timeframe","5m")!="5m" or config.get("horizon_candles",3)!=3:
+            return ["short_ml_shadow=incompatible_timeframe_or_horizon"]
+        if config.get('target_version','fixed-future-return-v1')!='fixed-future-return-v1':
+            return ['short_ml_shadow=incompatible_target']
         try:
-            features = extract_features(candles, [candle.volume for candle in candles])
+            features,state,observed=self._model_input_features(candles,config)
             probability = model.predict_short_probability(features)
+            if probability is not None and (not isfinite(probability) or not 0<=probability<=1):raise ValueError('invalid short ML probability')
+            predictor=getattr(model,'predict_probability',None)
+            long_probability=predictor(features) if predictor is not None else None
+            if long_probability is not None and (not isfinite(long_probability) or not 0<=long_probability<=1):raise ValueError('invalid long shadow probability')
+            self._last_candidate_forecast={'pair':candles[-1].pair,'model_version':model.model_version,
+                'artifact_sha256':getattr(model,'artifact_sha256',None),'features':list(features),
+                'feature_observed_at':observed.isoformat(),'predicted_at':datetime.now(UTC).isoformat(),
+                'input_candle_state':state,'input_contract':self._resolved_model_input_contract,
+                'input_bar_open_time':self._resolved_model_input_bar_open_time,
+                'opportunity_bar_open_time':candles[-1].open_time.isoformat(),
+                'reference_close':self._resolved_model_input_reference_close,
+                'target_version':'fixed-future-return-v1','horizon_candles':3,
+                'min_label_return':config.get('min_label_return',config.get('round_trip_cost',0.)),
+                'round_trip_cost':config.get('round_trip_cost',0.),
+                'label_policy_known':config.get('min_label_return') is not None and config.get('round_trip_cost') is not None,
+                'long_probability':long_probability,'short_probability':probability,
+                'input_drift':self._candidate_input_drift(model,features),
+                'baseline_entry_signal':baseline_entry_signal,'counts_as_real_executed_buys':False,
+                'scope':'inventory_conditioned_current_market_observation_not_counterfactual_profit'}
         except Exception as exc:
             return [f"short_ml_shadow=prediction_error:{type(exc).__name__}"]
+        recording=[]
+        if self.forecast_recorder is not None and self._last_candidate_forecast['artifact_sha256']:
+            try:
+                receipt=self.forecast_recorder.record(self._last_candidate_forecast)
+                recording=[f"primary_forecast_memory={receipt['status']}"]
+            except Exception as exc:recording=[f'primary_forecast_memory_error={type(exc).__name__}']
         if probability is None:
-            return ["short_ml_shadow=unavailable:legacy_model"]
-        return [f"short_ml_shadow=observed", f"ml_short_probability={probability:.6f}"]
+            return ["short_ml_shadow=unavailable:legacy_model",*recording]
+        return [f"short_ml_shadow=observed", f"ml_short_probability={probability:.6f}",*recording]
+
+    def _candidate_input_drift(self,model,features):
+        try:
+            from cryptoforge.feature_drift import feature_drift,training_feature_reference
+            from cryptoforge.training_snapshot import load_training_snapshot
+            artifact=getattr(model,'artifact',{}) or {};reference=artifact.get('feature_reference')
+            if reference is None:
+                snapshot_ref=(artifact.get('config') or {}).get('training_input_snapshot')
+                if snapshot_ref is None:return {'status':'original_training_reference_unavailable','changes_entry_policy':False}
+                cache=getattr(self,'_feature_reference_cache',{})
+                key=getattr(model,'artifact_sha256',None) or model.model_version
+                if key not in cache:
+                    snapshot=load_training_snapshot(snapshot_ref)
+                    reference=training_feature_reference([row['features'] for row in snapshot['splits']['train']],
+                        names=artifact['feature_names'],means=artifact['means'],stds=artifact['stds'])
+                    if len(cache)>=4:cache.pop(next(iter(cache)))
+                    cache[key]=reference;self._feature_reference_cache=cache
+                reference=cache[key]
+            return {'status':'train_only_support_diagnostic',**feature_drift(features,reference)}
+        except Exception as exc:
+            return {'status':'training_reference_diagnostic_error','error':type(exc).__name__,'changes_entry_policy':False}
 
     def _record(
         self,
@@ -347,6 +477,69 @@ class SupabaseLiveExecutor:
         order: dict[str, Any] | None = None,
     ) -> ExecutorDecision:
         latest = candles[-1] if candles else None
+        features: dict[str, Any] = {
+            "order": order or {}, "latest_open_time": latest.open_time.isoformat() if latest else None,
+            "decision_context_version": "executor-context-v2",
+            "captured_at": datetime.now(UTC).isoformat(),
+        }
+        candidate_forecast=getattr(self,'_last_candidate_forecast',None)
+        if candidate_forecast and candidate_forecast['pair']==pair:
+            features['primary_candidate_forecast']=candidate_forecast
+        shadow_receipt=getattr(self,"_last_cash_shadow_receipt",None)
+        if decision=="approve_entry" and shadow_receipt:
+            features["cash_shadow_receipt"]=shadow_receipt
+        instrument_snapshot=getattr(self,"_last_instrument_snapshot",None)
+        if instrument_snapshot and instrument_snapshot["pair"]==pair:
+            features["instrument_snapshot"]=instrument_snapshot
+        if getattr(self, "_feature_snapshot_pair", None) == pair:
+            features["feature_observed_at"] = self._feature_snapshot_time.isoformat()
+        # Keep exact as-of features: replaying a completed candle later can leak
+        # information that was unavailable when an intrabar order was placed.
+        if decision in {"approve_entry", "approve_exit", "reject_entry"} and len(candles) >= 36:
+            try:
+                from math import isfinite
+                from cryptoforge.model_training import FEATURE_VERSION, extract_features
+                values = extract_features(candles, [c.volume for c in candles])
+                if not all(isfinite(value) for value in values):
+                    raise ValueError("nonfinite decision features")
+                features.update(feature_version=FEATURE_VERSION, model_feature_values=list(values),
+                                feature_capture_status="complete", model_input_candle_state="legacy_asof_snapshot",
+                                model_feature_calculation_contract='bounded-window-candle-v1',
+                                model_feature_lookback_candles=len(candles),model_input_timeframe='5m',
+                                model_feature_bar_open_time=latest.open_time.isoformat())
+                model_input=getattr(self,"_last_model_input",None)
+                if decision in {'approve_entry','reject_entry'} and model_input and model_input["pair"]==pair:
+                    features.update(model_feature_values=model_input["values"],model_input_candle_state=model_input["state"])
+                    features.update(long_model_probability=model_input.get('probability'),
+                        long_model_version=model_input.get('model_version'),
+                        long_model_artifact_sha256=model_input.get('artifact_sha256'),
+                        model_feature_bar_open_time=model_input.get('bar_open_time'))
+                    contract=model_input.get('input_contract')
+                    if contract:
+                        features.update(model_feature_calculation_contract=contract['calculation_contract'],
+                            model_feature_lookback_candles=contract['lookback_candles'],model_input_timeframe=contract['timeframe'])
+                    else:
+                        for key in ('model_feature_calculation_contract','model_feature_lookback_candles','model_input_timeframe'):
+                            features.pop(key,None)
+                if decision in {'approve_entry','reject_entry'}:
+                    conflict, conflict_reasons = exit_signal(candles)
+                    features.update(entry_exit_conflict=conflict, entry_exit_conflict_reasons=conflict_reasons)
+            except Exception as exc:
+                # Diagnostics must never prevent recording a submitted exit.
+                features.update(feature_capture_status="failed", feature_capture_error=type(exc).__name__)
+        result = (order or {}).get("result") or {}
+        external_order_id = str(result.get("orderId") or "") if isinstance(result, dict) else ""
+        mode = "live" if live else "shadow"
+        key = (f"executor:{mode}:{pair}:order:{external_order_id}" if external_order_id else
+               f"executor:{mode}:{decision}:{order_id(pair, latest.open_time if latest else datetime.now(UTC))}")
+        if decision=='reject_entry':
+            import hashlib
+            identity={name:features.get(name) for name in ('long_model_version','long_model_artifact_sha256',
+                'model_input_candle_state','model_feature_calculation_contract','model_feature_lookback_candles',
+                'model_feature_bar_open_time','feature_capture_status')}
+            key+=':snapshot-v1:'+hashlib.sha256(json.dumps(identity,sort_keys=True).encode()).hexdigest()[:12]
+            features['opportunity_only']=True
+            features['rejection_snapshot_policy']='first_snapshot_per_bar_model_and_input_contract'
         record = {
             "decided_at": datetime.now(UTC).isoformat(),
             "mode": "live" if live else "shadow",
@@ -357,11 +550,12 @@ class SupabaseLiveExecutor:
             "decision": decision,
             "stake_amount": format(self.stake_amount, "f"),
             "reference_price": format(latest.close, "f") if latest else None,
-            "features": {"order": order or {}, "latest_open_time": latest.open_time.isoformat() if latest else None},
+            "features": features,
             "reasons": reasons,
-            "idempotency_key": order_id(pair, latest.open_time if latest else datetime.now(UTC)),
+            "idempotency_key": key,
         }
-        self.supabase.upsert("trade_decisions", [record], on_conflict="idempotency_key")
+        self.supabase.upsert("trade_decisions", [record], on_conflict="idempotency_key",
+                             resolution="ignore-duplicates" if external_order_id or decision=='reject_entry' else "merge-duplicates")
         return ExecutorDecision(decision, pair, tuple(reasons), order)
 
 

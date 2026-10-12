@@ -103,11 +103,7 @@ def test_trade_decision_event_formats_notification() -> None:
         )
     )
 
-    assert notification is not None
-    rendered = notification.render()
-    assert "CryptoForge: trade decision" in rendered
-    assert "ETH/USDT" in rendered
-    assert "decision: approve_entry" in rendered
+    assert notification is None
 
 
 def test_health_event_formats_notification() -> None:
@@ -303,3 +299,56 @@ def test_relay_retains_cursor_event_even_with_many_old_ids(tmp_path):
     assert relay_once(client=client, notifier=notifier, state_path=path).sent == 1
     assert load_state(path).delivered_event_ids == ('a-current',)
     assert relay_once(client=client, notifier=notifier, state_path=path).sent == 0
+
+
+def test_live_closed_notice_shows_loss_percentage_and_both_fees():
+    notification = notification_from_event(event('trade.closed', {
+        'journal_notice': True, 'pair': 'ETH/USDT', 'exit_price': '2', 'amount': '10',
+        'realized_pnl': '-1.2', 'realized_pnl_pct': '-0.06', 'fee_amount': '0.25',
+    }))
+    rendered = notification.render()
+    assert 'Убыток после комиссий: -1.200000 USDT' in rendered
+    assert 'Доходность: -6.00%' in rendered
+    assert 'Комиссии покупки и продажи: 0.250000 USDT' in rendered
+
+
+def test_relay_does_not_fetch_decisions(monkeypatch):
+    from cryptoforge.telegram_relay import SupabaseRelayClient
+    client = SupabaseRelayClient(supabase_url='https://example.test', service_role_key='secret')
+    monkeypatch.setattr(client, '_fetch_system_events', lambda **kw: [])
+    monkeypatch.setattr(client, '_fetch_bot_health', lambda **kw: [])
+    monkeypatch.setattr(client, '_fetch_trade_decisions', lambda **kw: (_ for _ in ()).throw(AssertionError('decision spam')))
+    assert client.fetch_events(since_occurred_at='2026-10-07T00:00:00Z', limit=100) == []
+
+
+def test_night_research_notification_is_disabled():
+    assert notification_from_event(event('research.nightly_summary', {'top_pairs': ['ETH/USDT']})) is None
+
+
+def test_partial_market_sync_warning_is_not_sent():
+    assert notification_from_event(event('system.health', {
+        'component': 'supabase_market_sync', 'status': 'warning',
+        'message': 'synced=19 failed=1',
+    })) is None
+    assert notification_from_event(event('system.health', {
+        'component': 'live_trade_journal', 'status': 'error',
+        'message': 'new entries paused',
+    })) is not None
+
+
+def test_watcher_suppresses_partial_sync_but_keeps_stale_data(monkeypatch, tmp_path):
+    from datetime import UTC, datetime, timedelta
+    from dataclasses import replace
+    from cryptoforge import telegram_relay as relay
+    now = datetime.now(UTC)
+    snapshot = StatusSnapshot(now, now, {'mode': 'live', 'decision': 'hold'},
+        {'status': 'warning', 'message': 'synced=18 failed=2', 'observed_at': now.isoformat()}, now, now)
+    monkeypatch.setattr(relay, 'fetch_status', lambda client: snapshot)
+    notifier = RecordingNotifier()
+    assert relay.watcher_once(client=ReportClient(), notifier=notifier, state_path=tmp_path / 'state.json') == 0
+    assert not notifier.notifications
+    assert 'feeder:warning' in snapshot.render()
+    snapshot = replace(snapshot, latest_candle_ingested_at=now - timedelta(minutes=20))
+    assert relay.watcher_once(client=ReportClient(), notifier=notifier, state_path=tmp_path / 'state.json') == 1
+    assert 'candles:stale' in notifier.notifications[0].body
+    assert 'feeder:warning' not in notifier.notifications[0].body

@@ -1,0 +1,96 @@
+{
+  "protocol_version": "live-cash-recovery-closed-v1.0",
+  "status": "frozen_collection_only",
+  "frozen_at": "2026-10-09T21:59:16.427796+00:00",
+  "target_version": "spot-long-real-cash-recovery-dust-zero-v1",
+  "feature_version": "candle-v1",
+  "input_candle_state": "closed_only",
+  "market": "bybit_global_spot",
+  "maximum_residual_cost_fraction": "0.01",
+  "windows": {
+    "train": {
+      "start": "2026-10-09T21:59:16.427796+00:00",
+      "end_exclusive": "2026-11-06T21:59:16.427796+00:00"
+    },
+    "validation": {
+      "start": "2026-11-06T21:59:16.427796+00:00",
+      "end_exclusive": "2026-11-20T21:59:16.427796+00:00"
+    },
+    "sealed_test": {
+      "start": "2026-11-20T21:59:16.427796+00:00",
+      "end_exclusive": "2026-12-18T21:59:16.427796+00:00"
+    },
+    "paper": {
+      "start": "2026-12-18T21:59:16.427796+00:00",
+      "end_exclusive": "2027-01-15T21:59:16.427796+00:00"
+    }
+  },
+  "embargo_seconds": 86400,
+  "minimums": {
+    "train": {
+      "buy_orders": 100,
+      "entry_days": 14,
+      "pairs": 6,
+      "positive": 20,
+      "negative": 20
+    },
+    "validation": {
+      "buy_orders": 40,
+      "entry_days": 7,
+      "pairs": 4,
+      "positive": 5,
+      "negative": 5
+    },
+    "sealed_test": {
+      "buy_orders": 60,
+      "entry_days": 14,
+      "pairs": 4
+    },
+    "paper": {
+      "buy_orders": 60,
+      "entry_days": 14,
+      "pairs": 4
+    }
+  },
+  "maximum_pair_fraction": "0.35",
+  "maximum_entry_day_fraction": "0.25",
+  "development_buy_keys": [
+    "34c7d408609274b7c94c1bc607c7790e1bbafaa79839389bfbcca47ba4f13a37",
+    "657502d1948f91ba83141171c7cb1534a6d0232d5127ce87c3ab99eab0b3157e",
+    "82ab9d48e642c59fa5b1fbfd9b7417aed22b2bd38037a3194ad6b2d6812a5e9e",
+    "86e784c2f478527ba5489f57b0c83a5c2c6940ec48ddd81c8d663e00f7087971",
+    "ba22900c70714ccfba7cfffb0b1a612657d278d60afedd450cb3903b8a4edb98",
+    "e857de2e970d58c2eae223f223d1b155fa510884a4d1b6ff65116f2ae81dc768",
+    "ec262f45d218f0171561cd07aaef94f1839b08b15d5335efda7e214dbc163e3d",
+    "fadb59cecb3b77010a41a5bd0d104047865df4ffb1880e3f6ed7f75f408b6078"
+  ],
+  "development_snapshot_sha256": "2e7c618d463c6e42a5ef7358be07914d21aaba05f38d32201161487fd94cb41b",
+  "development_policy": "seen_buys_train_only_all_later_corrections_same_group",
+  "assignment_policy": "actual_entry_time_and_label_known_before_split_boundary",
+  "sealed_test_policy": "no_outcome_statistics_or_selection_before_test_end",
+  "configuration_budget": {
+    "model_family": "pure-python-logistic",
+    "maximum_configurations": 3,
+    "thresholds": [
+      "0.50"
+    ],
+    "l2_values": [
+      "0.001",
+      "0.01",
+      "0.1"
+    ]
+  },
+  "evaluation_policy": "compare_on_same_prospective_buy_opportunities_no_counterfactual_fill_claim",
+  "minimum_example_snapshot_freshness_seconds": 2700,
+  "automatic_training_allowed": false,
+  "live_promotion_allowed": false,
+  "historical_reserved_final_compatible": false,
+  "note": "Separate forward closed-only study; legacy buys are not new closed-only samples. No automatic fitting, live promotion or paper activation.",
+  "feature_input_contract": {
+    "feature_version": "candle-v1",
+    "timeframe": "5m",
+    "input_candle_state": "closed_only",
+    "calculation_contract": "bounded-window-candle-v1",
+    "lookback_candles": 120
+  }
+}

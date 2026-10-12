@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from copy import deepcopy
 import hashlib
 import hmac
 import json
@@ -49,6 +50,7 @@ class BybitSpotInstrument:
     quantity_step: Decimal
     minimum_quantity: Decimal
     minimum_order_amount: Decimal
+    raw_metadata: dict[str, Any] | None = None
 
 
 class BybitPrivateClient:
@@ -184,6 +186,29 @@ class BybitPrivateClient:
             cursors.add(cursor)
             params["cursor"] = cursor
 
+    def get_unified_transactions(self, *, start_ms: int, end_ms: int) -> list[dict[str, Any]]:
+        if end_ms < start_ms or end_ms-start_ms > 7*24*60*60*1000:
+            raise ValueError("transaction range must be at most seven days")
+        params={"accountType":"UNIFIED","startTime":str(start_ms),"endTime":str(end_ms),"limit":"50"}
+        rows=[];seen=set()
+        while True:
+            result=self._private_get("/v5/account/transaction-log",params).get("result",{})
+            rows.extend(result.get("list") or [])
+            cursor=str(result.get("nextPageCursor") or "")
+            if not cursor:return rows
+            if cursor in seen:raise RuntimeError("Bybit repeated a transaction cursor")
+            seen.add(cursor);params["cursor"]=cursor
+
+    def get_small_conversion_history(self, *, start_ms: int, end_ms: int) -> list[dict[str, Any]]:
+        rows=[]
+        for page in range(1,101):
+            result=self._private_get("/v5/asset/covert/small-balance-history",{
+                "accountType":"eb_convert_uta","startTime":str(start_ms),"endTime":str(end_ms),
+                "cursor":str(page),"size":"100"}).get("result",{})
+            rows.extend(result.get("records") or [])
+            if page>=int(result.get("lastPage") or page):return rows
+        raise RuntimeError("conversion history pagination limit reached")
+
     def get_spot_instrument(self, symbol: str) -> BybitSpotInstrument:
         query = parse.urlencode({"category": "spot", "symbol": symbol})
         payload = self.http_get(
@@ -194,6 +219,8 @@ class BybitPrivateClient:
         if payload.get("retCode") != 0 or not payload.get("result", {}).get("list"):
             raise RuntimeError(f"Bybit instrument metadata unavailable for {symbol}")
         item = payload["result"]["list"][0]
+        if item.get("symbol") != symbol:
+            raise RuntimeError(f"Bybit instrument symbol mismatch for {symbol}")
         lot = item.get("lotSizeFilter") or {}
         step = lot.get("qtyStep") or lot.get("basePrecision")
         if not step:
@@ -203,6 +230,7 @@ class BybitPrivateClient:
             quantity_step=Decimal(str(step)),
             minimum_quantity=Decimal(str(lot.get("minOrderQty") or "0")),
             minimum_order_amount=Decimal(str(lot.get("minOrderAmt") or "5")),
+            raw_metadata=deepcopy(item),
         )
 
     def get_unified_wallet_coins(self) -> list[dict[str, Any]]:
