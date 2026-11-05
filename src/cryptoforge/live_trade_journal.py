@@ -17,6 +17,7 @@ from pathlib import Path
 import sqlite3
 from typing import Any
 
+from cryptoforge.execution_identity import unique_executions
 from cryptoforge.bybit_private import BybitPrivateClient
 from cryptoforge.supabase_market import SupabaseRestClient, bybit_symbol_to_pair
 
@@ -101,7 +102,7 @@ def reconstruct_trades(fills: list[JsonObject]) -> tuple[list[JsonObject], Journ
     records: list[JsonObject] = []
     unmatched = 0
     seen: set[str] = set()
-    for fill in sorted(fills, key=lambda r: (int(r["execTime"]), str(r["execId"]), str(r.get("orderId")), str(r.get("leavesQty")))):
+    for fill in sorted(unique_executions(fills), key=lambda r: (int(r["execTime"]), str(r["execId"]), str(r.get("orderId")), str(r.get("leavesQty")))):
         exec_id = str(fill["execId"])
         if exec_id in seen:
             continue
@@ -253,7 +254,9 @@ def sync_live_journal(*, bybit: BybitPrivateClient, supabase: SupabaseRestClient
             for fill in fills:
                 if not fill.get("execId") or not fill.get("execTime"):
                     raise ValueError("execution identity/time missing")
-                db.execute("insert into executions values (?, ?) on conflict(exec_id) do update set payload=excluded.payload",
+                previous_fill=db.execute("select payload from executions where exec_id=?",(str(fill["execId"]),)).fetchone()
+                unique_executions(([json.loads(previous_fill[0])] if previous_fill else [])+[fill])
+                db.execute("insert into executions values (?, ?) on conflict(exec_id) do nothing",
                            (str(fill["execId"]), json.dumps(fill, sort_keys=True)))
             start_ms = window_end + 1
         if hasattr(bybit, "get_small_conversion_history") and hasattr(bybit, "get_unified_transactions"):
@@ -292,9 +295,11 @@ def sync_live_journal(*, bybit: BybitPrivateClient, supabase: SupabaseRestClient
         inventory_verified = False
         if hasattr(bybit,"get_unified_wallet_coins") and hasattr(bybit,"get_unified_transactions"):
             from cryptoforge.inventory_audit import verify_inventory
+            tracked=sorted({str(fill["symbol"])[:-4] for fill in fills if owned(fill) and str(fill["symbol"]).endswith("USDT")})
+            wallet=(bybit.get_unified_wallet_coins_for(tracked) if tracked and hasattr(bybit,"get_unified_wallet_coins_for")
+                    else bybit.get_unified_wallet_coins())
             audit=verify_inventory(fills,
-                [json.loads(row[0]) for row in db.execute("select payload from account_transactions")],
-                bybit.get_unified_wallet_coins())
+                [json.loads(row[0]) for row in db.execute("select payload from account_transactions")],wallet)
             inventory_verified=audit["consistent"]
             if not inventory_verified:
                 raise ValueError("wallet inventory or opening balance does not reconcile with the journal")

@@ -18,7 +18,7 @@ from cryptoforge.llm_research_advisor import FreeAdvisor, SYSTEM, PROMPT_VERSION
 from cryptoforge.llm_research_contracts import CATALOG, PROPOSAL_VERSION
 from cryptoforge.llm_research_requests import ResearchRequests
 from cryptoforge.research_run_budget import BudgetCancelled
-from cryptoforge.training_diagnostics import canonical, digest, validate_diagnostics
+from cryptoforge.research_training_diagnostics import canonical, digest, validate_diagnostics
 
 
 def large_report():

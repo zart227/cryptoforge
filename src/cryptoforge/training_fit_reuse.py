@@ -11,7 +11,7 @@ from pathlib import Path
 from cryptoforge import research_fit_graph as graph
 from cryptoforge import training_experiment_planner as planner
 from cryptoforge.llm_research_contracts import CATALOG
-from cryptoforge.training_diagnostics import canonical, digest, exact_fields, number
+from cryptoforge.research_training_diagnostics import canonical, digest, exact_fields, number
 
 POLICY = {'schema_version':'ephemeral-training-fit-reuse-v1','maximum_logical_evaluations':7,
     'maximum_physical_fit_feature_operations':14000000,'cache_lifetime':'one_function_call',

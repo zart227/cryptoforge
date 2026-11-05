@@ -7,7 +7,7 @@ import subprocess
 import pytest
 
 from cryptoforge import ollama_local_preparation as prep
-from cryptoforge.training_diagnostics import digest
+from cryptoforge.research_training_diagnostics import digest
 
 
 GIB = 1024**3

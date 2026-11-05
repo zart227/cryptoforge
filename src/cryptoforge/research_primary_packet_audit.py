@@ -11,7 +11,7 @@ import re
 
 from cryptoforge import research_model_inventory as registry
 from cryptoforge.llm_research_contracts import strict_json
-from cryptoforge.training_diagnostics import canonical, digest, exact_fields, timestamp
+from cryptoforge.research_training_diagnostics import canonical, digest, exact_fields, timestamp
 
 private = registry.local; files = registry.files
 POLICY = {'schema_version': 'research-primary-packet-policy-v1', 'maximum_compressed_bytes': 4194304,

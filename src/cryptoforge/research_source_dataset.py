@@ -18,7 +18,7 @@ from cryptoforge import research_source_diagnostics as source
 from cryptoforge import research_reviewed_main_runtime as reviewed_main
 from cryptoforge import training_experiment_planner as planner
 from cryptoforge.llm_research_contracts import strict_json
-from cryptoforge.training_diagnostics import canonical, digest, exact_fields, timestamp
+from cryptoforge.research_training_diagnostics import canonical, digest, exact_fields, timestamp
 
 
 POLICY = {'schema_version':'review-source-dataset-policy-v1', 'validation_hours':6,

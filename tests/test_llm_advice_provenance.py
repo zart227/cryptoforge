@@ -9,7 +9,7 @@ from cryptoforge.llm_research_advisor import FreeAdvisor, DEFAULT_MODEL
 from cryptoforge.llm_research_requests import ResearchRequests
 from cryptoforge.llm_advice_provenance import verify_advice
 from cryptoforge.llm_training_study import freeze_study, run_study
-from cryptoforge.training_diagnostics import digest
+from cryptoforge.research_training_diagnostics import digest
 
 
 def origin(tmp_path):

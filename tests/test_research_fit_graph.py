@@ -6,7 +6,7 @@ import subprocess
 
 import pytest
 from cryptoforge import research_fit_graph as m
-from cryptoforge.training_diagnostics import build_diagnostics
+from cryptoforge.research_training_diagnostics import build_diagnostics
 
 
 @pytest.fixture

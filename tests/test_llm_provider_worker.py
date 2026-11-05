@@ -18,7 +18,7 @@ from cryptoforge.llm_research_advisor import FreeAdvisor, AdvisorUnavailable, Ad
 from cryptoforge.llm_research_requests import ResearchRequests
 from cryptoforge.research_resource_budget import DEFAULT_RESOURCES
 from cryptoforge.research_run_budget import BudgetCancelled, BudgetTimedOut
-from cryptoforge.training_diagnostics import canonical
+from cryptoforge.research_training_diagnostics import canonical
 
 
 @pytest.fixture(autouse=True)

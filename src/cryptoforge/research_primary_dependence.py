@@ -7,7 +7,7 @@ import hashlib
 from pathlib import Path
 
 from cryptoforge import research_primary_packet_audit as primary
-from cryptoforge.training_diagnostics import canonical, digest, timestamp
+from cryptoforge.research_training_diagnostics import canonical, digest, timestamp
 
 POLICY = {'schema_version': 'research-primary-dependence-policy-v1', 'maximum_examples': 10000,
     'maximum_report_bytes': 262144, 'label_window': 'reference_close_to_future_close_half_open',

@@ -14,7 +14,7 @@ from uuid import UUID
 
 from cryptoforge import research_feature_windows as windows
 from cryptoforge import semantic_source_collector as files
-from cryptoforge.training_diagnostics import canonical, digest, exact_fields, timestamp
+from cryptoforge.research_training_diagnostics import canonical, digest, exact_fields, timestamp
 
 POLICY = {'schema_version': 'research-local-export-policy-v1', 'host': '127.0.0.1',
     'port': 55432, 'database': 'cryptoforge', 'login': 'authenticator', 'role': 'service_role',

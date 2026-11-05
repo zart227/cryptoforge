@@ -16,8 +16,8 @@ import tempfile
 from cryptoforge import research_local_export as private
 from cryptoforge import research_reviewed_main_runtime as reviewed_main
 from cryptoforge import semantic_source_collector as files
-from cryptoforge import training_diagnostics as predictions
-from cryptoforge.training_diagnostics import canonical, digest, exact_fields, timestamp
+from cryptoforge import research_training_diagnostics as predictions
+from cryptoforge.research_training_diagnostics import canonical, digest, exact_fields, timestamp
 
 POLICY = {'schema_version': 'research-diagnostics-bridge-policy-v1', 'max_source_bytes': 262144,
     'max_evidence_bytes': 24000, 'max_configurations': 4, 'max_datasets': 32,

@@ -12,7 +12,7 @@ from cryptoforge import llm_audited_provider_v2 as candidate
 from cryptoforge import llm_prompt_preflight as prompt
 from cryptoforge import llm_research_advisor as advisor
 from cryptoforge import llm_research_requests as requests
-from cryptoforge.training_diagnostics import canonical, digest, validate_diagnostics
+from cryptoforge.research_training_diagnostics import canonical, digest, validate_diagnostics
 
 POLICY={'schema_version':'candidate-payload-contract-v3',
         'provider':'openrouter','model':candidate.CANDIDATE_MODEL,

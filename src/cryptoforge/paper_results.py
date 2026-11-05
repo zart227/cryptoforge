@@ -8,6 +8,7 @@ from pathlib import Path
 import sqlite3
 
 from cryptoforge.live_learning_protocol import time
+from cryptoforge.paper_fill_audit import verify_paper_fill_arithmetic
 
 D=Decimal
 
@@ -48,6 +49,7 @@ def export_results(wallet_path: Path,worker_path: Path,*,as_of: datetime) -> dic
         raise ValueError('cannot reconstruct earlier paper decision state from current intents')
     if any(row.get('mode')!='paper' or row.get('candidate_sha256')!=policy['candidate_sha'] for row in fills+segments):
         raise ValueError('real or foreign candidate events cannot become simulated evidence')
+    fill_audit=verify_paper_fill_arithmetic(fills,segments,policy['config'])
     buys={row['intent_id']:row for row in fills if row['side']=='Buy'};by_buy={key:[] for key in buys}
     for row in segments:
         if row['entry_intent'] not in buys:raise ValueError('paper closing segment has no acquisition')
@@ -59,6 +61,8 @@ def export_results(wallet_path: Path,worker_path: Path,*,as_of: datetime) -> dic
         basis=D(lot['cost']);qty=D(lot['quantity']);closed_pnl=sum((D(row['net_pnl']) for row in closed),D(0))
         if abs(original_cost-closed_cost-basis)>D('1e-20'):
             raise ValueError('paper acquisition basis is not conserved')
+        if abs(D(buy['quantity'])-qty-sum((D(row['quantity']) for row in closed),D(0)))>D('1e-20'):
+            raise ValueError('paper acquisition quantity is not conserved')
         entry_fee=D(buy['fee_quote_equivalent'])
         exit_fees=sum((D(row['fees'])-entry_fee*(D(row['cost'])/original_cost) for row in closed),D(0))
         source=link.get('source_prediction')
@@ -78,7 +82,7 @@ def export_results(wallet_path: Path,worker_path: Path,*,as_of: datetime) -> dic
     result={'schema_version':'paper-results-v1','status':'simulated_evidence_only','mode':'paper','simulated':True,
         'as_of':as_of.isoformat(),'candidate_artifact_sha256':policy['candidate_sha'],
         'policy':policy,'worker_policy':identity['policy'],'policy_sha256':hashlib.sha256(state['policy'].encode()).hexdigest(),
-        'capital':str(capital),'cash':str(cash),'remaining_basis':str(basis),'realized_net_pnl':str(realized),
+        'fill_arithmetic_audit':fill_audit,'capital':str(capital),'cash':str(cash),'remaining_basis':str(basis),'realized_net_pnl':str(realized),
         'campaigns':campaigns,'fills':sorted(fills,key=lambda row:(time(row['filled_at']),row['intent_id'])),
         'equity_marks':marks,'mark_quality':mark_quality,'intents':intents,'worker_events':events,'seen_predictions':seen,
         'execution_counts':dict(Counter(row['side']+':'+row['status'] for row in intents)),

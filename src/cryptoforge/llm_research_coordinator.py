@@ -19,7 +19,7 @@ from cryptoforge.llm_research_requests import ResearchRequests
 from cryptoforge.research_resource_budget import provider_tokens
 from cryptoforge.research_run_budget import ResearchRunBudget, ZERO_USAGE, BudgetCancelled, BudgetTimedOut
 from cryptoforge.semantic_request_journal import SemanticRequests, RequestCancelled, RequestTimedOut
-from cryptoforge.training_diagnostics import canonical, digest, timestamp, validate_diagnostics
+from cryptoforge.research_training_diagnostics import canonical, digest, timestamp, validate_diagnostics
 from cryptoforge.training_experiment_planner import load_development, validate_protocol, read_json, run_experiment
 from cryptoforge.typesafe_sdk_bridge import prepare_request
 from cryptoforge.local_semantic_contracts import prepare_request as prepare_local_request

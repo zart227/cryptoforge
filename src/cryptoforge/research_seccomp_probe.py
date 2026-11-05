@@ -12,7 +12,7 @@ import time
 from cryptoforge import research_code_isolation as isolation,research_local_export as private
 from cryptoforge import semantic_source_collector as files
 from cryptoforge.llm_research_contracts import strict_json
-from cryptoforge.training_diagnostics import canonical,digest,exact_fields
+from cryptoforge.research_training_diagnostics import canonical,digest,exact_fields
 
 LIBRARY='/usr/lib/x86_64-linux-gnu/libseccomp.so.2.5.5'
 LIBRARY_SHA='b4d9140a7797ccf3ac14f5d9d579b64f157111662940cb8330c632b11a8cea8e'

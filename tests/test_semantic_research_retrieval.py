@@ -7,7 +7,7 @@ import pytest
 from test_llm_training_experiments import setup
 from cryptoforge.semantic_research_catalog import SemanticResearchCatalog
 from cryptoforge.semantic_research_retrieval import main, prepare_request, rerank_mock
-from cryptoforge.training_diagnostics import canonical, digest
+from cryptoforge.research_training_diagnostics import canonical, digest
 
 
 @pytest.fixture(scope='module')

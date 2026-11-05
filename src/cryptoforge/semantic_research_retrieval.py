@@ -13,7 +13,7 @@ import re
 
 from cryptoforge import semantic_research_catalog
 from cryptoforge.semantic_research_catalog import SemanticResearchCatalog
-from cryptoforge.training_diagnostics import canonical, digest, exact_fields
+from cryptoforge.research_training_diagnostics import canonical, digest, exact_fields
 from cryptoforge.training_experiment_planner import read_json
 from cryptoforge.typesafe_judgment_contracts import evaluate_mock, text, validate_catalog
 

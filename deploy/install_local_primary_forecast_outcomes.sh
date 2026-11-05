@@ -20,11 +20,11 @@ NoNewPrivileges=true
 UNIT
 cat > "$UNIT_DIR/cryptoforge-primary-forecast-outcomes.timer" <<'UNIT'
 [Unit]
-Description=Update CryptoForge primary forecast diagnostics every 30 minutes
+Description=Update CryptoForge primary forecast diagnostics every 5 minutes
 [Timer]
 OnBootSec=5min
-OnUnitActiveSec=30min
-AccuracySec=1min
+OnUnitActiveSec=5min
+AccuracySec=15s
 Unit=cryptoforge-primary-forecast-outcomes.service
 [Install]
 WantedBy=timers.target

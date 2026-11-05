@@ -8,7 +8,7 @@ import pytest
 from cryptoforge import research_code_static as static, research_code_preview as preview, research_code_budget as code
 from cryptoforge import research_run_budget as common
 from cryptoforge.research_semantic_budget import DEFAULT_SEMANTIC_POLICY
-from cryptoforge.training_diagnostics import canonical, digest
+from cryptoforge.research_training_diagnostics import canonical, digest
 from test_research_code_budget import migrated, base
 from test_research_code_preview import proposal, BASE
 

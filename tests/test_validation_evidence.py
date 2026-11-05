@@ -11,7 +11,7 @@ START = NOW-timedelta(days=8)
 END = NOW-timedelta(days=1)
 
 
-def evidence(tmp_path, *, early=False, missing_sources=False):
+def evidence(tmp_path, *, early=False, missing_sources=False, missing_execution=False):
     clock=[NOW]
     ledger=ResearchAttempts(tmp_path/'ledger.sqlite',clock=lambda:clock[0])
     policy=dict(validation_start=START.isoformat(),validation_end=END.isoformat(),
@@ -32,7 +32,11 @@ def evidence(tmp_path, *, early=False, missing_sources=False):
             execution_started_at=(NOW+timedelta(seconds=-1 if early else 1)).isoformat(),
             execution_finished_at=(NOW+timedelta(seconds=2)).isoformat(),
             portfolio=dict(initial_cash=100,net_pnl=2,stress_net_pnl=1,
-                           max_drawdown='.02',stress_max_drawdown='.03',trade_count=20,stress_trade_count=20))
+                           max_drawdown='.02',stress_max_drawdown='.03',trade_count=20,stress_trade_count=20,open_positions_at_end=0,stress_open_positions_at_end=0,
+                           exit_minimum_violations=0,stress_exit_minimum_violations=0))
+        if missing_execution:
+            for key in ('open_positions_at_end','stress_open_positions_at_end','exit_minimum_violations','stress_exit_minimum_violations'):
+                payload['portfolio'].pop(key)
         ledger.record(study,candidate,payload)
         path=tmp_path/(candidate['threshold']+'.json')
         path.write_text(json.dumps(payload))
@@ -76,3 +80,10 @@ def test_legacy_manifest_without_original_selection_sources_is_rejected(tmp_path
     path,kwargs=evidence(tmp_path,missing_sources=True)
     with pytest.raises(ValueError,match='source dependency'):
         select_registered_validation_reports(path,**kwargs)
+
+
+def test_original_report_without_closeout_evidence_cannot_select_a_threshold(tmp_path):
+    path,kwargs=evidence(tmp_path,missing_execution=True)
+    result=select_registered_validation_reports(path,**kwargs)
+    assert result['selected_threshold'] is None
+    assert len(result['execution_exclusions'])==2

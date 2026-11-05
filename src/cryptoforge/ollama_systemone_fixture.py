@@ -7,7 +7,7 @@ from pathlib import Path
 from cryptoforge import llm_research_contracts, ollama_decision_readiness, training_diagnostics, typesafe_judgment_contracts
 from cryptoforge.ollama_decision_readiness import local_model, model_digest, server_version
 from cryptoforge.semantic_annotation_benchmark import write_new
-from cryptoforge.training_diagnostics import canonical, digest, exact_fields
+from cryptoforge.research_training_diagnostics import canonical, digest, exact_fields
 from cryptoforge.training_experiment_planner import read_json
 from cryptoforge.typesafe_judgment_contracts import evaluate_mock, normalize_answer, validate_catalog
 

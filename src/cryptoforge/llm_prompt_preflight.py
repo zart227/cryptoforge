@@ -7,7 +7,7 @@ import hashlib
 from pathlib import Path
 
 from cryptoforge.llm_research_contracts import CATALOG, PROPOSAL_VERSION
-from cryptoforge.training_diagnostics import canonical, digest, validate_diagnostics
+from cryptoforge.research_training_diagnostics import canonical, digest, validate_diagnostics
 
 MAX_MESSAGE_BYTES = 24000
 MAX_REQUEST_BYTES = 32000

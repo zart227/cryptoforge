@@ -6,6 +6,19 @@ from cryptoforge.live_learning_protocol import time
 
 
 class PrimaryForecastMemory:
+    @classmethod
+    def from_env(cls, path, *, env=None, **kwargs):
+        """Share one bounded capacity setting across the production writers."""
+        import os
+        env = os.environ if env is None else env
+        raw = env.get('CRYPTOFORGE_PRIMARY_FORECAST_MAXIMUM_MB', '256')
+        if not isinstance(raw, str) or not raw.isascii() or not raw.isdecimal():
+            raise ValueError('primary forecast capacity must be an integer MiB value')
+        capacity = int(raw)
+        if not 256 <= capacity <= 1024:
+            raise ValueError('primary forecast capacity must be between 256 and 1024 MiB')
+        return cls(path, maximum_database_mb=capacity, **kwargs)
+
     def __init__(self,path,*,clock=None,minimum_free_disk_mb=2048,maximum_database_mb=256):
         self.path=path;self.clock=clock or (lambda:datetime.now(UTC))
         self.minimum_free_disk_mb=minimum_free_disk_mb;self.maximum_database_mb=maximum_database_mb
@@ -159,12 +172,12 @@ class PrimaryForecastMemory:
         try:
             tables={r[0] for r in db.execute("SELECT name FROM sqlite_master WHERE type='table'")}
             if tables-{'primary_forecasts','primary_forecast_outcomes'}:raise ValueError('isolated primary forecast database required')
-            prior='EXISTS(SELECT 1 FROM primary_forecast_outcomes o WHERE o.forecast=f.id),' if 'primary_forecast_outcomes' in tables else ''
-            query=f'''SELECT f.id,f.payload FROM primary_forecasts f
+            prior='EXISTS(SELECT 1 FROM primary_forecast_outcomes o WHERE o.forecast=f.id)' if 'primary_forecast_outcomes' in tables else '0'
+            query=f'''SELECT f.id,f.payload,{prior} AS outcome_exists FROM primary_forecasts f
                 WHERE json_extract(f.payload,'$.target_information_end')<=?
                   AND json_extract(f.payload,'$.target_information_end')>=?
-                ORDER BY {prior}json_extract(f.payload,'$.target_information_end'),f.id LIMIT ?'''
-            return [{**json.loads(row[1]),'forecast_id':row[0]} for row in db.execute(query,(cutoff.isoformat(),lower.isoformat(),limit))]
+                ORDER BY outcome_exists,json_extract(f.payload,'$.target_information_end'),f.id LIMIT ?'''
+            return [{**json.loads(row[1]),'forecast_id':row[0],'outcome_pending':not bool(row[2])} for row in db.execute(query,(cutoff.isoformat(),lower.isoformat(),limit))]
         finally:db.close()
 
     def iter_labeled_asof(self,*,as_of):

@@ -8,7 +8,7 @@ from concurrent.futures import ProcessPoolExecutor
 import pytest
 
 from cryptoforge import model_training
-from cryptoforge.training_diagnostics import digest
+from cryptoforge.research_training_diagnostics import digest
 from cryptoforge.training_experiment_planner import (
     freeze_protocol, load_development, run_experiment, ledger_lock,
 )

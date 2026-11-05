@@ -8,7 +8,7 @@ import sqlite3
 
 from cryptoforge import research_code_preview as preview
 from cryptoforge.llm_research_contracts import strict_json
-from cryptoforge.training_diagnostics import canonical, digest, exact_fields, timestamp
+from cryptoforge.research_training_diagnostics import canonical, digest, exact_fields, timestamp
 
 
 CODE_TABLE = 'coordinated_code_extension'

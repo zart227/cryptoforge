@@ -10,7 +10,7 @@ import subprocess
 from cryptoforge import research_code_resources as resources, research_code_static as static
 from cryptoforge import research_feature_windows as windows
 from cryptoforge.llm_research_contracts import strict_json
-from cryptoforge.training_diagnostics import canonical, digest, exact_fields
+from cryptoforge.research_training_diagnostics import canonical, digest, exact_fields
 
 
 POLICY = {'schema_version': 'research-numeric-interpreter-v1', 'arithmetic': 'binary64_each_node',

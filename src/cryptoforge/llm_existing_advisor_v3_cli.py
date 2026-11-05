@@ -16,7 +16,7 @@ from cryptoforge import llm_audited_provider_v3 as capture
 from cryptoforge import llm_candidate_payload_v3 as payload_contract
 from cryptoforge import research_phase as phase
 from cryptoforge import research_phase_semantic_cli as existing
-from cryptoforge.training_diagnostics import canonical, digest, validate_diagnostics
+from cryptoforge.research_training_diagnostics import canonical, digest, validate_diagnostics
 
 
 def implementation():

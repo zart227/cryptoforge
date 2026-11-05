@@ -7,7 +7,7 @@ import hashlib
 from pathlib import Path
 
 from cryptoforge import research_cohort_http_audit as source
-from cryptoforge.training_diagnostics import canonical, digest
+from cryptoforge.research_training_diagnostics import canonical, digest
 
 POLICY = {'schema_version': 'research-source-diagnostics-policy-v1', 'pairs': source.POLICY['pairs'],
     'timeframe_seconds': 300, 'feature_lookback_candles': 120, 'horizon_candles': 3,

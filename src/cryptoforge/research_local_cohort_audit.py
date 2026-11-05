@@ -16,7 +16,7 @@ from cryptoforge import research_value_audit as values
 from cryptoforge import research_reviewed_main_runtime as reviewed_main
 from cryptoforge import research_feature_reference as features, research_label_reference_worker as labels
 from cryptoforge.llm_research_contracts import strict_json
-from cryptoforge.training_diagnostics import canonical, digest, exact_fields, timestamp
+from cryptoforge.research_training_diagnostics import canonical, digest, exact_fields, timestamp
 
 POLICY = {'schema_version': 'research-local-cohort-audit-policy-v1', 'maximum_pairs': 20,
     'maximum_rows_per_capture': 10000, 'maximum_source_bytes': 16777216, 'maximum_compressed_bytes': 4194304,

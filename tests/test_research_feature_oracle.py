@@ -13,7 +13,7 @@ import pytest
 
 from cryptoforge import research_feature_oracle as m
 from cryptoforge import research_feature_reference as ref
-from cryptoforge.training_diagnostics import canonical, digest
+from cryptoforge.research_training_diagnostics import canonical, digest
 from test_research_revision_bridge import native_fixture
 from test_research_value_audit import value_base
 

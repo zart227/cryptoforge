@@ -8,7 +8,7 @@ import re
 
 from cryptoforge import research_local_export as local
 from cryptoforge import semantic_source_collector as files
-from cryptoforge.training_diagnostics import canonical, digest, exact_fields
+from cryptoforge.research_training_diagnostics import canonical, digest, exact_fields
 
 
 POLICY = {

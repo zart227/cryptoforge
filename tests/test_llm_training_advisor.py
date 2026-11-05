@@ -5,7 +5,7 @@ import stat
 
 import pytest
 
-from cryptoforge.training_diagnostics import build_diagnostics, validate_diagnostics
+from cryptoforge.research_training_diagnostics import build_diagnostics, validate_diagnostics
 from cryptoforge.llm_research_contracts import strict_json, validate_proposal
 from cryptoforge.llm_research_advisor import (
     AdvisorUnavailable, DEFAULT_MODEL, FreeAdvisor, free_model_receipt, jobpilot_credentials,

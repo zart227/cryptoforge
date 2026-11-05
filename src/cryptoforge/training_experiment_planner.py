@@ -20,7 +20,7 @@ from cryptoforge import model_training
 from cryptoforge.llm_research_contracts import strict_json, validate_proposal
 from cryptoforge.research_attempts import ResearchAttempts
 from cryptoforge.research_environment import research_environment
-from cryptoforge.training_diagnostics import (
+from cryptoforge.research_training_diagnostics import (
     build_diagnostics, canonical, digest, exact_fields, number, timestamp,
 )
 

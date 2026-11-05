@@ -16,7 +16,7 @@ import re
 from cryptoforge import llm_research_advisor as advisor
 from cryptoforge.llm_candidate_adapter_v3 import CandidateAdvisor
 from cryptoforge.llm_research_contracts import strict_json, validate_proposal
-from cryptoforge.training_diagnostics import canonical, digest, exact_fields, timestamp
+from cryptoforge.research_training_diagnostics import canonical, digest, exact_fields, timestamp
 from cryptoforge import research_local_export as private
 from cryptoforge import semantic_source_collector as files
 

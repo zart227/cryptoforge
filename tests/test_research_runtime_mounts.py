@@ -9,7 +9,7 @@ import stat
 
 import pytest
 from cryptoforge import research_runtime_mounts as m
-from cryptoforge.training_diagnostics import canonical,digest
+from cryptoforge.research_training_diagnostics import canonical,digest
 from test_research_seccomp_probe import observation,PARENT
 
 

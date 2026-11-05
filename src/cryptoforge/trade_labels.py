@@ -48,6 +48,14 @@ def build_trade_labels(pair: str, candles: Sequence[CandleRow],
         index=indices[feature.open_time]
         window=candles[index:index+horizon+1]
         result=simulate_portfolio({pair:window},{pair:[feature.open_time]},config)
+        if result.exit_minimum_violations:
+            labels.append(TradeLabel(pair,feature.open_time,'unresolved_exit_minimum',window[-1].open_time+step,
+                None,None,None,'minimum_exit_notional'))
+            continue
+        if result.open_positions:
+            labels.append(TradeLabel(pair,feature.open_time,'unresolved_open_inventory',window[-1].open_time+step,
+                None,None,None,'incomplete_cash_closeout'))
+            continue
         if not result.trades:
             labels.append(TradeLabel(pair,feature.open_time,'rejected',window[-1].open_time+step,
                                     None,None,None,result.rejections[0]['reason']))

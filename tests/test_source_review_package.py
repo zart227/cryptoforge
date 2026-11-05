@@ -7,7 +7,7 @@ import pytest
 
 from cryptoforge import source_review_package as review, semantic_asset_registry as assets
 from cryptoforge import semantic_source_snapshot as snapshots, semantic_source_collector as collector
-from cryptoforge.training_diagnostics import canonical, digest
+from cryptoforge.research_training_diagnostics import canonical, digest
 from test_semantic_event_review import inputs, packet_for, TEXT
 
 

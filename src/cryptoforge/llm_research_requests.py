@@ -6,7 +6,7 @@ import sqlite3
 
 from cryptoforge.llm_research_advisor import PROMPT_VERSION, SYSTEM, AdvisorCancelled, AdvisorTimedOut
 from cryptoforge.llm_research_contracts import CATALOG, validate_proposal
-from cryptoforge.training_diagnostics import canonical, digest, validate_diagnostics
+from cryptoforge.research_training_diagnostics import canonical, digest, validate_diagnostics
 
 
 class ResearchRequests:

@@ -3,7 +3,7 @@ import hashlib
 from pathlib import Path
 
 from cryptoforge.llm_research_contracts import strict_json
-from cryptoforge.training_diagnostics import canonical, digest, exact_fields, timestamp
+from cryptoforge.research_training_diagnostics import canonical, digest, exact_fields, timestamp
 
 
 EXTENSION_TABLE = 'coordinated_semantic_extension'

@@ -7,7 +7,7 @@ import stat
 
 import pytest
 from cryptoforge import research_primary_dependence as m
-from cryptoforge.training_diagnostics import canonical, digest
+from cryptoforge.research_training_diagnostics import canonical, digest
 
 
 def rows(minutes=(0, 5, 10, 15, 20, 25), pairs=('AAA/USDT', 'BBB/USDT')):

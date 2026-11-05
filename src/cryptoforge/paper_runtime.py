@@ -17,10 +17,11 @@ def paper_runtime_sources():
     from cryptoforge.paper_acceptance import evaluate_paper
     from cryptoforge.paper_policy_design import validate_execution_design
     from cryptoforge.spot_buy_math import spot_acquisition
+    from cryptoforge.paper_fill_audit import verify_paper_fill_arithmetic
     return {'worker':PaperWorker,'wallet':PaperWallet,'market':observe_market,
         'exit_observations':SharedExitObservations,'activation':load_activation,'exit_rules':price_time_exit,
         'shared_exit_indicator':exit_signal,'candle_contract':known_closed,'public_client':BybitPublicClient,
-        'results_exporter':export_results,'acceptance_evaluator':evaluate_paper,'execution_design':validate_execution_design,'buy_math':spot_acquisition,
+        'fill_arithmetic_auditor':verify_paper_fill_arithmetic,'results_exporter':export_results,'acceptance_evaluator':evaluate_paper,'execution_design':validate_execution_design,'buy_math':spot_acquisition,
         'source_hash_dependency':source_hashes,'runtime_manifest':paper_runtime_sources,
         'worker_runner':Path(__file__).resolve().parents[2]/'scripts/run_cash_paper.py',
         'export_runner':Path(__file__).resolve().parents[2]/'scripts/export_cash_paper.py',

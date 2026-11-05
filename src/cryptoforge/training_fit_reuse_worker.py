@@ -17,7 +17,7 @@ import time
 from cryptoforge import training_fit_reuse as reuse
 from cryptoforge.llm_research_contracts import strict_json
 from cryptoforge.research_run_budget import BudgetCancelled, BudgetTimedOut
-from cryptoforge.training_diagnostics import canonical, digest, exact_fields, number, validate_diagnostics
+from cryptoforge.research_training_diagnostics import canonical, digest, exact_fields, number, validate_diagnostics
 
 
 POLICY = {'schema_version': 'fixed-fit-reuse-worker-v1', 'cpu_seconds': 10,

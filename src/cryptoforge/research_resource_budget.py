@@ -4,7 +4,7 @@ Allocations are not hard bounds on provider consumption. No quota is refunded.
 Legacy actions retain their history and get conservative, unmeasured allocations.
 """
 from cryptoforge.llm_research_contracts import strict_json
-from cryptoforge.training_diagnostics import canonical, digest, exact_fields
+from cryptoforge.research_training_diagnostics import canonical, digest, exact_fields
 
 DEFAULT_RESOURCES = {
     'schema_version': 'coordinated-research-resources-v1',

@@ -17,7 +17,7 @@ from cryptoforge import research_code_static as static, research_feature_windows
 from cryptoforge import research_numeric_worker as worker, research_run_budget as common
 from cryptoforge.research_resource_budget import resource_snapshot
 from cryptoforge.llm_research_contracts import strict_json
-from cryptoforge.training_diagnostics import canonical, digest, exact_fields, timestamp
+from cryptoforge.research_training_diagnostics import canonical, digest, exact_fields, timestamp
 
 
 POLICY = {'schema_version':'coordinated-numeric-controls-v4','maximum_actions':3,

@@ -13,7 +13,7 @@ import sys
 from cryptoforge import research_cohort_reader_audit as prior
 from cryptoforge import research_cohort_http_worker as wire
 from cryptoforge import research_reviewed_main_runtime as reviewed_main
-from cryptoforge.training_diagnostics import canonical, digest, exact_fields
+from cryptoforge.research_training_diagnostics import canonical, digest, exact_fields
 
 POLICY = {'schema_version': 'research-cohort-HTTP-policy-v1', 'origin': wire.ORIGIN, 'pairs': wire.PAIRS,
     'timeframe': '5m', 'lookback_candles': 500, 'feature_lookback_candles': 120, 'horizon_candles': 3,

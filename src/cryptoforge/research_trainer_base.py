@@ -8,7 +8,7 @@ import subprocess
 import time
 
 from cryptoforge import research_value_audit as values
-from cryptoforge.training_diagnostics import canonical, digest, exact_fields
+from cryptoforge.research_training_diagnostics import canonical, digest, exact_fields
 
 
 GIT = '/usr/bin/git'

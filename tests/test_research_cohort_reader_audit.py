@@ -8,7 +8,7 @@ import subprocess
 import pytest
 from test_research_local_cohort_audit import base
 from cryptoforge import research_cohort_reader_audit as m
-from cryptoforge.training_diagnostics import timestamp
+from cryptoforge.research_training_diagnostics import timestamp
 
 
 @pytest.fixture(scope='module')

@@ -14,7 +14,7 @@ import time
 
 from cryptoforge import research_code_resources as resources
 from cryptoforge import research_label_oracle as labels, research_syscall_allowlist as allowlist
-from cryptoforge.training_diagnostics import canonical, digest, exact_fields
+from cryptoforge.research_training_diagnostics import canonical, digest, exact_fields
 
 files = labels.values.files; private = labels.values.private
 MODES = ('source_labels', 'syscall_allowlist')

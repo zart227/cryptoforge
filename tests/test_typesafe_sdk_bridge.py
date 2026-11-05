@@ -12,7 +12,7 @@ sdk = pytest.importorskip('typesafe_sdk')
 from cryptoforge import typesafe_sdk_bridge as bridge
 from cryptoforge.document_eval import Document, evaluate_document
 from cryptoforge.semantic_annotation_benchmark import freeze_benchmark, evaluate_benchmark
-from cryptoforge.training_diagnostics import canonical, digest
+from cryptoforge.research_training_diagnostics import canonical, digest
 from test_document_eval import sample_rubric
 
 

@@ -10,7 +10,7 @@ import re
 from urllib.parse import urlsplit
 
 from cryptoforge.llm_research_contracts import strict_json
-from cryptoforge.training_diagnostics import canonical, digest, number
+from cryptoforge.research_training_diagnostics import canonical, digest, number
 
 
 MAX_METADATA_BYTES = 256_000

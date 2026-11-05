@@ -9,7 +9,7 @@ import tempfile
 
 from cryptoforge import research_local_cohort_audit as native
 from cryptoforge import research_cohort_http_worker as identity
-from cryptoforge.training_diagnostics import canonical, digest, exact_fields, timestamp
+from cryptoforge.research_training_diagnostics import canonical, digest, exact_fields, timestamp
 
 POLICY = {'schema_version': 'prospective-primary-cohort-audit-policy-v1', 'pairs': identity.PAIRS,
     'maximum_public_GET_attempts': 40, 'maximum_body_bytes': 128000, 'maximum_source_raw_bytes': 5120000,

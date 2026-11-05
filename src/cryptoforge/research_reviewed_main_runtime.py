@@ -5,7 +5,7 @@ import os
 from pathlib import Path
 import shutil
 
-from cryptoforge.training_diagnostics import canonical
+from cryptoforge.research_training_diagnostics import canonical
 
 
 _BRANCH_ROOT = Path(__file__).resolve().parents[2]

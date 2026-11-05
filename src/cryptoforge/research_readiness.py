@@ -7,7 +7,7 @@ from pathlib import Path
 from cryptoforge import research_cohort_reader_audit as reader, research_provider_limits as limits
 from cryptoforge import llm_research_advisor as advisor
 from cryptoforge.llm_research_contracts import strict_json
-from cryptoforge.training_diagnostics import canonical, digest, timestamp
+from cryptoforge.research_training_diagnostics import canonical, digest, timestamp
 
 POLICY = {'schema_version': 'research-evidence-readiness-policy-v1', 'maximum_evidence_age_seconds': 900,
     'modes': ['generative', 'semantic'], 'operational_actions_enabled': False,

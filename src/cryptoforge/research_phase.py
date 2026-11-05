@@ -14,7 +14,7 @@ from cryptoforge import research_code_static as static, research_feature_windows
 from cryptoforge import research_numeric_worker as worker, llm_research_coordinator as coordinator
 from cryptoforge import research_resource_budget as resources
 from cryptoforge.llm_research_contracts import strict_json
-from cryptoforge.training_diagnostics import canonical, digest, exact_fields, timestamp
+from cryptoforge.research_training_diagnostics import canonical, digest, exact_fields, timestamp
 
 
 POLICY = {'schema_version':'coordinated-research-phase-v5',

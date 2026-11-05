@@ -16,7 +16,7 @@ from cryptoforge import research_revision_bridge as revisions
 from cryptoforge import research_reviewed_main_runtime as reviewed_main
 from cryptoforge import research_data_protocol as temporal, research_local_export as private
 from cryptoforge import semantic_source_collector as files
-from cryptoforge.training_diagnostics import canonical, digest, exact_fields
+from cryptoforge.research_training_diagnostics import canonical, digest, exact_fields
 
 
 REVIEWED_VALUE_RUNTIME = {'bybit_private': 'b1695348785e1f418a50e4b6dafb6302a6e96dd9871f67b6fe1a1c11b7df8ade',

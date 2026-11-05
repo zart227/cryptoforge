@@ -15,7 +15,7 @@ import shutil
 from cryptoforge.llm_research_contracts import strict_json
 from cryptoforge.local_semantic_contracts import SUPPORTED_SERVER_VERSION
 from cryptoforge.ollama_decision_readiness import local_model, model_digest
-from cryptoforge.training_diagnostics import canonical, digest, exact_fields
+from cryptoforge.research_training_diagnostics import canonical, digest, exact_fields
 
 
 def _bytes(value, *, nullable=False):

@@ -11,7 +11,7 @@ import tempfile
 
 from cryptoforge import research_value_audit as values
 from cryptoforge import research_reviewed_main_runtime as reviewed_main
-from cryptoforge.training_diagnostics import canonical,digest,exact_fields
+from cryptoforge.research_training_diagnostics import canonical,digest,exact_fields
 
 POLICY={'schema_version':'research-loader-audit-policy-v1','lookback_candles':512,'feature_lookback_candles':120,
     'horizon_candles':3,'maximum_source_age_seconds':600,'minimum_source_coverage':1.0,

@@ -12,7 +12,7 @@ from cryptoforge import research_numeric_worker as worker,research_code_budget a
 from cryptoforge import llm_research_coordinator as coordinator
 from cryptoforge.research_semantic_budget import DEFAULT_SEMANTIC_POLICY
 from cryptoforge.research_resource_budget import DEFAULT_RESOURCES
-from cryptoforge.training_diagnostics import canonical,digest
+from cryptoforge.research_training_diagnostics import canonical,digest
 from test_research_numeric_controls import migrated as numeric_migrated,fake_worker
 from test_research_numeric_controls import setup as numeric_setup
 from test_research_run_budget import envelope,bindings

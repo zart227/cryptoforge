@@ -13,7 +13,7 @@ import pytest
 from cryptoforge import research_numeric_controls as numeric, research_numeric_worker as worker
 from cryptoforge import research_code_budget as code, research_code_preview as preview
 from cryptoforge import research_run_budget as common, research_feature_windows as windows
-from cryptoforge.training_diagnostics import canonical, digest
+from cryptoforge.research_training_diagnostics import canonical, digest
 from test_research_code_static import registered, source, bundle
 from test_research_feature_windows import capture, request
 

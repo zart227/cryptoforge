@@ -10,7 +10,7 @@ from pathlib import Path
 import random
 import sys
 
-from cryptoforge.training_diagnostics import canonical, digest, exact_fields, number
+from cryptoforge.research_training_diagnostics import canonical, digest, exact_fields, number
 from cryptoforge.training_experiment_planner import read_json
 from cryptoforge.typesafe_judgment_contracts import validate_catalog, normalize_answer
 

@@ -16,7 +16,7 @@ from cryptoforge import research_code_static as static, research_code_preview as
 from cryptoforge import research_code_resources as resources, research_feature_windows as windows
 from cryptoforge import research_run_budget as common
 from cryptoforge.llm_research_contracts import strict_json
-from cryptoforge.training_diagnostics import canonical, digest, exact_fields, timestamp
+from cryptoforge.research_training_diagnostics import canonical, digest, exact_fields, timestamp
 
 
 POLICY = {'schema_version':'research-numeric-verification-v1','selected_window_bars':[1,2],

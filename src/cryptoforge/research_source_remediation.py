@@ -9,7 +9,7 @@ import hashlib
 from pathlib import Path
 
 from cryptoforge import research_source_dataset as dataset
-from cryptoforge.training_diagnostics import canonical, digest, timestamp
+from cryptoforge.research_training_diagnostics import canonical, digest, timestamp
 
 POLICY = {'schema_version':'source-remediation-diagnostic-v1',
           'uses_original_review_only':True, 'historical_lineage_or_repair_attested':False,

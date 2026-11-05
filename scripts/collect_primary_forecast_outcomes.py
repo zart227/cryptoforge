@@ -3,7 +3,8 @@ from datetime import UTC,datetime
 import argparse,json,os,tempfile,hashlib
 from pathlib import Path
 from cryptoforge.primary_forecast_memory import PrimaryForecastMemory
-from cryptoforge.primary_forecast_outcomes import collect_primary_forecast_outcomes
+from cryptoforge.primary_forecast_outcomes import collect_primary_forecast_outcomes,BybitPrimaryEndpointReader
+from cryptoforge.market_data import BybitPublicClient
 from cryptoforge.supabase_executor import SupabaseMarketReader
 from cryptoforge.supabase_market import SupabaseRestClient
 
@@ -34,7 +35,7 @@ def main():
     parser.add_argument('--wall-seconds',type=float,default=20)
     args=parser.parse_args();now=datetime.now(UTC)
     path=Path(os.environ.get('CRYPTOFORGE_PRIMARY_FORECAST_LEDGER','.local/state/primary-forecast-memory.sqlite'))
-    memory=PrimaryForecastMemory(path)
+    memory=PrimaryForecastMemory.from_env(path)
     if not memory.path.exists() or not memory.matured_batch(as_of=now,limit=1):
         report={'status':'waiting_for_mature_primary_forecasts','as_of':now.isoformat(),
             'cash_training_rows_added':0,'live_promotion_allowed':False}
@@ -42,7 +43,12 @@ def main():
         client=SupabaseRestClient.from_env(timeout_seconds=2)
         report=collect_primary_forecast_outcomes(memory,SupabaseMarketReader(client),as_of=now,
             maximum_forecasts=args.maximum_forecasts,maximum_pairs=args.maximum_pairs,wall_seconds=args.wall_seconds,
-            policy_resolver=original_policy_resolver(Path('.local/models')))
+            policy_resolver=original_policy_resolver(Path('.local/models')),
+            endpoint_reader=BybitPrimaryEndpointReader(BybitPublicClient(timeout=2,max_retries=0)))
+    if report.get('public_endpoint_evidence'):
+        from cryptoforge.atomic_reports import write_json_report
+        receipt=Path('.local/state/primary-forecast-endpoint-recovery')/(now.strftime('%Y%m%dT%H%M%S%fZ')+'.json')
+        write_json_report(receipt,report)
     output=Path('.local/state/primary-forecast-outcome-report.json');output.parent.mkdir(parents=True,exist_ok=True)
     temporary=None
     try:

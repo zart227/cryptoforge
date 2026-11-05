@@ -12,7 +12,7 @@ import time
 
 from cryptoforge import semantic_source_collector as files
 from cryptoforge.llm_research_contracts import strict_json
-from cryptoforge.training_diagnostics import canonical, digest, exact_fields
+from cryptoforge.research_training_diagnostics import canonical, digest, exact_fields
 
 
 SYSTEMD_RUN = '/usr/bin/systemd-run'

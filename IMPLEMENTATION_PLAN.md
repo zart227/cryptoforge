@@ -1,21 +1,528 @@
 # CryptoForge - Implementation Plan
 
-> **Authoritative execution plan**
->
-> This file is the primary source of truth for implementation progress.
-> Codex must copy it into the root of the `cryptoforge` repository as
-> `IMPLEMENTATION_PLAN.md`, follow the phases in order, and maintain the
-> checkboxes in the project copy.
+> **Архив с 5 ноября 2026.** Единственный актуальный план и чеклисты:
+> [docs/CURRENT_PLAN.md](docs/CURRENT_PLAN.md). Галочки ниже не обновлять.
+> Фазы 0–29 описывают прежний dry-run контур и не квалифицируют текущий
+> Supabase executor с `--live`.
+
+> **Прежняя пометка, сохранена как история.** Этот файл был основным планом
+> реализации. Исследовательские и ноябрьские статусы в начале файла устарели
+> относительно `docs/CURRENT_PLAN.md`.
+
+Исследовательское направление ведётся в
+[действующем research-плане](docs/PROFITABLE_STRATEGY_RESEARCH_PLAN.md), включая
+дополнение VP. Полные VP-чеклисты находятся там и в связанной спецификации.
+LLM-направление отдельно реализует другой агент; оно не входит в эту очередь.
+
+## Other writers и обучение — 28 октября 2026
+
+- [x] R4/R15: training sync20 пар,4 совпадают с incomplete selection;
+  health согласуется, но авторство DB rows не доказано.
+- [x] R7 partial: candidate253dc4fce7 не продвинут,2 signals/420;
+  test probability metrics лучше baseline, не cash P&L. 24new+123compat=147tests.
+- [ ] Полный writer inventory/recovery, compatible incumbent/control,
+  current executor model и independent cost-aware evaluation.
+  [Writers](docs/FEEDER_COMPETING_WRITERS_20261028.md), [model](docs/MODEL_TRAINING_STATUS_20261028.md).
+
+## Selected sync effect и current data — 28 октября 2026
+
+- [x] R4/R15: на тестовых клиентах проверены partial writes; local REST
+  20 pairs,14 stale >1h; SQL/REST BTC stale≈14ч06м, ETH fresh.
+  13new+110compat=123tests. [Evidence](docs/FEEDER_SELECTED_SYNC_OBSERVATION.md).
+- [ ] Historical effect/competing writers, explicit recovery и actual
+  continuous collection остаются открытыми.
+
+## Повторный разбор локального кэша сделок — 28 октября 2026
+
+- [x] Повторён source-bound FIFO:49 closed segments,28 losses,16 ≤−1%,
+  6 случаев комиссии; snapshot идентичен14 октября, 8 тестов.
+- [ ] Актуальные данные биржи/wallet и attribution, затем независимая
+  оценка стратегий. [Evidence](docs/EXECUTION_CACHE_REVIEW_20261028.md).
+
+## Feeder guard — 28 октября 2026
+
+- [x] R4/R15: current service failed/timer active и read-only повторная
+  проверка incomplete guard исходного цикла.
+- [ ] Эффект selected_sync, explicit recovery и actual свежесть closed120.
+  [Evidence](docs/FEEDER_GUARD_CURRENT_20261028.md).
+
+## Forecast runtime inventory — 28 октября 2026
+
+- [x] R6/R15: read-only unit/FD inventory, ограниченный host probe и health;
+  active timers, исходная SQLite полная; 10new+68compat=78tests.
+- [ ] Full host namespaces/writers, общий fencing и восстановление записи.
+  [Evidence](docs/FORECAST_RUNTIME_INVENTORY.md).
+
+## Forecast outcome ID rehearsal — 28 октября 2026
+
+- [x] R6/R15: synthetic ID47723–47726 в изолированной копии, стабильный
+  event replay, процессы и crash до/после commit; 13new+49compat=62tests.
+- [ ] Real event identity, общий lease/fencing всех writers, live reader,
+  recovery, независимый backup и cutover. [Evidence](docs/FORECAST_OUTCOME_ID_REHEARSAL.md).
+
+## Forecast composite reader rehearsal — 28 октября 2026
+
+- [x] R6/R15: изолированное чтение 5 API, полная сверка47979 forecasts и
+  47700 as-of результатов, batch400, synthetic corrections; 49tests.
+- [ ] Production wiring и concurrency, глобальная выдача ID, полный runtime
+  inventory, backup и cutover. [Evidence](docs/FORECAST_RETENTION_READER.md).
+
+## Forecast split rehearsal — 28 октября 2026
+
+- [x] R6/R15: две изолированные SQLite, полное объединение typed rows и
+  независимый SQL audit; 7new+34compat=41tests.
+- [ ] Глобальные ID и порядок версий outcome, composite readers, writers,
+  independent backup и безопасный cutover. [Evidence](docs/FORECAST_RETENTION_REHEARSAL.md).
+
+## Forecast retention preflight — 28 октября 2026
+
+- [x] R6/R15: read-only inventory snapshot, 47700 кандидатов с47722 версиями
+  и279 защищённых unresolved; 9new+25compat=34tests.
+- [ ] Подтвердить все readers/writers, архив и сохранение typed rows,
+  concurrency, независимый backup, физический размер и безопасный cutover.
+
+[Контракт и evidence](docs/FORECAST_RETENTION_PREFLIGHT.md).
+
+## Forecast health — 28 октября 2026
+
+- [x] R6: независимая read-only оценка storage capacity и незакрытых endpoints;
+  6new+25compat=31tests. Actual06:11: SQLite полная,0 recent/279 older unresolved;
+  local REST содержит226/277 distinct endpoint,51 не найден.
+- [ ] Проверить поздние endpoint/availability, подключить мониторинг и восстановить
+  запись после согласованного cutover. [Evidence](docs/FORECAST_MEMORY_HEALTH.md).
+
+## Incomplete feeder inspection — 28 октября 2026
+
+- [x] R4/R15: read-only проверка original registration, receipt order и source
+  observations;7new+32compat=39tests. Actual selected_sync остаётся unknown.
+- [ ] Независимая сверка эффекта с SQL/REST/историей и recovery/restart/host.
+  В 06:08 SQL/REST/SQL binding120 подтверждён: BTC stale≈6ч23м, ETH fresh.
+
+[Метод и evidence](docs/FEEDER_INCOMPLETE_INSPECTION.md).
+
+## Diagnostic forecast snapshot — 28 октября 2026
+
+- [x] R6/R15: изолированный snapshot actual price diagnostic SQLite и отдельный
+  restore drill; 47979 forecasts/47722 outcome versions, integrity и row digests
+  совпали, orphan0. 8new+17compat=25tests; WAL/concurrent writer проверены.
+- [ ] База остаётся полной: versioned writer/reader cutover, rollback, безопасный
+  bounded retention, actual сбор новых записей и независимый backup не выполнены.
+
+[Контракт и evidence](docs/FORECAST_MEMORY_SNAPSHOT.md).
+
+## Bounded paired coordinator — 27 октября 2026
+
+- [x] W8.2b.3a: отдельный preregistered coordinator с журналом prepared/completed,
+  точными role refs, missed slots, сохранением cooldown и explicit recovery
+  подтверждённого tick без повтора worker/provider; process exit42 проверен.
+- [x] 22new+36compat=58tests/365.04s; cumulative827; прежние601 Python files
+  сохранены. Synthetic12ticks, fills4/0/4, source/reader и независимый replay3/3.
+- [ ] W8.2b.3/W7b.3b unknown source/worker/finalization/host recovery; physical
+  history, actual positive и whole-host capacity, W9/R14 и economic gates.
+
+[Runbook](docs/PAIRED_CACHED_COORDINATOR.md), evidence
+`.local/state/paired-cached-coordinator-work-20261027/verification.json`.
+Действующий торговый путь, модель, риск и сервисы не менялись.
+
+## Операционная диагностика покупок — 27 октября 2026
+
+- [x] Read-only сверены local executor/unit/registry и execution cache; последняя
+  найденная покупка CHIP 8 октября17:10:24 МСК, active `09b486e979` старше36h.
+- [x] 23:00–23:15 зафиксированы39 hold/0 rejects, а не объяснение всех отказов;
+  candidate `f8028fb44d` denied, forecast store256MiB и feeder incomplete.
+- [ ] R4/R15 доказать эффект незавершённой стадии feeder и восстановить сбор;
+  R6/R15 сохранить записи и восстановить запись прогнозов с ограничением диска;
+  R7/R12/R8 и W9/R14 — совместимая migration и независимая оценка с учётом
+  закрытого real-buy gate. Аккаунт/риск в свежем snapshot не подтверждены.
+
+[Диагностика и источники](docs/NO_BUY_DIAGNOSIS_20261027.md),
+[конкретные критерии и зависимости](docs/PROFITABLE_STRATEGY_RESEARCH_PLAN.md#current-checklist).
+
+## Cached actual paper application v3 — 27 октября 2026
+
+- [x] W8.2b.2b: новый pre-start parent, cached reader proof в actual input,
+  prepared/completed worker result и result SHA ack. Heartbeats не создают
+  opportunities, группы сохраняются в прежнем archive v2.
+- [x]17new+39compat=56tests/124.44s, cumulative805. Прежние599Pythonfiles сохранены;
+  61accepted source/test copies/77runtime keys. Unknown worker result/stale parent blocked.
+- [x] Synthetic3roles/12applications/6opportunities/9heartbeats: source/reader
+  audits3/3, independent controller/FIFO3/3, fills4/0/4;12retained reader proofs.
+- [ ] W8.2b.3 новый coordinator/durable operations и W7b.3b unknown/parent/host
+  recovery; bounded physical/source/delivery/native/capture history/capacity,
+  actualpositive/current-model/R1–R16/VP/W9/host/review/economic gates.
+
+[Runbook](docs/CACHED_CASH_APPLICATION_V3.md), evidence
+`.local/state/cached-cash-application-v3-work-20261027/verification.json`.
+Public network/primary DB/model/risk/trading/fits/realorders0 этим этапом; actual paper
+class работал только на synthetic quotes. Original sealed outcomes не открывались.
+
+## Cached reader для original role offers — 27 октября 2026
+
+- [x] W8.2b.2a: новый pre-start read-only reader связывает exact whole-poll
+  source/index bytes с original role offer/cursor/batch. Backlog/stale/foreign
+  offers blocked; cached view не подставляется в старый сигнал.
+- [x]20new+18compat=38tests/10.14s, cumulative788. Прежние597Pythonfiles сохранены;
+  19accepted copies/17runtime keys. Synthetic9packets/18cash decisions совпали
+  с прежним reader,4positive synthetic decisions; actual worker/fills не проверялись.
+- [ ] W8.2b.2b versioned cash-worker application с reader proof; далее coordinator/
+  recovery и bounded physical/source/delivery/native/capture history/capacity.
+  W7b.3b/actualpositive/current-model/R1–R16/VP/W9/economic открыты.
+
+[Runbook](docs/CACHED_REFERENCE_READER_V2.md), evidence
+`.local/state/cached-reader-v2-work-20261027/verification.json`.
+Public network/actual worker/primary DB/model/risk/trading/fits/orders0 этим шагом.
+Original sealed outcomes не читались; старые app/runner не получили новый reader автоматически.
+
+## Incremental cash source index — 27 октября 2026
+
+- [x] W8.2b.1: отдельный pre-start source prefix index. Прежний SourceReplay
+  проверяет только новые события; original first-seen и cached view сохраняются,
+  полный независимый audit сверяет историю/state/versions/projection.
+- [x]18new+100compat=118tests/17.99s, cumulative768. Прежние594Pythonfiles сохранены;
+  19accepted copies/16runtime keys. Unknown commit/stale checkpoint blocked.
+- [x] Synthetic6attempts/4polls/16events/12role packets matched, updates4/4/4/0/4/0
+  соблюдают cooldown. Это input-only receipts, не actual worker result.
+- [ ] W8.2b.2 versioned delivery/reader, bounded physical SHA/source/native/capture
+  history, новый paired coordinator и W7b.3b unknown/parent/host recovery.
+  Whole-file SHA ещё читается целиком; actualpositive/current-model/R1–R16/VP/W9/
+  economic gates открыты. Старые runner/limits/registrations не менялись.
+
+[Runbook](docs/REFERENCE_PREFIX_V2.md), evidence
+`.local/state/reference-prefix-v2-work-20261027/verification.json`.
+Public network/actual worker/primary DB/model/risk/trading/fits/orders0; original
+sealed outcomes не открывались, общий admission false.
+
+## Индексированный cash application v2 — 27 октября 2026
+
+- [x] W8.2a: новый сжатый архив точных исходных квитанций; проверка последней
+  записи и текущей группы, полный post-end audit, explicit recovery одного
+  completed шага без worker/provider/ack rerun. Истинный process exit42 проверен.
+- [x]19new/97.65s +50compatibility cases в119.59s profile =69distinct;
+  cumulative750. Ошибки прежней test fixture исключены, затем19new прошли все.
+  Прежние591Pythonfiles сохранены;57accepted sources/59runtime keys.
+- [x] Synthetic three-role replay3/3,12applications/6decisions/9heartbeats,
+  fills4/0/4; receipt bytes/queue ack SHA сохранены. Actual market proof этим не получен.
+- [ ] W8.2b source/delivery/native/capture и новый paired coordinator/long capacity;
+  W7b.3b unknown/parent/host recovery, actualpositive/current-model/R1–R16/VP/W9/
+  economic gates. Прежний single-use runner не получил v2 или resume автоматически.
+
+[Runbook](docs/CASH_APPLICATION_V2.md), evidence
+`.local/state/cash-application-v2-work-20261027/verification.json`.
+Primary DB/model/risk/trading/fits/orders/public network не менялись этим этапом.
+Original sealed outcomes не открывались; общий admission false.
+
+## Count/resource capacity preflight — 27 октября 2026
+
+- [x] W8.1 metadata-only preflight: original SHA-bound source/delivery/worker/app/
+  replay caps, exact UTC poll/tick counts, quotas/segment/native/journal budgets.
+- [x]13new+19compatibility=32distinct tests /38.28s; cumulative731cases.
+  Actual trace896paths: no SQLite/outcome/groups/.env. Прежние588Python files сохранены.
+- [x] Existing60s profile count pass; hypothetical30days518400ticks/role/8641polls/
+  3144976journal records даёт26blockers/exit2. Execution/admission остаётся false.
+- [ ] W8.2 versioned scalable long history/checkpoints/source/delivery/native
+  quotas/retention/whole-host/review; W7b.3b unknowneffects/whole-runner recovery,
+  W7b.2c.2 actualpositive и R1–R16/VP/W9/economic gates.
+
+[Runbook](docs/CASH_CAPACITY_PREFLIGHT.md), receipt
+`.local/state/cash-capacity-preflight-work-20261027/verification.json`.
+Новых fits/model/risk/trading/primary DB changes/orders нет, original sealed outcomes
+не читались. Hypothetical horizon не является новой регистрацией или запущенным study.
+
+## Known paper-result ack recovery — 27 октября 2026
+
+- [x] W7b.3a: explicit recovery только durable completed worker-result/ack.
+  Original source packet/offer, полный worker prefix/native/head и known queue
+  ancestor проверяются; worker tick/provider/source poll не повторяются.
+- [x] Default plan-only; explicit paper ack apply сохраняет original result и
+  existing ack bytes, выдаёт новый application/queue checkpoint. Unknown states блокируются.
+- [x]17new+33compatibility=50distinct, cumulative718. True process exit после
+  queue commit и synthetic3failure points проверены; subsequent fills без duplicate intents.
+- [ ] W7b.3b whole-runner/unknown worker effects/missing result/host restart;
+  W8 long paired capacity/retention/review и W7b.2c.2 actualpositive/все economic gates.
+
+[Runbook](docs/CASH_ACK_RECOVERY.md), receipt
+`.local/state/cash-ack-recovery-work-20261027/verification.json`.
+Прежние585Python files сохранены. Это synthetic recovery qualification, не actual
+production outage. Primary DB/model/risk/trading services/orders/fit не менялись,
+original sealed outcomes не читались. Paper/economic/live=false.
+
+## Actual bounded paired rehearsal — 27 октября 2026
+
+- [x] W7b.2c.1: source/delivery/cash rules/3captured workers/5s ticks/endpoint/
+  independent replay объединены в single-use20–120s runner с durable journal.
+- [x]19new+33unchanged compatibility=52distinct cases; cumulative701.
+  Прежние582Python files сохранены. Runtime103entries/59accepted source copies.
+- [x] Actual prospective minute13:40–13:41МСК:240closed rows,12ticks×3,
+  6negative/cash decisions,33heartbeats,44completed operations, ack1/1/1.
+  Independent controller/FIFO/coverage3/3, actual fills0/0/0.
+- [x] Transient service MemoryMax512MiB/AS384MiB/320s, measured cgroup peak≈33MiB,
+  exit0/runtime81.467s. Whole-host/positive-load qualification этим не выдана.
+- [ ] W7b.2c.2 actual positive/fill/exit branches и более длинный paired stream;
+  W7b.3 interrupted recovery, W8 host/capacity/retention/review и R1–R16/VP/W9.
+
+[Runbook](docs/PAIRED_CASH_REHEARSAL.md), receipt
+`.local/state/paired-cash-runner-work-20261027/verification.json`.
+Source public BTC/ETH; primary DB/model/risk/trading units не менялись, real
+orders/fit0. Original sealed outcomes не читались; paper/economic/live=false.
+Это short negative-case paper run, не прибыльный кандидат и не persistent daemon.
+
+## Cash contracts и actual worker receipts — 27 октября 2026
+
+- [x] W7b.2a: pre-start three-role cash rules/strategy SHA, exact rational guards,
+  cash-only control и separate stress floor. Price probability не становится entry.
+- [x] W7b.2b: все fixed-pair decisions/negative/skip/failures, реальные frozen
+  CapturedPaperWorkerV2 prepared/completed receipts, ack после durable result.
+  Heartbeats обслуживают fills/exits между5m polls, без fake opportunities/acks.
+- [x]33current tests +249compatibility =282distinct cases; по всем профилям682.
+  Синтетический3role сценарий:12applications/6opportunities/9heartbeats,
+  independent controller/FIFO replay3/3. Это не market study/доказательство дохода.
+- [x]27октября feeder recheck:313retained successes/0failures/238prune receipts;
+  BTC fresh120SQL/REST/SQL. Длительная whole-host/outage qualification ещё открыта.
+- [ ] W7b.2c: actual bounded paired runner/public providers/cadence/monitoring/
+  finalization и source-bound actual rehearsal. Diagnostic coordinator не paper runner.
+- [ ] W7b.3/W8 recovery/capacity/review; actual current-model comparisons,
+  R1–R16/VP/W9 и economic/paper/live admission остаются открытыми.
+
+[Runbook](docs/CASH_WORKER_APPLICATION.md). Receipt
+`.local/state/cash-worker-application-work-20261027/verification.json`.
+Прежние578Python files и804historicalcheckbox/body сохранены. LLM — другой агент.
+Новых fits/primary model/risk/trading-unit changes/orders нет, original sealed
+outcomes не читались. Ниже предыдущие датированные состояния.
+
+## Рабочий reference feeder — 26 октября 2026
+
+- [x] W6b.3b.2a: observed Docker api→PostgREST→PostgreSQL route и exact120
+  closed UUID/value rows связаны SQL/REST/SQL; key/DB password не сохраняются.
+- [x] W6b.3b.2b: установлен отдельный pinned managed runner на выбранный user
+  market-feeder path UID1000. Первый настоящий service cycle завершился успешно;
+  BTC/ETH sync+SQL probes идут перед ranking. Timer active/waiting, interval120s
+  после завершения, MemoryMax768MiB/TasksMax64; child AS512MiB/75s/64KiB.
+- [x] Operational retention ограничен384MiB/720cycles/24h; сохраняются два последних
+  success и все failures. Unknown partial cycle блокирует автоматический повтор.
+  Research evidence не очищается. Это реализация/test, не длительный host drill.
+- [x]43new+108compatibility=151tests passed /4.19s; по четырём профилям26октября
+  **564 разных cases**. Прежние572 Python files сохранены; полный suite не запускался.
+- [x] W6b.3b.2c: автоматический timer cycle13:24UTC success, BTC/ETH probes fresh.
+- [ ] W6b.3b.2d/R4/W8: длительные outages/recovery/retention/capacity проверки.
+  Cash worker/host admission открыт.
+- [ ] W7b.2 cash policies/all actual opportunities/CapturedPaperWorkerV2 results;
+  W7b.3/W8 и остальные R1–R16/VP/W9 остаются открытыми.
+
+[Runbook и пределы](docs/MANAGED_REFERENCE_FEEDER.md). Evidence
+`.local/state/reference-feeder-operation-work-20261026/verification.json`.
+Market candles/tickers/health/universe обновлены локально; заменены только
+market-feeder service/timer. Модель/risk/trading units не менялись, real orders0,
+sealed outcomes не читались, fit=false, economic/paper/live=false.
+Ниже сохранены предыдущие датированные состояния до deployment.
+
+## Reference-aware feeder proposal — 26 октября 2026
+
+- [x] [W6b.3b.1 runner](docs/REFERENCE_AWARE_FEEDER.md): independent BTC/ETH before ranking,
+  closed120 SQL probes, strict full sync result и общий venue cooldown10min.
+- [x] Child caps512MiB address space/64KiB output/75s stage, bounded kill,
+  local-only backend, private receipts и default plan-only mode.
+- [x]17new+96compatibility=113tests passed /2.55s; actual proposal создан,
+  primary write attempted=false. Три набора26октября:521 разных cases с учётом91повтора.
+- [ ] W6b.3b.2/R4: actual installed path/ownership, local writes+probes,
+  REST→instance linkage и repeated-cycle/restart/retention qualification.
+- [ ] W7b.2 cash contracts/full opportunities/actual worker receipts;
+  W7b.3/W8 recovery/host, W9 future evidence и остальные R1–R16/VP gates.
+
+Evidence `.local/state/reference-aware-feeder-work-20261026/verification.json`.
+Прежние569 Python-файлов сохранены. Primary DB/services/model/risk на этой
+code-приёмке не менялись; установленный feeder продолжает прежний путь.
+
+## Guarded cash preflight и local health — 26 октября 2026
+
+- [x] [Календарь до чтения cash outcomes](docs/SEALED_CASH_READINESS.md): незавершённые train/validation
+  не вызывают payload loader; sealed-test/paper никогда не читаются этим путём.
+  Explicit protocol/observed freeze, bounded read-only reader и immutable report.
+- [x]14new+41compatibility=55 разных tests passed /0.92s. Actual closed-protocol
+  preflight: inspected[],fit=false; openat trace не содержит memory.sqlite.
+- [x] Current local SQL read: BTC close23октября14:05UTC/stale≈70h;
+  ETH close26октября12UTC/fresh. Timer активен, последний oneshot успешен.
+- [ ] W7b.2 cash policies/full actual opportunities/worker application receipts;
+  R6 qualified counts/оконные cutoffs/collection health и W6b.3b actual refresh.
+
+Evidence `.local/state/local-cash-readiness-work-20261026/verification.json`.
+Прежние566 Python-файлов сохранены. Primary DB читалась read-only; services,
+model/risk не менялись. New guard — opt-in, старые CLIs/schedulers не переписаны.
+
+## Bounded coordinator W7b.1 — 26 октября 2026
+
+- [x] [Source/delivery coordinator](docs/REFERENCE_COORDINATOR.md):5m polling/cooldown, durable
+  prepared/completed checkpoints, source tail/backlog monitoring и input receipts.
+- [x]31new+413compatibility=444 разных tests passed /113.32s; actual два соседних
+  windows, packets6/cursors2/2/2 и full offline source/delivery/receipt replay.
+- [x] Completed-pass lost checkpoint восстанавливается только explicit known
+  ancestor recovery. Неопределённая component operation блокирует дальнейшую работу.
+- [ ] W7b.2: cash-entry policies/all actual opportunities, CapturedPaperWorkerV2
+  wiring и durable application/result receipts. Input ack не является worker trade.
+- [ ] W7b.3/W8: interrupted component/host recovery, installed runner/capacity/review.
+- [ ] W6b.3b/R4 actual primary reference refresh/REST linkage, W9 и общие W7/W6/W5.
+
+Receipt `.local/state/reference-coordinator-work-20261026/verification.json`.
+Прежние563 Python-файла и804 historical checkbox/body сохранены. Primary DB,
+services/model/risk не менялись. Sealed outcomes не читались; LLM — другой агент.
+Ниже прежние датированные сводки; текущая очередь — W7b.2, затем W7b.3/W8.
+
+
+Actual replay сохранил35 initial missing5m slots: source namespace создан
+08:56:27UTC, первый poll11:54:33UTC. Между двумя выполненными polls gaps нет;
+current tail0 не отменяет initial gap. Continuous source completeness=false.
+
+## Retained source history и role delivery W7a — 23 октября 2026
+
+- [x] Append-only original source events и anchors, global first-seen/revisions/
+  forecasts, bounded whole-operation chunks и independent offline source replay.
+- [x] Три независимых durable cursor/pending/ack, stable redelivery, strict
+  acknowledgement order/idempotency и explicit known-ancestor recovery.
+- [x]39new+374compatibility=413 разных tests passed /27.98s. Проверены реальные
+  process deaths до/после commit, source removal, tampering и storage/scratch caps.
+- [ ] W7b — следующая реализация: periodic bounded coordinator, полный actual
+  opportunity stream/cash policies и durable worker result receipts/full wiring.
+- [ ] W6b.3b operational reference refresh/primary linkage; W8/W9 и общие
+  W7/W6/W5/R1–R16/VP qualification остаются открытыми.
+
+[Delivery runbook](docs/REFERENCE_DELIVERY.md). Прежние559 Python-файлов и804
+historical checkbox/body сохранены. Ack — consumer receipt, не исполнение worker;
+physical old source SQLite bytes не усыновляются под новым SHA.
+Receipt: `.local/state/reference-delivery-work-20261023/verification.json`.
+Primary DB/services/model/risk не менялись; paper/economic/live=false.
+Датированные записи ниже сохраняют прежнюю область проверки.
+
+## Общий reader W6b.3a — 23 октября 2026
+
+- [x] Prospective reader contract, immutable shared source frame и closed120/
+  precision28 feature interface для candidate/control/stress; original negative
+  price forecasts и source/first-seen/forecast replay.
+- [x] Inference envelope304141→2906bytes с сохранёнными original bytes/SHA и
+  exact parameters. Actual360source rows,1AVAX forecast, three-role read;
+  probability равна расчёту original migration-v3`041b` artifact.
+- [x]48new+326compatibility=374 разных tests passed /38.85s; общий suite не запускался.
+- [ ] W7 — следующая реализация: retained source history, durable common polling/
+  role cursors/acks/restart и cash-decision policies. Reader не запускает workers
+  и не преобразует price forecast в `would_enter`.
+- [ ] W6b.3b actual working reference refresh/deployment/primary linkage;
+  W8/W9 и общие W6/W5/R1–R16/VP qualification остаются открытыми.
+
+[Reader runbook/evidence](docs/REFERENCE_SOURCE_READER.md).
+Прежние556 Python-файлов и804 historical checkbox/body сохранены. Primary DB,
+services/model/risk и старые protocols не менялись; paper/economic/live=false.
+Receipt: `.local/state/reference-reader-work-20261023/verification.json`.
+Датированные сводки ниже сохраняют прежний scope, текущая очередь приведена здесь.
+
+## Продолжение W6b.1/W6b.2 — 23 октября 2026
+
+- [x] Mandatory BTC/ETH research collector независимо от ranking, original raw
+  HTTP/clock/query pins, immutable versions/first-seen и durable poll journal.
+- [x] Source-bound original price forecast/replay mechanism с frozen artifact,
+  negative forecasts, mandatory freshness и crash/tamper/resource guards.
+- [x] 61new+265compatibility=326 разных tests passed /25.09s; actual public
+  120BTC+120ETH ready в07:51UTC и offline audit. Actual forecasts=0.
+- [ ] W6b.3: подключение reader к общему потоку/paired runner, actual compatible
+  forecasts и проверка reference refresh рабочего контура. Primary SQL BTC
+  при read07:08UTC остаётся stale≈32h; новый collector primary DB не обновляет.
+- [ ] W7–W9 и общие W6/W5/R1–R16/VP gates остаются открытыми.
+
+[W6b runbook/checklist/evidence](docs/REFERENCE_SOURCE_LEDGER.md).
+Прежние552 Python-файла и804 historical checkbox/body сохранены. Primary DB,
+services/model/risk не менялись; paper/economic/live admission=false.
+Evidence: `.local/state/reference-sources-work-20261023/verification.json`.
+Ниже датированные записи предыдущих этапов; их очередь уточнена текущим блоком.
+
+## Продолжение W6a — 22 октября 2026
+
+- [x] Read-only local instance/schema/migration и original candle observations,
+  immutable pre-start contract, conservative known_at, revision/freshness guards
+  и offline verifier реализованы отдельно от frozen paper components.
+- [x]79new+186compatibility=265 distinct tests passed. Actual120BTC+120ETH rows
+  и offline CLI verified; общий suite заново не запускался.
+- [ ] W6b: mandatory reference sources/original forecasts/reader linkage.
+  BTC stale≈14h23m, ETH fresh при read22октября13:33UTC; полный W6 не закрыт.
+- [ ] W7/W8/W9, R1–R16 и VP qualification остаются по общему checklist.
+
+[W6a runbook и evidence](docs/LOCAL_SOURCE_PROVENANCE.md).
+Primary DB/services/model/risk не менялись; код и receipts прежних548files сохранены.
+
+## Актуальная сверка чек-листов — 22 октября 2026
+
+Единый текущий остаток и условия закрытия находятся в
+[research checklist](docs/PROFITABLE_STRATEGY_RESEARCH_PLAN.md#current-checklist).
+Там разделены выполненный код, незавершённая интеграция, ожидание данных/дат
+и постоянные требования. Старые пустые строки дневника не означают, что
+готовый механизм надо реализовать повторно; исторические `[x]` не подтверждают
+сегодняшний deployment.
+
+- [x] Сверены 25 SHA implementation/tests W5a/W5b.1–W5b.3 и сохранённые
+  результаты 21 октября:753 разных cases. Эта отметка относится к сверке docs;
+  новые W6a tests приведены выше.
+- [x] Completed long/minute audits, fixed/ATR4/4 (0passes), cached loss review,
+  calendar/fold0 preparation отделены от ещё открытой квалификации результата.
+- [ ] R1–R5: actual runtime/account/risk/exit qualification и проверка rollout.
+- [ ] R6–R11: original entry data, candidate/control comparison, cash readiness,
+  human20cases и historical execution/source qualification.
+- [ ] W7b → W8 и W6b.3b operational: coordinator/cash policies/paired runner →
+  whole-worker capacity/review. Kernel/archive/capture/replay заново не писать.
+- [ ] R12/R13: полная независимая процедура и остальные folds; fold0 test
+  заканчивается 15 ноября 03:00 МСК. Closed-cash train/validation cutoffs —
+  7/21 ноября 00:59 МСК, это другое исследование.
+- [ ] W9/R14: qualified candidate, новая preregistration, actual future
+  paper30days/100closed trades и economic/replay review по общему плану.
+- [ ] INT/VP-00…09, R15/R16 и Phase30/31: отдельные незавершённые gates,
+  не закрываемые наличием подготовительных механизмов.
+
+Основная БД — local PostgreSQL/PostgREST; authenticated read проверен 20 октября,
+при предыдущей сверке docs. W6a22октября выполнил отдельное read-only SQL
+наблюдение240rows, приведённое выше; сервисы/модель не менялись.
+Подробные приёмочные условия и evidence — в указанном текущем checklist,
+а не в повторяющихся исторических очередях ниже.
+
+## Продолжение исследования — 21 октября 2026
+
+- [x] W5b.2: capture v2 с original kernel/archive pins,14 groups, durable native
+  clocks после SQLite lock и ограниченным actual endpoint без backfill.
+  **637 разных cases прошли:** 123 passed /363.09s + 1 passed /26.08s после исправления tuple expectation только в тесте; compatibility 513 passed /620.65s. Общий suite заново не запускался.
+- [x] W5b.3: independent controller/wallet replay новой schema реализован;
+  exact financial rules, ordered native clocks, original-window valuation и scratch bounds.
+  **753 разных cases прошли:** 115 passed /388.36s + overnight UTC 1 passed /13.43s; compatibility 637 passed /953.93s. Общий suite заново не запускался.
+- [ ] W6/W7: local provenance/shared polling/paired runner; затем W8/W9
+  capacity/review, qualified candidate и actual economic evidence.
+
+Подробные чек-листы и границы: [capture v2](docs/PAPER_WORKER_CAPTURE_V2.md),
+[independent replay v2](docs/PAPER_WORKER_REPLAY_V2.md).
+W5 и paper/live admission целиком не закрыты.
+
+## Исходная сверка — 14 октября 2026
+
+Основной план сохраняет исходные фазы и исторические проверки. Текущая сводка,
+выявленные ошибки и actionable checklist R1–R16 находятся в
+[сверке реализации](docs/IMPLEMENTATION_RECONCILIATION_20261014.md).
+Детальный research backlog — [исследовательский план](docs/PROFITABLE_STRATEGY_RESEARCH_PLAN.md).
+
+- [x] На14октября локальный non-integration suite: 1057 passed, 1 deselected.
+- [x] Подтверждены механизмы исследований и сохранённые source evidence в указанной области.
+- [ ] Текущий end-to-end/live admission: runtime risk/outage wiring, model contract,
+  independent profitability и forward paper не квалифицированы.
+
+**Последняя проверка установки14октября:** локальный Supabase Spot executor был
+установлен с `--live`; таймер присутствовал в расписании. Сверка22октября состояние
+службы заново не проверяла. Поэтому старые утверждения «real trading disabled»
+не описывают весь проект. Это фиксация состояния, а не новый допуск или изменение торговли.
+Freqtrade dry-run проверки не переносятся автоматически на Supabase executor.
+
+Исторические `[x]` фаз 0–29 подтверждают прежние проверки/механизмы, а не повторный
+аудит текущего deployment. Открытые критерии актуальной квалификации перечислены
+в R1–R16; Phase 30 и Phase 31 не завершены.
 
 ## 0. Non-negotiable rules
 
 -   [ ] Exchange scope is **Bybit only**.
 -   [ ] Current market scope is **Spot only**.
--   [ ] Current implemented execution mode is **DRY-RUN / PAPER TRADING
-    only** until the controlled-live phase passes audit.
--   [ ] Real-money trading remains disabled until a dedicated
-    controlled-live phase is implemented, audited, and explicitly
-    enabled.
+-   [ ] Current Supabase live executor must pass the dedicated runtime audit R1–R5;
+    original Freqtrade dry-run checks do not certify it.
+-   [ ] Controlled-live admission must be documented and verified for the actual
+    executor; installed `--live` does not close this requirement.
 -   [ ] Futures, margin and leverage remain disabled.
 -   [ ] Hard risk limits cannot be modified by a strategy, ML model,
     optimizer, or Strategy Lab.
@@ -1006,7 +1513,7 @@ Checklist:
 -   [x] Check Supabase privileged key handling.
 -   [x] Review RLS if applicable.
 -   [x] Confirm Bybit withdrawal permission is never required.
--   [x] Confirm real trading remains disabled.
+-   [ ] Reconcile actual live executor and current admission evidence (R1–R5).
 -   [x] Confirm Futures/leverage remain disabled.
 
 ### Definition of Done - Phase 26
@@ -1137,12 +1644,12 @@ Final checklist:
 -   [x] Monitoring/fail-safe works.
 -   [x] Backup and tested restore work.
 -   [x] Migration export is ready.
--   [x] Real trading is still disabled.
+-   [ ] Actual Supabase live execution is reconciled with runtime-specific gates (R1–R5).
 -   [x] Futures are still disabled.
 -   [x] Leverage is still disabled.
 -   [x] Heavy FreqAI is honestly marked inactive if not running.
--   [x] `FINAL_AUDIT.md` accurately distinguishes working/partial/not
-    implemented.
+-   [ ] Current complete end-to-end audit closes R1–R16; historical FINAL_AUDIT
+    and current reconciliation alone do not establish live readiness.
 
 ------------------------------------------------------------------------
 
@@ -1152,6 +1659,10 @@ This phase supports the revised long-term objective: autonomous daytime
 trading and nighttime learning. It may begin only after Phase 30 is
 complete and no blocking security, quant, risk, backup, restore,
 monitoring or resource audit item remains open.
+
+Status: **incomplete**. Checkboxes for primitives below retain their original
+Freqtrade/design scope. Actual Supabase executor admission and operational
+qualification require R1–R16; no blanket transfer of these checks is valid.
 
 Live trading scope for the first pilot:
 
@@ -1175,12 +1686,12 @@ Pre-live checklist:
 -   [x] Verify live config has Spot only.
 -   [x] Verify live config has no leverage/futures/margin settings.
 -   [x] Verify withdrawal permission is absent.
--   [x] Verify kill switch.
--   [x] Verify no-new-entry switch.
--   [x] Verify daily loss guard.
--   [x] Verify max drawdown guard.
--   [x] Verify max position size.
--   [x] Verify max simultaneous positions.
+-   [ ] Verify kill switch.
+-   [ ] Verify no-new-entry switch.
+-   [ ] Verify daily loss guard. Runtime qualification: R3/R5.
+-   [ ] Verify max drawdown guard.
+-   [ ] Verify max position size. Runtime qualification: R3/R5.
+-   [ ] Verify max simultaneous positions. Runtime qualification: R3/R5.
 -   [x] Verify minimum order/precision handling.
 -   [x] Verify monitoring alerts.
 -   [ ] Verify backup/restore immediately before live start.
@@ -1188,11 +1699,11 @@ Pre-live checklist:
 
 Autonomous day mode:
 
--   [x] Run only approved live strategies.
+-   [ ] Run only approved live strategies.
 -   [x] Monitor strategy health.
 -   [x] Pause strategy after configured abnormal loss/drift/error.
 -   [x] Never edit live strategy code in place while positions are open.
--   [x] Persist all decisions and trade context.
+-   [ ] Persist all decisions and trade context.
 -   [x] Keep user-visible daily summary.
 
 Autonomous night mode:
@@ -1202,8 +1713,8 @@ Autonomous night mode:
 -   [x] Run bounded backtests/research.
 -   [x] Compare candidates against champion.
 -   [x] Produce candidate recommendations.
--   [x] Promote only through configured gates.
--   [x] Deploy first to shadow/paper mode.
+-   [ ] Promote only through configured gates.
+-   [ ] Deploy first to shadow/paper mode.
 
 Objective:
 
@@ -1366,3 +1877,24 @@ schema tests, and ran the non-integration test suite.
 Follow-up:
 When Supabase credentials are added, apply the migration to the real
 project through the Supabase workflow and verify remote table/RLS state.
+
+## 2026-10-14 — Reconcile plans against actual executor and evidence
+
+Reason: root plan/README/final audit described September dry-run, while Linux
+Supabase executor is installed with --live and research continued through October.
+Impact: preserve historical phases; reopen misleading current/live checks;
+record R1–R16 and distinguish code tests, source arithmetic, independent
+profitability and operational admission. No executor/model/service/order changes.
+Verification: 1057 passed, 1 deselected; saved input/runtime and minute snapshot
+checks; installed timer/ExecStart read-only inspection. See dated reconciliation.
+
+## 2026-10-18 — Correct research scope and link the VP supplement
+
+Reason: user clarified that another agent owns the LLM plan. Its provisional
+integration and continuation tasks were removed from this research queue.
+The standalone LLM plan and implemented diagnostics remain available to that agent.
+Impact: the existing research master preserves its phases/checklists and adds
+the user-supplied VP specification with dependencies; no duplicate root checklist.
+Verification: original804 research checkboxes retained, unique VP section and
+documentation links checked; independent review and Git commit/PR remain open.
+No research run, model publication, order or service change in this correction.

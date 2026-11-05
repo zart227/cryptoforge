@@ -10,7 +10,7 @@ from pathlib import Path
 import random
 
 from cryptoforge.llm_research_contracts import CATALOG, validate_proposal_shape
-from cryptoforge.training_diagnostics import canonical, digest, exact_fields
+from cryptoforge.research_training_diagnostics import canonical, digest, exact_fields
 from cryptoforge.training_experiment_planner import (
     BASELINE, freeze_protocol, load_development, read_json, run_experiment,
 )

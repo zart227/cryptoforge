@@ -6,7 +6,7 @@ import pytest
 
 from cryptoforge.semantic_review_package import make_package, blank_response, complete_review, main, validate_package
 from cryptoforge.semantic_annotation_benchmark import freeze_benchmark
-from cryptoforge.training_diagnostics import build_diagnostics, digest
+from cryptoforge.research_training_diagnostics import build_diagnostics, digest
 from cryptoforge.training_experiment_planner import read_json
 
 

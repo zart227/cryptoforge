@@ -11,7 +11,7 @@ import pytest
 
 from cryptoforge import ollama_decision_readiness as readiness
 from cryptoforge import ollama_systemone_fixture as bridge
-from cryptoforge.training_diagnostics import canonical, digest
+from cryptoforge.research_training_diagnostics import canonical, digest
 
 
 @pytest.fixture

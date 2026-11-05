@@ -3,7 +3,7 @@ from decimal import Decimal, InvalidOperation
 import hashlib
 from pathlib import Path
 
-from cryptoforge.training_diagnostics import canonical, digest, timestamp
+from cryptoforge.research_training_diagnostics import canonical, digest, timestamp
 
 POLICY = {'schema_version': 'research-provider-limits-policy-v1', 'provider': 'openrouter',
     'metadata_endpoint': 'https://openrouter.ai/api/v1/key', 'generation_endpoint_enabled': False,

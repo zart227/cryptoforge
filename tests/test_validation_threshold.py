@@ -11,7 +11,7 @@ SHA = 'a' * 64
 
 def trial(threshold, net=2, stress=1):
     return ValidationPortfolio(D(threshold), 'validation', START, END, SHA,
-                               'b'*64, D(100), D(net), D(stress), D('.02'), D('.03'), 20, 20)
+                               'b'*64, D(100), D(net), D(stress), D('.02'), D('.03'), 20, 20, 0, 0, 0, 0)
 
 
 def select(results, **changes):
@@ -60,3 +60,16 @@ def test_tie_is_deterministic_and_nonfinite_metric_refused():
 def test_tiny_stress_execution_sample_cannot_qualify_profitable_threshold():
     result=select([replace(trial('.5',100,100),stress_trade_count=1),trial('.6',-1,-1)])
     assert result['selected_threshold'] is None
+
+
+@pytest.mark.parametrize('field',['open_positions_at_end','stress_open_positions_at_end','exit_minimum_violations','stress_exit_minimum_violations'])
+@pytest.mark.parametrize('value',[None,1])
+def test_unknown_or_failed_cash_closeout_cannot_win(field,value):
+    result=select([replace(trial('.5',100,100),**{field:value}),trial('.6')])
+    assert result['selected_threshold']=='0.6'
+    assert len(result['execution_exclusions'])==1
+
+
+def test_invalid_execution_counts_cannot_be_economic_evidence():
+    with pytest.raises(ValueError,match='execution coverage'):
+        select([replace(trial('.5'),exit_minimum_violations=True),trial('.6')])

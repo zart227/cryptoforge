@@ -10,7 +10,7 @@ import pytest
 from test_typesafe_sdk_bridge import catalog, sdk_request, response
 from cryptoforge import semantic_request_journal as module
 from cryptoforge.typesafe_sdk_bridge import evaluate_fixture
-from cryptoforge.training_diagnostics import canonical
+from cryptoforge.research_training_diagnostics import canonical
 
 
 def policy(**overrides):

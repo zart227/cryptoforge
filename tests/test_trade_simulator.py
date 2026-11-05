@@ -51,6 +51,34 @@ def test_gap_stop_fills_at_open_not_stop():
     assert trade.net_pnl==D(-1)
 
 
+def test_gap_exit_below_minimum_is_explicitly_not_certified_executable():
+    rows=history();rows[2]=replace(rows[2],open=D(40),low=D(39),high=D(41),close=D(40))
+    result=run(rows)
+    assert len(result.exit_minimum_violations)==1
+    violation=result.exit_minimum_violations[0]
+    assert violation['notional']==D(4) and violation['required_minimum']==D(5)
+    assert violation['scope']=='assumed_exit_not_certified_executable'
+
+
+def test_strict_exit_preserves_cash_basis_and_inventory_after_gap():
+    rows=history();rows=[replace(row,open=D(40),high=D(41),low=D(39),close=D(40)) if i>=2 else row for i,row in enumerate(rows)]
+    result=run(rows,exit_minimum_policy='preserve_inventory')
+    assert not result.trades and result.final_cash==D(90)
+    assert len(result.open_positions)==1 and result.open_positions[0]['quantity']==D('.1')
+    assert result.open_positions[0]['cost_basis']==D(10)
+    assert result.equity[-1][1]==D(90)
+
+
+def test_strict_unsellable_position_cannot_finance_a_later_entry():
+    eth=history();eth=[replace(row,open=D(40),high=D(41),low=D(39),close=D(40)) if i>=2 else row for i,row in enumerate(eth)]
+    btc=history('BTC/USDT')
+    result=simulate_portfolio({'ETH/USDT':eth,'BTC/USDT':btc},
+        {'ETH/USDT':[eth[0].open_time],'BTC/USDT':[btc[2].open_time]},
+        SimulationConfig(capital=D(10),stake=D(10),fee=D(0),slippage=D(0),exit_minimum_policy='preserve_inventory'))
+    assert any(row['reason']=='insufficient_cash' for row in result.rejections)
+    assert result.final_cash==0 and len(result.open_positions)==1
+
+
 def test_adverse_entry_fill_does_not_exit_at_a_stop_above_the_current_market():
     rows=history();cfg=SimulationConfig(stake=D(10),fee=D(0),slippage=D('.03'),stop_fraction=D('.02'))
     trade=simulate_portfolio({'ETH/USDT':rows},{'ETH/USDT':[rows[0].open_time]},cfg).trades[0]
@@ -202,3 +230,13 @@ def test_bounded_equity_details_reconcile_cash_basis_and_open_positions():
         assert snapshot['equity']==equity
     assert not result.equity_snapshots[-1]['open_positions']
     assert not simulate_portfolio({'ETH/USDT':rows},{},cfg).equity_snapshots
+
+
+def test_strict_exit_recovers_when_minimum_becomes_executable():
+    rows=history()
+    rows[2]=replace(rows[2],open=D(40),high=D(41),low=D(39),close=D(40))
+    rows[3]=replace(rows[3],open=D(60),high=D(61),low=D(59),close=D(60))
+    result=run(rows,exit_minimum_policy='preserve_inventory')
+    assert len(result.trades)==1 and not result.open_positions
+    assert result.trades[0].exit_time==rows[3].open_time
+    assert result.trades[0].net_pnl==D(-4) and result.final_cash==D(96)

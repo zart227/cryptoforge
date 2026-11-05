@@ -14,7 +14,7 @@ import time
 from urllib.parse import urlsplit
 
 from cryptoforge.llm_research_contracts import strict_json
-from cryptoforge.training_diagnostics import canonical
+from cryptoforge.research_training_diagnostics import canonical
 
 
 MAX_RAW_BYTES = 2_000_000

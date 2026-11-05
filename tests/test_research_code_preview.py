@@ -6,7 +6,7 @@ from pathlib import Path
 import pytest
 
 from cryptoforge import research_code_preview as preview
-from cryptoforge.training_diagnostics import canonical, digest
+from cryptoforge.research_training_diagnostics import canonical, digest
 
 
 PATH = 'research/feature_candidate.py'

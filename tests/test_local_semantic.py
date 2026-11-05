@@ -22,7 +22,7 @@ from cryptoforge.research_run_budget import ResearchRunBudget, DEFAULT_POLICY as
 from cryptoforge.research_resource_budget import ZERO_TOKENS
 from cryptoforge.research_semantic_budget import DEFAULT_SEMANTIC_POLICY
 from cryptoforge.semantic_research_catalog import SemanticResearchCatalog
-from cryptoforge.training_diagnostics import canonical, digest
+from cryptoforge.research_training_diagnostics import canonical, digest
 from test_ollama_systemone import catalog, response
 
 

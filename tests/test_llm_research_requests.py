@@ -7,7 +7,7 @@ from concurrent.futures import ThreadPoolExecutor
 import pytest
 
 from cryptoforge.llm_research_requests import ResearchRequests
-from cryptoforge.training_diagnostics import build_diagnostics, digest
+from cryptoforge.research_training_diagnostics import build_diagnostics, digest
 
 
 def report(offset=0):

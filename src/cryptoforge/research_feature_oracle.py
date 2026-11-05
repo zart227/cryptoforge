@@ -10,7 +10,7 @@ import tempfile
 
 from cryptoforge import research_feature_reference as reference
 from cryptoforge import research_value_audit as values
-from cryptoforge.training_diagnostics import canonical, digest, exact_fields
+from cryptoforge.research_training_diagnostics import canonical, digest, exact_fields
 
 
 POLICY = {'schema_version': 'research-feature-oracle-policy-v1',

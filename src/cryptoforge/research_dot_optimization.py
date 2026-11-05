@@ -5,7 +5,7 @@ import math
 from operator import mul as _dot_mul
 from pathlib import Path
 
-from cryptoforge.training_diagnostics import digest
+from cryptoforge.research_training_diagnostics import digest
 
 REVIEWED_NATIVE_SHA256='9afb8aab375ec786aa8f9c9a7f617a5db642e49fcfbf45d311a413a05e63aeb7'
 

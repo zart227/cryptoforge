@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 from cryptoforge import research_provider_limits as m
-from cryptoforge.training_diagnostics import canonical, digest
+from cryptoforge.research_training_diagnostics import canonical, digest
 
 NOW = '2026-10-26T08:10:00+00:00'
 SHA = 'a'*64

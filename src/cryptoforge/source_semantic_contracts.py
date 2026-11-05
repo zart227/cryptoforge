@@ -4,7 +4,7 @@ import hashlib
 from pathlib import Path
 
 from cryptoforge import local_semantic_contracts as local, semantic_event_review as events
-from cryptoforge.training_diagnostics import canonical, digest, exact_fields, timestamp
+from cryptoforge.research_training_diagnostics import canonical, digest, exact_fields, timestamp
 from cryptoforge.typesafe_judgment_contracts import normalize_answer
 
 

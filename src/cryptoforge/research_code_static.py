@@ -11,7 +11,7 @@ import time
 from cryptoforge import research_code_budget as code, research_code_preview as preview
 from cryptoforge import research_run_budget as common
 from cryptoforge.research_resource_budget import resource_snapshot
-from cryptoforge.training_diagnostics import canonical, digest, exact_fields
+from cryptoforge.research_training_diagnostics import canonical, digest, exact_fields
 from cryptoforge.llm_research_contracts import strict_json
 
 

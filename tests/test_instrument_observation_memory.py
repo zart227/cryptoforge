@@ -27,3 +27,23 @@ def test_backdated_or_duplicate_symbol_snapshot_is_not_registered(tmp_path):
     data=payload();data['result']['list']*=2
     with pytest.raises(ValueError,match='unique'):memory.remember(data,request_started_at=NOW,response_observed_at=NOW)
     assert not memory.path.exists()
+
+
+def test_changed_registry_receipt_cannot_claim_complete_historical_rules(tmp_path):
+    import sqlite3,json
+    memory=InstrumentObservationMemory(tmp_path,clock=lambda:NOW)
+    memory.remember(payload(),request_started_at=NOW,response_observed_at=NOW)
+    with sqlite3.connect(memory.path) as db:
+        row=json.loads(db.execute('select payload from instrument_observations').fetchone()[0])
+        row['symbols_observed']=1000
+        db.execute('update instrument_observations set payload=?',(json.dumps(row,sort_keys=True),))
+    with pytest.raises(ValueError,match='identity'):memory.state_at('ETHUSDT',as_of=NOW)
+
+
+def test_registry_time_column_cannot_backdate_original_observation(tmp_path):
+    import sqlite3
+    memory=InstrumentObservationMemory(tmp_path,clock=lambda:NOW)
+    memory.remember(payload(),request_started_at=NOW,response_observed_at=NOW)
+    with sqlite3.connect(memory.path) as db:
+        db.execute('update instrument_observations set observed_at=?',((NOW-timedelta(hours=1)).isoformat(),))
+    with pytest.raises(ValueError,match='identity'):memory.state_at('ETHUSDT',as_of=NOW)

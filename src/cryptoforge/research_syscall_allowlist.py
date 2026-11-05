@@ -12,7 +12,7 @@ import subprocess
 import time
 
 from cryptoforge import research_runtime_mounts as mounts
-from cryptoforge.training_diagnostics import canonical, digest, exact_fields
+from cryptoforge.research_training_diagnostics import canonical, digest, exact_fields
 
 seccomp = mounts.seccomp
 inventory = mounts.inventory

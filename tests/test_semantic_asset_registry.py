@@ -8,7 +8,7 @@ import pytest
 
 from cryptoforge import semantic_asset_registry as assets, semantic_source_collector as collector
 from cryptoforge import semantic_source_snapshot as snapshots
-from cryptoforge.training_diagnostics import canonical, digest
+from cryptoforge.research_training_diagnostics import canonical, digest
 
 
 T0,T1,T2 = ['2000-01-01T00:00:0'+str(i)+'+00:00' for i in range(3)]

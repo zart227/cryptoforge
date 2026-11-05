@@ -737,10 +737,13 @@ def watcher_once(
 
 
 def client_from_env(environ: dict[str, str] | None = None) -> SupabaseRelayClient:
+    from cryptoforge.backend import resolve_backend
+
     env = os.environ if environ is None else environ
+    backend = resolve_backend(env)
     return SupabaseRelayClient(
-        supabase_url=env.get("SUPABASE_URL", ""),
-        service_role_key=env.get("SUPABASE_SERVICE_ROLE_KEY", ""),
+        supabase_url=backend.url,
+        service_role_key=backend.key,
         timeout_seconds=float(env.get("CRYPTOFORGE_RELAY_TIMEOUT_SECONDS", "10")),
         include_hold_decisions=env.get("CRYPTOFORGE_TELEGRAM_INCLUDE_HOLD", "").lower()
         in {"1", "true", "yes"},

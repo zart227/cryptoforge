@@ -14,7 +14,7 @@ import stat
 
 from cryptoforge import announcement_sources, llm_research_contracts, semantic_source_snapshot as snapshots
 from cryptoforge import semantic_source_transport as transport, training_diagnostics
-from cryptoforge.training_diagnostics import canonical, digest, exact_fields, timestamp
+from cryptoforge.research_training_diagnostics import canonical, digest, exact_fields, timestamp
 from cryptoforge.llm_research_contracts import strict_json
 
 

@@ -10,7 +10,7 @@ import tempfile
 
 from cryptoforge import research_feature_oracle as features
 from cryptoforge import research_label_reference_worker as reference
-from cryptoforge.training_diagnostics import canonical, digest, exact_fields
+from cryptoforge.research_training_diagnostics import canonical, digest, exact_fields
 
 values = features.values
 POLICY = {'schema_version': 'research-label-oracle-policy-v1', 'maximum_samples': 16,

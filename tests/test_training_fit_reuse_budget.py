@@ -6,7 +6,7 @@ import pytest
 
 from cryptoforge import research_phase as phase, training_fit_reuse_budget as adapter
 from cryptoforge.research_attempts import ResearchAttempts
-from cryptoforge.training_diagnostics import digest
+from cryptoforge.research_training_diagnostics import digest
 from test_research_phase import migrated
 from test_training_fit_reuse import EVIDENCE, inputs
 

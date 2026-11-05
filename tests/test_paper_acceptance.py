@@ -133,3 +133,27 @@ def test_normal_portfolio_risk_rejection_is_accounted_without_data_failure():
     assert evaluate(c=c)['paper_evidence_pass']
     c['worker_quality_error_count']=1
     assert 'worker_errors_or_pending_intents' in evaluate(c=c)['failures']
+
+
+def full_mark_summary(c):
+    return {'raw_mark_count':len(c['equity_marks']),'known_mark_count':len(c['equity_marks']),
+        'all_marks_known':True,'max_drawdown':'0','max_gap_seconds':86400,
+        'first_mark_at':START.isoformat(),'last_mark_at':END.isoformat()}
+
+
+@pytest.mark.parametrize('changes',[{'known_mark_count':100},{'raw_mark_count':True},
+    {'all_marks_known':False},{'max_drawdown':'NaN'},{'max_gap_seconds':0}])
+def test_retained_mark_summary_cannot_fabricate_complete_low_risk_history(changes):
+    c=result();c['mark_quality']={**full_mark_summary(c),**changes}
+    with pytest.raises(ValueError):evaluate(c=c)
+
+
+def test_full_history_summary_cannot_hide_visible_drawdown():
+    c=result();c['mark_quality']=full_mark_summary(c)
+    c['equity_marks'][4]['equity']='50'
+    with pytest.raises(ValueError,match='drawdown summary'):evaluate(c=c)
+
+
+def test_valid_retained_mark_summary_preserves_evaluation():
+    c=result();c['mark_quality']=full_mark_summary(c)
+    assert evaluate(c=c)['paper_evidence_pass']

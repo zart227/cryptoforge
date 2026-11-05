@@ -5,7 +5,7 @@ import hashlib
 from pathlib import Path
 import math
 import re
-from cryptoforge.training_diagnostics import exact_fields, number, digest, canonical
+from cryptoforge.research_training_diagnostics import exact_fields, number, digest, canonical
 
 
 def identifier(value):

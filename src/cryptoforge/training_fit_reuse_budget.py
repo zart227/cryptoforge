@@ -15,7 +15,7 @@ import stat
 from cryptoforge import research_phase as phase, training_fit_reuse_worker as worker
 from cryptoforge.llm_research_contracts import strict_json
 from cryptoforge.research_attempts import ResearchAttempts, budget_key, identity
-from cryptoforge.training_diagnostics import canonical, digest
+from cryptoforge.research_training_diagnostics import canonical, digest
 
 
 planner = worker.reuse.planner

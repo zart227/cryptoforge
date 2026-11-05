@@ -1,6 +1,38 @@
 # CryptoForge Final End-To-End Audit
 
-Audit date: 2026-09-25.
+> **Архив с 5 ноября 2026.** Текущий статус и незакрытые gates:
+> [docs/CURRENT_PLAN.md](docs/CURRENT_PLAN.md). Утверждения ниже о запрете
+> реальной торговли и о 121 тесте относятся к 25 сентября 2026. Они не
+> описывают установленный позже Supabase executor с `--live`.
+
+Historical audit date: 2026-09-25. This body is retained as a historical snapshot.
+
+Checklist reconciliation on 2026-10-22:
+[current research checklist](docs/PROFITABLE_STRATEGY_RESEARCH_PLAN.md#current-checklist).
+Producer/archive/capture/independent replay v2 are implemented and their25
+tested file hashes were rechecked against saved receipts. The753 passing
+cases belong to2026-10-21; code tests and deployment/account/DB checks were
+not rerun on2026-10-22. The primary backend is local PostgreSQL/PostgREST.
+R1–R16, independent profitability, actual forward paper and Phase30/31
+qualification remain open. Dated sections below retain their original scope.
+
+## Current status — 2026-10-14
+
+The current [implementation reconciliation](docs/IMPLEMENTATION_RECONCILIATION_20261014.md)
+supersedes historical claims below about disabled real trading, absent live code,
+121 tests and the deployment host. Linux Supabase Spot executor is installed with
+`--live`; its complete safety and independent profitability qualification is open.
+
+- [x] Current local non-integration suite: **1057 passed, 1 deselected**.
+- [x] Source accounting/research mechanisms and completed negative studies verified in scope.
+- [ ] Runtime-specific risk/switch/outage handling qualification (R1–R5).
+- [ ] Compatible model/cash sources and historical execution qualification (R6–R11).
+- [ ] Independent evaluation, future paper and operational/live review (R12–R16).
+
+The September sections below do not state today's account permissions, model,
+service availability or approval. Remote integration/recovery was not rerun in this review.
+
+---
 
 ## Executive Summary
 

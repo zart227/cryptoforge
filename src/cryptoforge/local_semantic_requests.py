@@ -10,7 +10,7 @@ from cryptoforge import local_semantic_worker
 from cryptoforge.local_semantic_worker import run_worker, SemanticCancelled, SemanticTimedOut
 from cryptoforge.local_semantic_contracts import validate_request, normalize_transport, inference_identity
 from cryptoforge.llm_research_contracts import strict_json
-from cryptoforge.training_diagnostics import canonical, digest, exact_fields, number, timestamp
+from cryptoforge.research_training_diagnostics import canonical, digest, exact_fields, number, timestamp
 
 
 DEFAULT_POLICY = {'schema_version': 'local-semantic-inner-budget-v1', 'daily_requests': 5, 'total_requests': 5,

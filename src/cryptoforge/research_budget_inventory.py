@@ -13,7 +13,7 @@ from cryptoforge import research_resource_budget as resources, semantic_request_
 from cryptoforge import research_data_protocol as temporal, research_local_export as private
 from cryptoforge import semantic_source_collector as files
 from cryptoforge.llm_research_contracts import strict_json
-from cryptoforge.training_diagnostics import canonical, digest, exact_fields, timestamp
+from cryptoforge.research_training_diagnostics import canonical, digest, exact_fields, timestamp
 
 
 POLICY = {'schema_version': 'research-budget-inventory-policy-v1', 'maximum_ledgers': 16,

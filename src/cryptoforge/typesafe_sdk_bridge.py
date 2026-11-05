@@ -13,7 +13,7 @@ import re
 
 from cryptoforge import typesafe_judgment_contracts
 from cryptoforge.semantic_annotation_benchmark import write_new
-from cryptoforge.training_diagnostics import canonical, digest, exact_fields
+from cryptoforge.research_training_diagnostics import canonical, digest, exact_fields
 from cryptoforge.training_experiment_planner import read_json
 from cryptoforge.typesafe_judgment_contracts import evaluate_mock, normalize_answer, validate_catalog
 

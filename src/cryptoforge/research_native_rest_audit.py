@@ -12,7 +12,7 @@ import tempfile
 
 from cryptoforge import research_value_audit as values
 from cryptoforge import research_reviewed_main_runtime as reviewed_main
-from cryptoforge.training_diagnostics import canonical,digest,exact_fields
+from cryptoforge.research_training_diagnostics import canonical,digest,exact_fields
 
 POLICY={'schema_version':'native-local-rest-audit-policy-v1','origin':'http://127.0.0.1:54321','pairs':['BTC/USDT','ETH/USDT'],
     'timeframe':'5m','lookback_candles':144,'feature_lookback_candles':120,'horizon_candles':3,'min_label_return':'0.003',

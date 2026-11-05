@@ -1,7 +1,7 @@
 """Parameter proposals only: validation never executes or promotes a model."""
 import json
 import re
-from cryptoforge.training_diagnostics import exact_fields, number, validate_diagnostics
+from cryptoforge.research_training_diagnostics import exact_fields, number, validate_diagnostics
 
 PROPOSAL_VERSION = 'llm-training-proposal-v1'
 # A bounded starting search space; these are proposals, not production defaults.

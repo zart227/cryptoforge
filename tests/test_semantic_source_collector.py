@@ -15,7 +15,7 @@ import pytest
 from cryptoforge import semantic_source_collector as collector
 from cryptoforge import semantic_source_transport as transport
 from cryptoforge import semantic_source_snapshot as snapshots
-from cryptoforge.training_diagnostics import canonical, digest
+from cryptoforge.research_training_diagnostics import canonical, digest
 
 
 URL = 'https://announcements.bybit.com/en/article/synthetic-notice/'

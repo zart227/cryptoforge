@@ -5,7 +5,7 @@ import hashlib
 from pathlib import Path
 
 from cryptoforge import research_budget_inventory as inventory
-from cryptoforge.training_diagnostics import canonical, digest, exact_fields, timestamp
+from cryptoforge.research_training_diagnostics import canonical, digest, exact_fields, timestamp
 
 
 POLICY = {'schema_version': 'research-historical-debits-policy-v1',

@@ -16,7 +16,7 @@ from cryptoforge import research_local_export as private
 from cryptoforge import research_data_protocol as temporal
 from cryptoforge import semantic_source_collector as files
 from cryptoforge.llm_research_contracts import strict_json
-from cryptoforge.training_diagnostics import canonical, digest, exact_fields
+from cryptoforge.research_training_diagnostics import canonical, digest, exact_fields
 
 
 POLICY = {'schema_version': 'research-resource-stress-policy-v1',

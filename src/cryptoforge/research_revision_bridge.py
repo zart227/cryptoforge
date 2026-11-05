@@ -15,7 +15,7 @@ import tempfile
 from cryptoforge import research_data_protocol as temporal, research_local_export as private
 from cryptoforge import research_reviewed_main_runtime as reviewed_main
 from cryptoforge import semantic_source_collector as files
-from cryptoforge.training_diagnostics import canonical, digest, exact_fields
+from cryptoforge.research_training_diagnostics import canonical, digest, exact_fields
 
 
 POLICY = {'schema_version': 'research-revision-bridge-policy-v1', 'maximum_database_bytes': 8388608,

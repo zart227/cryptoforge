@@ -6,7 +6,7 @@ from pathlib import Path
 import pytest
 
 from cryptoforge import research_feature_windows as windows
-from cryptoforge.training_diagnostics import canonical, digest
+from cryptoforge.research_training_diagnostics import canonical, digest
 
 
 START = datetime(2026, 1, 1, tzinfo=timezone.utc)

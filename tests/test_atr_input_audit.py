@@ -22,6 +22,27 @@ def test_bad_frozen_source_is_not_treated_as_temporary_resource_defer(tmp_path,m
     assert not (tmp_path/'audit.json').exists()
 
 
+def test_explicit_resource_profile_is_forwarded_to_worker_guard(tmp_path,monkeypatch):
+    calls=[]
+    def blocked(path):
+        calls.append(path)
+        raise ValueError('insufficient resources: preserve executor')
+    monkeypatch.setattr(audit_atr_inputs,'prepare_research',blocked)
+    profile=tmp_path/'resources.json'
+    assert audit_atr_inputs.main(['--resource-protocol',str(profile),'--output',str(tmp_path/'audit.json')])==0
+    assert calls==[str(profile)]
+
+
+def test_changed_source_identity_never_replaces_completed_receipt(tmp_path,monkeypatch):
+    import pytest
+    output=tmp_path/'audit.json';output.write_text('{"audit_identity":"old","status":"completed_input_audit"}')
+    original=output.read_bytes()
+    monkeypatch.setattr(audit_atr_inputs,'prepare_research',lambda:{'baseline_pairs':['ETH/USDT']})
+    with pytest.raises(ValueError,match='immutable'):
+        audit_atr_inputs.main(['--output',str(output)])
+    assert output.read_bytes()==original
+
+
 def test_completed_source_audit_is_cached_without_repeating_input_calculations(tmp_path,monkeypatch):
     from test_trade_simulator import history
     protocol={'baseline_pairs':['ETH/USDT'],'datasets':[{'pair':'ETH/USDT','path':str(tmp_path/'ETHUSDT-5.json'),'sha256':'0'*64}]}

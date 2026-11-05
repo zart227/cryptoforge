@@ -10,7 +10,7 @@ from pathlib import Path
 
 from cryptoforge import semantic_asset_registry as assets, semantic_source_collector as collector
 from cryptoforge import semantic_source_snapshot as snapshots, typesafe_judgment_contracts as judgments
-from cryptoforge.training_diagnostics import canonical, digest, exact_fields, number
+from cryptoforge.research_training_diagnostics import canonical, digest, exact_fields, number
 
 
 EVENTS = {

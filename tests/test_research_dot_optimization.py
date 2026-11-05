@@ -61,5 +61,5 @@ def test_bounded_scalar_CPU_comparison_records_measurements_without_speed_assert
         'whole_training_speedup_measured':False,'model_fit_prediction_provider_or_budget_actions':0,
         'review':m.reviewed_patch(Path(native.__file__).read_bytes())['review']}
     path=tmp_path/'dot-benchmark.json'
-    from cryptoforge.training_diagnostics import canonical
+    from cryptoforge.research_training_diagnostics import canonical
     path.write_text(canonical(report));path.chmod(0o600)

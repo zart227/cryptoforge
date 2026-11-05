@@ -7,7 +7,7 @@ from pathlib import Path
 import re
 
 from cryptoforge import semantic_source_collector as collector, semantic_source_snapshot as snapshots
-from cryptoforge.training_diagnostics import canonical, digest, exact_fields, timestamp
+from cryptoforge.research_training_diagnostics import canonical, digest, exact_fields, timestamp
 
 
 MAX_REGISTRY_BYTES = 4_000_000

@@ -12,7 +12,7 @@ import sys
 import pytest
 
 from cryptoforge import research_value_audit as m
-from cryptoforge.training_diagnostics import digest,canonical
+from cryptoforge.research_training_diagnostics import digest,canonical
 import test_research_revision_bridge as previous
 from test_research_revision_bridge import native_fixture
 

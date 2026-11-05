@@ -58,3 +58,15 @@ def test_coarse_revision_cannot_be_used_before_it_was_observed():
         audit_barrier_order(coarse,rows(),as_of=START+timedelta(minutes=5),**kwargs)
     result=audit_barrier_order(coarse,rows(),as_of=START+timedelta(minutes=11),**kwargs)
     assert result['information_available_at']==(START+timedelta(minutes=10)).isoformat()
+
+
+def test_unambiguous_stop_can_expose_a_more_adverse_gap_inside_the_coarse_bar():
+    from cryptoforge.closed_timeframes import aggregate_closed
+    fine=[CandleRow('ETH/USDT','ETHUSDT',START+timedelta(minutes=i),D(100),D(101),D(99),D(100),D(20)) for i in range(5)]
+    fine[1]=replace(fine[1],open=D(95),high=D(97),low=D(94),close=D(96))
+    coarse=aggregate_closed(fine,as_of=START+timedelta(minutes=5),minutes=5,base_minutes=1)[0][0]
+    default=audit_barrier_order(coarse,fine,entry_price=D(100),stop_fraction=D('.02'),target_fraction=D('.04'),as_of=START+timedelta(minutes=5))
+    detailed=audit_barrier_order(coarse,fine,entry_price=D(100),stop_fraction=D('.02'),target_fraction=D('.04'),as_of=START+timedelta(minutes=5),inspect_unambiguous=True)
+    assert default['raw_price']=='98.00'
+    assert detailed['status']=='ordered_fine_stop_gap' and detailed['raw_price']=='95'
+    assert not detailed['can_certify_real_fill'] and not detailed['trade_policy_changed']

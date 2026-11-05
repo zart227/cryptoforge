@@ -8,7 +8,7 @@ from pathlib import Path
 from cryptoforge.llm_research_advisor import FreeAdvisor, DEFAULT_MODEL, jobpilot_credentials
 from cryptoforge.llm_research_contracts import strict_json, validate_proposal
 from cryptoforge.llm_research_requests import ResearchRequests
-from cryptoforge.training_diagnostics import build_diagnostics, canonical, digest, validate_diagnostics
+from cryptoforge.research_training_diagnostics import build_diagnostics, canonical, digest, validate_diagnostics
 
 
 def main(argv=None):

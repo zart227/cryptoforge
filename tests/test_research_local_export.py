@@ -12,7 +12,7 @@ from types import ModuleType, SimpleNamespace
 import pytest
 
 from cryptoforge import research_local_export as m
-from cryptoforge.training_diagnostics import digest
+from cryptoforge.research_training_diagnostics import digest
 
 
 @pytest.fixture

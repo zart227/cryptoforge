@@ -5,7 +5,7 @@ import hashlib
 from pathlib import Path
 
 from cryptoforge import research_primary_packet_audit as packets
-from cryptoforge.training_diagnostics import canonical, digest, exact_fields
+from cryptoforge.research_training_diagnostics import canonical, digest, exact_fields
 
 POLICY = {'schema_version': 'research-primary-training-cost-policy-v1',
     'primary_source_sha256': '9afb8aab375ec786aa8f9c9a7f617a5db642e49fcfbf45d311a413a05e63aeb7',

@@ -11,7 +11,7 @@ import tempfile
 
 from cryptoforge import research_late_label_audit as late
 from cryptoforge import research_reviewed_main_runtime as reviewed_main
-from cryptoforge.training_diagnostics import canonical, digest, exact_fields
+from cryptoforge.research_training_diagnostics import canonical, digest, exact_fields
 
 POLICY = {'schema_version': 'research-projected-cohort-reader-policy-v1', 'maximum_pairs': 20,
     'lookback_candles': 500, 'feature_lookback_candles': 120, 'horizon_candles': 3,

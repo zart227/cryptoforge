@@ -15,7 +15,7 @@ import time
 from cryptoforge.llm_research_advisor import (FreeAdvisor, http_json, jobpilot_credentials,
     AdvisorUnavailable, AdvisorCancelled, AdvisorTimedOut)
 from cryptoforge.llm_research_contracts import strict_json, validate_proposal
-from cryptoforge.training_diagnostics import canonical, digest, exact_fields, number, validate_diagnostics
+from cryptoforge.research_training_diagnostics import canonical, digest, exact_fields, number, validate_diagnostics
 
 
 MAX_WALL_SECONDS = 65.0

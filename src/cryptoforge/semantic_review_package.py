@@ -9,7 +9,7 @@ from pathlib import Path
 
 from cryptoforge.semantic_research_catalog import record_from_receipt, validate_record
 from cryptoforge.semantic_annotation_benchmark import sha, validate_gold
-from cryptoforge.training_diagnostics import canonical, digest, exact_fields, timestamp
+from cryptoforge.research_training_diagnostics import canonical, digest, exact_fields, timestamp
 from cryptoforge.training_experiment_planner import read_json
 from cryptoforge.typesafe_judgment_contracts import validate_catalog, text
 

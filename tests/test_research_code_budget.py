@@ -13,7 +13,7 @@ from cryptoforge import research_code_budget as code, research_code_preview as p
 from cryptoforge import research_run_budget as common
 from cryptoforge.research_resource_budget import DEFAULT_RESOURCES, ZERO_TOKENS
 from cryptoforge.research_semantic_budget import DEFAULT_SEMANTIC_POLICY
-from cryptoforge.training_diagnostics import canonical, digest
+from cryptoforge.research_training_diagnostics import canonical, digest
 from test_research_run_budget import bindings, envelope
 from test_research_code_preview import proposal, PATCH
 

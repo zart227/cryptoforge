@@ -7,7 +7,7 @@ import subprocess
 import pytest
 
 from cryptoforge import semantic_source_snapshot as sources
-from cryptoforge.training_diagnostics import canonical, digest
+from cryptoforge.research_training_diagnostics import canonical, digest
 
 
 T0 = '2026-10-18T10:00:00+00:00'

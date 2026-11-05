@@ -10,7 +10,7 @@ import stat
 import pytest
 from test_research_local_cohort_audit import base
 from cryptoforge import research_late_label_audit as m
-from cryptoforge.training_diagnostics import canonical, digest, timestamp
+from cryptoforge.research_training_diagnostics import canonical, digest, timestamp
 
 
 @pytest.fixture(scope='module')

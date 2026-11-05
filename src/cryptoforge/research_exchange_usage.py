@@ -15,7 +15,7 @@ import stat
 from cryptoforge import llm_audited_provider as capture
 from cryptoforge import research_phase_semantic_cli as existing
 from cryptoforge.llm_research_contracts import strict_json
-from cryptoforge.training_diagnostics import canonical, digest
+from cryptoforge.research_training_diagnostics import canonical, digest
 
 TOKEN_FIELDS=('prompt_tokens','completion_tokens','total_tokens')
 

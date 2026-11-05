@@ -17,7 +17,7 @@ from cryptoforge.research_resource_budget import (DEFAULT_RESOURCES, RESOURCE_TA
 
 from cryptoforge import research_code_budget as code_budget
 from cryptoforge.llm_research_contracts import strict_json
-from cryptoforge.training_diagnostics import canonical, digest, exact_fields
+from cryptoforge.research_training_diagnostics import canonical, digest, exact_fields
 from cryptoforge.research_semantic_budget import (EXTENSION_TABLE, validate_semantic_policy,
     extension_configuration, check_extension, create_extension, table_digest, check_legacy_actions)
 

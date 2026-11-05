@@ -7,7 +7,7 @@ import pytest
 
 from cryptoforge import semantic_event_review as review, semantic_asset_registry as assets
 from cryptoforge import semantic_source_collector as collector, semantic_source_snapshot as sources
-from cryptoforge.training_diagnostics import canonical, digest
+from cryptoforge.research_training_diagnostics import canonical, digest
 
 
 AT = '2000-01-01T00:01:00+00:00'

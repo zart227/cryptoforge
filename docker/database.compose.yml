@@ -1,0 +1,48 @@
+name: cryptoforge-database
+services:
+  db:
+    image: postgres:17@sha256:0027bef26712baaee437a4ea48fdf3d2d2e2bc5f0d81615374408ca320f3c7e3
+    restart: unless-stopped
+    mem_limit: 512m
+    shm_size: 128m
+    environment:
+      POSTGRES_DB: cryptoforge
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Run database_backend.py init}
+      POSTGREST_DB_PASSWORD: ${POSTGREST_DB_PASSWORD:?Run database_backend.py init}
+      FREQTRADE_DB_PASSWORD: ${FREQTRADE_DB_PASSWORD:?Run database_backend.py init}
+    ports:
+      - "127.0.0.1:55432:5432"
+    volumes:
+      - cryptoforge_pgdata:/var/lib/postgresql/data
+      - ./database-init.sh:/docker-entrypoint-initdb.d/10-roles.sh:ro
+    command: ["postgres", "-c", "shared_buffers=64MB", "-c", "work_mem=4MB", "-c", "maintenance_work_mem=64MB", "-c", "max_connections=20"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d cryptoforge"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+  rest:
+    image: postgrest/postgrest:v14.5@sha256:b574528fe109c8343c1247155734d03df8c34b462f342dca0ccc20244fc36ef9
+    restart: unless-stopped
+    mem_limit: 128m
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      PGRST_DB_URI: postgres://authenticator:${POSTGREST_DB_PASSWORD}@db:5432/cryptoforge
+      PGRST_DB_SCHEMAS: public
+      PGRST_DB_POOL: 4
+      PGRST_DB_MAX_ROWS: 1000
+      PGRST_JWT_SECRET: ${POSTGREST_JWT_SECRET:?Run database_backend.py init}
+      PGRST_JWT_AUD: cryptoforge-local
+  api:
+    image: nginx:1.28-alpine@sha256:a8b39bd9cf0f83869a2162827a0caf6137ddf759d50a171451b335cecc87d236
+    restart: unless-stopped
+    mem_limit: 32m
+    depends_on: [rest]
+    ports:
+      - "127.0.0.1:54321:80"
+    volumes:
+      - ./database-nginx.conf:/etc/nginx/nginx.conf:ro
+volumes:
+  cryptoforge_pgdata:

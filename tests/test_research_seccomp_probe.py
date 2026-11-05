@@ -9,7 +9,7 @@ import stat
 
 import pytest
 from cryptoforge import research_seccomp_probe as m
-from cryptoforge.training_diagnostics import canonical,digest
+from cryptoforge.research_training_diagnostics import canonical,digest
 
 
 PARENT={k:k+':[parent]' for k in ('net','pid','user','mnt')}

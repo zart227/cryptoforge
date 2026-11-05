@@ -16,7 +16,7 @@ import time
 
 from cryptoforge.llm_research_contracts import strict_json
 from cryptoforge.semantic_annotation_benchmark import validate_prediction
-from cryptoforge.training_diagnostics import canonical, digest, exact_fields, number
+from cryptoforge.research_training_diagnostics import canonical, digest, exact_fields, number
 from cryptoforge.training_experiment_planner import read_json
 from cryptoforge.typesafe_sdk_bridge import prepare_request, evaluate_fixture
 

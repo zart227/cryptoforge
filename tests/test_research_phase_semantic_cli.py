@@ -11,7 +11,7 @@ import pytest
 from cryptoforge import research_phase_semantic_cli as m
 from cryptoforge import local_semantic_requests as journal,local_semantic_worker as worker
 from cryptoforge.semantic_research_catalog import SemanticResearchCatalog
-from cryptoforge.training_diagnostics import canonical,digest
+from cryptoforge.research_training_diagnostics import canonical,digest
 from test_research_phase import migrated,prepared
 from test_research_run_budget import bindings
 from test_local_semantic import record,transport_fixture

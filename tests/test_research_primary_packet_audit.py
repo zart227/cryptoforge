@@ -10,7 +10,7 @@ import stat
 
 import pytest
 from cryptoforge import research_primary_packet_audit as m
-from cryptoforge.training_diagnostics import canonical, digest
+from cryptoforge.research_training_diagnostics import canonical, digest
 
 
 @pytest.fixture

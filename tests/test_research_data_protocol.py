@@ -9,7 +9,7 @@ import stat
 import pytest
 
 from cryptoforge import research_data_protocol as m
-from cryptoforge.training_diagnostics import canonical, digest
+from cryptoforge.research_training_diagnostics import canonical, digest
 
 
 UTC = timezone.utc

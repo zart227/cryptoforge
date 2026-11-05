@@ -18,7 +18,7 @@ import tempfile
 from cryptoforge import research_diagnostics_bridge as bridge, research_local_export as local
 from cryptoforge import research_reviewed_main_runtime as reviewed_main
 from cryptoforge import semantic_source_collector as files
-from cryptoforge.training_diagnostics import canonical,digest,exact_fields,timestamp
+from cryptoforge.research_training_diagnostics import canonical,digest,exact_fields,timestamp
 
 SOURCE_FILES={**{n:'src/cryptoforge/'+n+'.py' for n in ('model_registry','model_training','target_contracts',
  'supabase_executor','candle_contract','backend','supabase_market','runtime_approval')},

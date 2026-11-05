@@ -15,7 +15,7 @@ import tempfile
 from cryptoforge import research_local_cohort_audit as cohort
 from cryptoforge import research_reviewed_main_runtime as reviewed_main
 from cryptoforge.llm_research_contracts import strict_json
-from cryptoforge.training_diagnostics import canonical, digest, exact_fields, timestamp
+from cryptoforge.research_training_diagnostics import canonical, digest, exact_fields, timestamp
 
 POLICY = {'schema_version': 'research-late-label-audit-policy-v1', 'maximum_source_transactions': 1,
     'original_source_transactions_retained': 2, 'original_features_may_be_recovered': False,

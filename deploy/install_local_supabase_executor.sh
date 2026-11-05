@@ -26,7 +26,7 @@ Type=oneshot
 WorkingDirectory=${PROJECT_DIR}
 Environment=PYTHONPATH=${PROJECT_DIR}/src
 Environment=PYTHONUNBUFFERED=1
-ExecStart=/usr/bin/flock -n ${PROJECT_DIR}/.local/state/executor.lock ${PROJECT_DIR}/.venv/bin/python ${PROJECT_DIR}/scripts/windows_background_runner.py executor --use-night-research --night-research-limit 12 --allow-intraday-reversion --allow-emerging-momentum --append-fallback-pairs --pair ETH/USDT --pair NEAR/USDT --pair ENA/USDT --pair HYPE/USDT --stake-amount 6 --max-open-positions 6 --max-daily-loss 2 --stop-loss-percent 0.04 --ml-mode gate --ml-threshold 0.50 --ml-max-age-hours 36 --timeout 25 ${LIVE_ARG}
+ExecStart=/usr/bin/flock -n ${PROJECT_DIR}/.local/state/executor.lock ${PROJECT_DIR}/.venv/bin/python ${PROJECT_DIR}/scripts/windows_background_runner.py executor --use-night-research --night-research-limit 12 --allow-intraday-reversion --allow-emerging-momentum --append-fallback-pairs --pair ETH/USDT --pair NEAR/USDT --pair ENA/USDT --pair HYPE/USDT --stake-amount 6 --max-open-positions 6 --max-daily-loss 2 --stop-loss-percent 0.04 --ml-mode gate --ml-threshold 0.50 --ml-max-age-hours 36 --timeout 25 --decision-outbox ${PROJECT_DIR}/.local/state/live-decision-outbox.sqlite --order-submission-journal ${PROJECT_DIR}/.local/state/live-order-submissions.sqlite ${LIVE_ARG}
 TimeoutStartSec=10min
 KillMode=control-group
 Nice=10

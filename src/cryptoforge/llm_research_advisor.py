@@ -9,7 +9,7 @@ from urllib import error, request
 from urllib.parse import urlsplit
 
 from cryptoforge.llm_research_contracts import CATALOG, PROPOSAL_VERSION, strict_json, validate_proposal
-from cryptoforge.training_diagnostics import canonical, digest, validate_diagnostics
+from cryptoforge.research_training_diagnostics import canonical, digest, validate_diagnostics
 from cryptoforge.llm_prompt_preflight import prepare_prompt, provider_payload, require_verified_limit, MAX_REQUEST_BYTES
 
 DEFAULT_MODEL = 'nvidia/nemotron-3-super-120b-a12b:free'

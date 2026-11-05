@@ -9,7 +9,7 @@ from types import SimpleNamespace
 import pytest
 
 from cryptoforge import research_code_resources as resources
-from cryptoforge.training_diagnostics import digest
+from cryptoforge.research_training_diagnostics import digest
 
 
 UNIT = 'cryptoforge-research-resource-' + 'a' * 16 + '.scope'

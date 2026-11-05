@@ -9,7 +9,7 @@ import hashlib
 import json
 from pathlib import Path
 
-from cryptoforge.training_diagnostics import canonical, digest
+from cryptoforge.research_training_diagnostics import canonical, digest
 
 
 SCHEMA = 'exposure-inventory-v1'

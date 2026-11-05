@@ -26,13 +26,10 @@ class SupabaseRestClient:
 
     @classmethod
     def from_env(cls, *, timeout_seconds: float = 15.0) -> "SupabaseRestClient":
-        url = os.environ.get("SUPABASE_URL", "")
-        key = os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "") or os.environ.get("SUPABASE_SECRET_KEY", "")
-        if not url:
-            raise ValueError("SUPABASE_URL is required")
-        if not key:
-            raise ValueError("SUPABASE_SERVICE_ROLE_KEY or SUPABASE_SECRET_KEY is required")
-        return cls(url, key, timeout_seconds=timeout_seconds)
+        from cryptoforge.backend import resolve_backend
+
+        backend = resolve_backend(os.environ)
+        return cls(backend.url, backend.key, timeout_seconds=timeout_seconds)
 
     def upsert(
         self,

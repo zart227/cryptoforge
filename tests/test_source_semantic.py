@@ -10,7 +10,7 @@ import pytest
 from cryptoforge import source_semantic_contracts as source, local_semantic_contracts as local
 from cryptoforge import local_semantic_requests as journal_module, local_semantic_worker as worker
 from cryptoforge import llm_research_coordinator as coordinator, semantic_source_snapshot as snapshots
-from cryptoforge.training_diagnostics import canonical, digest
+from cryptoforge.research_training_diagnostics import canonical, digest
 from cryptoforge.research_run_budget import DEFAULT_POLICY, BudgetCancelled, BudgetTimedOut
 from cryptoforge.research_semantic_budget import DEFAULT_SEMANTIC_POLICY
 from test_semantic_event_review import inputs, packet_for, response_for

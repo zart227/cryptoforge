@@ -14,6 +14,18 @@ class Fold:
     embargo: timedelta
 
 
+def validate_fold(fold):
+    boundaries=(fold.train_start,fold.train_end,fold.validation_start,fold.validation_end,fold.test_start,fold.test_end)
+    if any(stamp.tzinfo is None or stamp.utcoffset() is None for stamp in boundaries):
+        raise ValueError('aware fold boundaries required')
+    if not fold.train_start<fold.train_end==fold.validation_start<fold.validation_end==fold.test_start<fold.test_end:
+        raise ValueError('ordered contiguous fold boundaries required')
+    if not isinstance(fold.embargo,timedelta) or fold.embargo<=timedelta(0):
+        raise ValueError('positive fold embargo required')
+    if min(fold.validation_end-fold.validation_start,fold.test_end-fold.test_start)<=2*fold.embargo:
+        raise ValueError('insufficient fold duration after embargo')
+
+
 def folds(start,end,*,train_days=120,validation_days=30,test_days=30,step_days=30,
           embargo=timedelta(days=1),maximum_label_duration=timedelta(hours=4)):
     if start.tzinfo is None or end.tzinfo is None or start>=end:raise ValueError('ordered aware fold range required')
@@ -28,7 +40,9 @@ def folds(start,end,*,train_days=120,validation_days=30,test_days=30,step_days=3
         train_end=anchor+timedelta(days=train_days);validation_end=train_end+timedelta(days=validation_days)
         test_end=validation_end+timedelta(days=test_days)
         if test_end>end:break
-        result.append(Fold(anchor,train_end,train_end,validation_end,validation_end,test_end,embargo))
+        fold=Fold(anchor,train_end,train_end,validation_end,validation_end,test_end,embargo)
+        validate_fold(fold)
+        result.append(fold)
         anchor+=timedelta(days=step_days)
     return result
 
@@ -49,6 +63,7 @@ def select_fold(examples,fold,*,as_of,include_test=False):
     can reappear in later training folds once it is historically available;
     test intervals themselves remain nonoverlapping.
     """
+    validate_fold(fold)
     if as_of.tzinfo is None:raise ValueError('aware evaluation time required')
     if as_of<fold.test_start:raise ValueError('train/validation selection window is unfinished')
     if include_test and as_of<fold.test_end:raise ValueError('test outcomes remain sealed until window end')

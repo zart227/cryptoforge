@@ -14,7 +14,7 @@ import pytest
 
 from cryptoforge import research_revision_bridge as m
 from cryptoforge import research_reviewed_main_runtime as reviewed_main
-from cryptoforge.training_diagnostics import canonical, digest
+from cryptoforge.research_training_diagnostics import canonical, digest
 
 
 MAIN = reviewed_main.live_main_project()

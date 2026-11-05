@@ -1,10 +1,12 @@
 from __future__ import annotations
 
-from datetime import datetime
-from decimal import Decimal
+from datetime import UTC, date, datetime
+from decimal import Decimal, InvalidOperation
+import fcntl
 import json
 from pathlib import Path
 from typing import Any
+from cryptoforge.atomic_reports import write_json_report
 
 
 def count_open_spot_positions(coins: list[dict[str, Any]], *, minimum_usd: Decimal = Decimal("1")) -> int:
@@ -43,19 +45,44 @@ def daily_equity_blockers(
     state_path: Path,
     now: datetime,
 ) -> tuple[str, ...]:
-    day = now.date().isoformat()
-    state: dict[str, str] = {}
-    if state_path.exists():
-        try:
-            state = json.loads(state_path.read_text(encoding="utf-8"))
-        except (OSError, ValueError, TypeError):
-            state = {}
-    if state.get("date") != day:
-        state = {"date": day, "start_equity": format(current_equity, "f")}
+    """Fail closed on missing/corrupt state; preserve the existing UTC baseline.
+
+    Initial provisioning/recovery must supply an independently reviewed baseline.
+    A valid previous-day state may roll forward under the same UTC policy.
+    """
+    if (not isinstance(current_equity, Decimal) or not isinstance(maximum_loss, Decimal)
+            or now.tzinfo is None or now.utcoffset() is None
+            or not current_equity.is_finite() or current_equity < 0
+            or not maximum_loss.is_finite() or maximum_loss <= 0):
+        return ('daily equity risk input invalid; new entries paused',)
+    day = now.astimezone(UTC).date()
+    try:
         state_path.parent.mkdir(parents=True, exist_ok=True)
-        state_path.write_text(json.dumps(state, sort_keys=True) + "\n", encoding="utf-8")
-    start_equity = Decimal(state["start_equity"])
-    loss = start_equity - current_equity
-    if loss >= maximum_loss:
-        return (f"daily equity loss limit reached: {loss:.8f} >= {maximum_loss:.8f} USDT",)
-    return ()
+        # Lock a stable sidecar: atomic replacement changes the state inode.
+        lock_path = state_path.with_name(state_path.name + '.lock')
+        with lock_path.open('a') as lock:
+            lock_path.chmod(0o600)
+            fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            state = json.loads(state_path.read_text(encoding='utf-8'))
+            if not isinstance(state, dict) or not isinstance(state.get('date'), str):
+                raise ValueError('invalid state object')
+            state_day = date.fromisoformat(state['date'])
+            if state_day.isoformat() != state['date'] or state_day > day:
+                raise ValueError('invalid state day')
+            if not isinstance(state.get('start_equity'), str):
+                raise ValueError('invalid baseline type')
+            start_equity = Decimal(state['start_equity'])
+            if not start_equity.is_finite() or start_equity < 0:
+                raise ValueError('invalid baseline value')
+            if state.get('timezone', 'UTC') != 'UTC':
+                raise ValueError('incompatible baseline timezone')
+            if state_day < day:
+                start_equity = current_equity
+                write_json_report(state_path, {'date': day.isoformat(),
+                    'start_equity': format(start_equity, 'f'), 'timezone': 'UTC'})
+            loss = start_equity - current_equity
+            if loss >= maximum_loss:
+                return (f'daily equity loss limit reached: {loss:.8f} >= {maximum_loss:.8f} USDT',)
+            return ()
+    except (OSError, ValueError, TypeError, InvalidOperation):
+        return ('daily equity risk state unavailable or invalid; new entries paused pending baseline recovery',)

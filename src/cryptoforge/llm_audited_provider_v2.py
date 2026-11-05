@@ -26,7 +26,7 @@ from cryptoforge.llm_research_contracts import CATALOG, strict_json, validate_pr
 from cryptoforge.llm_research_requests import ResearchRequests
 from cryptoforge.research_resource_budget import provider_tokens
 from cryptoforge.research_run_budget import ZERO_USAGE, BudgetCancelled, BudgetTimedOut
-from cryptoforge.training_diagnostics import canonical, digest, exact_fields, number, validate_diagnostics
+from cryptoforge.research_training_diagnostics import canonical, digest, exact_fields, number, validate_diagnostics
 
 CANDIDATE_MODEL = audit.CANDIDATE_MODEL
 

@@ -12,7 +12,7 @@ from pathlib import Path
 from cryptoforge import training_experiment_planner as planner
 from cryptoforge import llm_training_study as study
 from cryptoforge.llm_research_contracts import CATALOG
-from cryptoforge.training_diagnostics import canonical, digest
+from cryptoforge.research_training_diagnostics import canonical, digest
 from cryptoforge import research_local_export as private, semantic_source_collector as files
 
 REVIEWED = {'training_experiment_planner.py': '94da2e3bfce36d23eed0c6fc30f3669c6e11b6bf19714e7c032408301a858d06',

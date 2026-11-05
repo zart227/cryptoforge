@@ -13,7 +13,7 @@ from urllib.parse import urlsplit
 
 from cryptoforge import llm_research_contracts, training_diagnostics
 from cryptoforge.llm_research_contracts import strict_json
-from cryptoforge.training_diagnostics import canonical, digest, exact_fields, timestamp
+from cryptoforge.research_training_diagnostics import canonical, digest, exact_fields, timestamp
 
 
 MAX_EXPORT_BYTES = 8_000_000

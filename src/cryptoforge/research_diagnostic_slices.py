@@ -5,7 +5,7 @@ import hashlib
 from pathlib import Path
 import re
 
-from cryptoforge import training_diagnostics as diagnostics
+from cryptoforge import research_training_diagnostics as diagnostics
 from cryptoforge import research_data_protocol as temporal, research_local_export as private
 from cryptoforge import semantic_source_collector as files
 

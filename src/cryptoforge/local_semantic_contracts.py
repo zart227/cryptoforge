@@ -6,7 +6,7 @@ from pathlib import Path
 from cryptoforge import llm_research_contracts, semantic_research_catalog, training_diagnostics, typesafe_judgment_contracts, ollama_decision_readiness
 from cryptoforge.ollama_decision_readiness import local_endpoint, model_digest
 from cryptoforge.semantic_research_catalog import validate_record
-from cryptoforge.training_diagnostics import canonical, digest, exact_fields, timestamp
+from cryptoforge.research_training_diagnostics import canonical, digest, exact_fields, timestamp
 from cryptoforge.typesafe_judgment_contracts import validate_catalog, normalize_answer
 
 

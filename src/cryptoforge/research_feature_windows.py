@@ -9,8 +9,8 @@ import re
 from types import MappingProxyType
 
 from cryptoforge import research_code_static as static, semantic_source_collector as files
-from cryptoforge import training_diagnostics as diagnostics
-from cryptoforge.training_diagnostics import canonical, digest, exact_fields, timestamp
+from cryptoforge import research_training_diagnostics as diagnostics
+from cryptoforge.research_training_diagnostics import canonical, digest, exact_fields, timestamp
 
 
 FIELDS = ('open', 'high', 'low', 'close', 'volume')

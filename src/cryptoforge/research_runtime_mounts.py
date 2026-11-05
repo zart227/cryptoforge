@@ -11,7 +11,7 @@ import subprocess
 import time
 
 from cryptoforge import research_seccomp_probe as seccomp
-from cryptoforge.training_diagnostics import canonical,digest,exact_fields
+from cryptoforge.research_training_diagnostics import canonical,digest,exact_fields
 
 STDLIB=Path('/usr/lib/python3.12')
 LIBS=['libm.so.6','libz.so.1','libexpat.so.1','libc.so.6','libffi.so.8','libcrypto.so.3','libseccomp.so.2.5.5','ld-linux-x86-64.so.2']

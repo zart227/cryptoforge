@@ -11,7 +11,7 @@ from cryptoforge import llm_research_coordinator as module
 from cryptoforge.llm_research_advisor import FreeAdvisor, DEFAULT_MODEL, jobpilot_credentials
 from cryptoforge.research_run_budget import DEFAULT_POLICY, ZERO_USAGE, BudgetTimedOut
 from cryptoforge.training_experiment_planner import freeze_protocol, run_experiment
-from cryptoforge.training_diagnostics import canonical
+from cryptoforge.research_training_diagnostics import canonical
 
 
 def in_process_provider_fixture(advisor, report, *, api_key=None, jobpilot_env=None, **kwargs):

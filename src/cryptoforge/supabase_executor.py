@@ -133,7 +133,7 @@ class SupabaseLiveExecutor:
             from pathlib import Path
             from cryptoforge.primary_forecast_memory import PrimaryForecastMemory
             ledger=os.environ.get('CRYPTOFORGE_PRIMARY_FORECAST_LEDGER')
-            forecast_recorder=PrimaryForecastMemory(Path(ledger)) if ledger else None
+            forecast_recorder=PrimaryForecastMemory.from_env(Path(ledger)) if ledger else None
         self.forecast_recorder=forecast_recorder
 
     def run_once(self, pair: str, *, live: bool = False, now: datetime | None = None) -> ExecutorDecision:
@@ -219,7 +219,7 @@ class SupabaseLiveExecutor:
             if not live:
                 reasons.append("shadow mode; exit order not submitted")
                 return self._record(pair, "approve_exit", reasons, candles, live=live)
-            order = self.bybit.create_spot_market_order(
+            order = self._submit_market_order(pair, "approve_exit", reasons, candles,
                 symbol=symbol,
                 side="Sell",
                 qty=qty,
@@ -301,7 +301,7 @@ class SupabaseLiveExecutor:
         except Exception as exc:
             reasons.append(f"cash_shadow_recording_error={type(exc).__name__}")
         self._last_cash_shadow_receipt=receipt
-        order = self.bybit.create_spot_market_order(
+        order = self._submit_market_order(pair, "approve_entry", reasons, candles,
             symbol=symbol,
             side="Buy",
             qty=self.stake_amount,
@@ -466,7 +466,41 @@ class SupabaseLiveExecutor:
         except Exception as exc:
             return {'status':'training_reference_diagnostic_error','error':type(exc).__name__,'changes_entry_policy':False}
 
-    def _record(
+    def _submit_market_order(self, pair, decision, reasons, candles, **intent):
+        self._prepared_order_decision = None
+        # Only an explicitly implemented journal capability may bind a context;
+        # generic dynamic proxies must not fabricate this optional method.
+        capture = getattr(type(self.bybit), 'capture_decision_context', None)
+        if capture is not None:
+            record = self._decision_record(pair, decision, reasons, candles, live=True)
+            record['features']['original_input_candles'] = [dict(
+                pair=c.pair, symbol=c.symbol, open_time=c.open_time.isoformat(),
+                **{name: str(getattr(c, name)) for name in ('open','high','low','close','volume')},
+                cache_observed_at=c.cache_observed_at.isoformat() if c.cache_observed_at else None)
+                for c in candles]
+            record['features']['submission_context_version'] = 'original-before-submit-v1'
+            self._prepared_order_decision = capture(self.bybit, intent, record)
+        response = self.bybit.create_spot_market_order(**intent)
+        if self._prepared_order_decision is not None:
+            self._prepared_order_decision['features']['order'] = response
+        return response
+
+    def _record(self, pair, decision, reasons, candles, *, live, order=None):
+        external_order_id = ((order or {}).get('result') or {}).get('orderId')
+        prepared = getattr(self, '_prepared_order_decision', None)
+        if (live and external_order_id and prepared and prepared['pair'] == pair
+                and prepared['decision'] == decision
+                and ((prepared['features'].get('order') or {}).get('result') or {}).get('orderId') == external_order_id):
+            record = json.loads(json.dumps(prepared, allow_nan=False))
+            record['idempotency_key'] = f'executor:live:{pair}:order:{external_order_id}'
+            record['features']['decision_context_provenance'] = 'original_pre_submission'
+        else:
+            record = self._decision_record(pair, decision, reasons, candles, live=live, order=order)
+        self.supabase.upsert("trade_decisions", [record], on_conflict="idempotency_key",
+                             resolution="ignore-duplicates" if external_order_id or decision=='reject_entry' else "merge-duplicates")
+        return ExecutorDecision(decision, pair, tuple(reasons), order)
+
+    def _decision_record(
         self,
         pair: str,
         decision: str,
@@ -475,7 +509,7 @@ class SupabaseLiveExecutor:
         *,
         live: bool,
         order: dict[str, Any] | None = None,
-    ) -> ExecutorDecision:
+    ) -> dict[str, Any]:
         latest = candles[-1] if candles else None
         features: dict[str, Any] = {
             "order": order or {}, "latest_open_time": latest.open_time.isoformat() if latest else None,
@@ -554,9 +588,7 @@ class SupabaseLiveExecutor:
             "reasons": reasons,
             "idempotency_key": key,
         }
-        self.supabase.upsert("trade_decisions", [record], on_conflict="idempotency_key",
-                             resolution="ignore-duplicates" if external_order_id or decision=='reject_entry' else "merge-duplicates")
-        return ExecutorDecision(decision, pair, tuple(reasons), order)
+        return record
 
 
 def entry_signal(

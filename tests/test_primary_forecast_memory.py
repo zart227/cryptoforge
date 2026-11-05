@@ -5,6 +5,28 @@ from cryptoforge.primary_forecast_memory import PrimaryForecastMemory
 NOW=datetime(2026,10,10,12,tzinfo=UTC)
 
 
+def test_shared_production_capacity_preserves_existing_file(tmp_path):
+    path=tmp_path/'memory.sqlite'
+    original=PrimaryForecastMemory(path,clock=lambda:NOW,minimum_free_disk_mb=0)
+    assert original.record(forecast())['stored']
+    inode=path.stat().st_ino
+    reopened=PrimaryForecastMemory.from_env(path,env={'CRYPTOFORGE_PRIMARY_FORECAST_MAXIMUM_MB':'512'},
+        clock=lambda:NOW,minimum_free_disk_mb=0)
+    assert reopened.maximum_database_mb==512
+    assert not reopened.record(forecast())['stored']
+    assert reopened.record({**forecast(),'pair':'BTC/USDT'})['stored']
+    assert len(reopened.rows())==2 and path.stat().st_ino==inode
+    assert PrimaryForecastMemory.from_env(path,env={}).maximum_database_mb==256
+
+
+@pytest.mark.parametrize('value',['', '0', '255', '1025', '-1', '512.0', 'secret', '٥١٢'])
+def test_invalid_production_capacity_fails_before_database_access(tmp_path,value):
+    path=tmp_path/'memory.sqlite'
+    with pytest.raises(ValueError,match='capacity'):
+        PrimaryForecastMemory.from_env(path,env={'CRYPTOFORGE_PRIMARY_FORECAST_MAXIMUM_MB':value})
+    assert not path.exists()
+
+
 def forecast():
     return {'pair':'ETH/USDT','artifact_sha256':'a'*64,'features':[0.,0.,.01,1.,0.,.5,0.],
         'predicted_at':NOW.isoformat(),'feature_observed_at':(NOW-timedelta(seconds=1)).isoformat(),

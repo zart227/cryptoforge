@@ -5,7 +5,7 @@ from pathlib import Path
 import pytest
 
 from cryptoforge.semantic_annotation_benchmark import freeze_benchmark, evaluate_benchmark, public_view, main
-from cryptoforge.training_diagnostics import digest
+from cryptoforge.research_training_diagnostics import digest
 from cryptoforge.typesafe_judgment_contracts import evaluate_mock
 
 

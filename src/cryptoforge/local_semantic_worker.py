@@ -17,7 +17,7 @@ from urllib.parse import urlsplit
 
 from cryptoforge.local_semantic_contracts import validate_request, normalize_transport, check_show_metadata, inference_identity
 from cryptoforge.llm_research_contracts import strict_json
-from cryptoforge.training_diagnostics import canonical, digest, exact_fields, number
+from cryptoforge.research_training_diagnostics import canonical, digest, exact_fields, number
 
 
 MAX_WALL_SECONDS = 30.0

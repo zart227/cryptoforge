@@ -9,7 +9,7 @@ import subprocess
 
 import pytest
 from cryptoforge import research_local_cohort_audit as m
-from cryptoforge.training_diagnostics import canonical, digest
+from cryptoforge.research_training_diagnostics import canonical, digest
 
 
 @pytest.fixture(scope='module')

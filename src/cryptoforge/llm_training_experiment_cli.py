@@ -3,7 +3,7 @@ import argparse
 import os
 import sqlite3
 from pathlib import Path
-from cryptoforge.training_diagnostics import canonical
+from cryptoforge.research_training_diagnostics import canonical
 from cryptoforge.training_experiment_planner import freeze_protocol, read_json, run_experiment
 
 

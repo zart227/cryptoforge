@@ -8,7 +8,7 @@ from pathlib import Path
 import sqlite3
 
 from cryptoforge.llm_research_contracts import strict_json, validate_proposal
-from cryptoforge.training_diagnostics import digest, timestamp, validate_diagnostics
+from cryptoforge.research_training_diagnostics import digest, timestamp, validate_diagnostics
 from cryptoforge.training_experiment_planner import read_json
 
 

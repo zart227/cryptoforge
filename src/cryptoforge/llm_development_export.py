@@ -11,7 +11,7 @@ from pathlib import Path
 
 from cryptoforge.model_training import FEATURE_NAMES, FEATURE_VERSION
 from cryptoforge.training_snapshot import load_training_snapshot, load_runtime_sources
-from cryptoforge.training_diagnostics import canonical, digest, number
+from cryptoforge.research_training_diagnostics import canonical, digest, number
 from cryptoforge.training_experiment_planner import DATA_VERSION, parse_development, read_json
 
 

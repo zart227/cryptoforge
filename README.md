@@ -2,31 +2,35 @@
 
 Adaptive crypto trading and strategy research platform for Bybit.
 
-CryptoForge is currently being bootstrapped from `IMPLEMENTATION_PLAN.md`.
-The active implementation constraints are:
-
-- Bybit only
-- Spot only
-- Dry-run / paper trading only
-- No futures, margin, leverage, or real-money execution
-- Independent hard risk controls
-- Resource-conscious operation for a small VPS
+CryptoForge implements Bybit Spot market data, research, accounting and execution.
+The local Supabase executor is installed with `--live`; the separate Freqtrade
+runtime has dry-run configurations. Complete live/independent qualification remains open.
 
 ## Current Status
 
-The repository is in Phase 0/1 bootstrap. The VPS has been inspected
-read-only and baseline documentation has been created. No trading runtime
-has been installed or started yet.
+Database backend update (2026-10-20): local PostgreSQL is available with
+explicit `local` / `supabase` selection. See
+[database setup, migration and switching](docs/DATABASE_BACKENDS.md).
+Cloud egress restrictions do not affect the local backend. Switching does
+not synchronize databases or override live execution approval gates.
+
+Updated 2026-11-05. The only current plan and checklists are
+[docs/CURRENT_PLAN.md](docs/CURRENT_PLAN.md). No candidate has established
+independent profitability. The local Supabase executor is installed with
+`--live`; runtime qualification R1–R5 and live admission remain open.
+The October 14 suite result, 1057 passed and 1 deselected, is a historical
+slice, not a current full run.
 
 ## Repository Layout
 
-- `IMPLEMENTATION_PLAN.md` - authoritative progress plan
+- `docs/CURRENT_PLAN.md` - the only current plan and checklists
+- `IMPLEMENTATION_PLAN.md` - historical phase plan
 - `docs/` - architecture, operations, VPS audit, and later phase docs
 - `config/` - non-secret configuration templates
 - `src/cryptoforge/` - application code
 - `tests/` - automated tests
-- `supabase/migrations/` - future Supabase schema migrations
-- `user_data/strategies/` - future Freqtrade strategies
+- `supabase/migrations/` - Supabase schema migrations
+- `user_data/strategies/` - Freqtrade strategies
 
 ## Local Docker Runtime
 

@@ -4,6 +4,8 @@ import argparse
 import hashlib
 import json
 import tarfile
+import sqlite3
+import tempfile
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
@@ -15,7 +17,14 @@ DEFAULT_INCLUDE_PATHS = (
     "supabase/migrations",
     "deploy",
     "data/outbox.sqlite3",
+    ".local/state/live-decision-outbox.sqlite",
+    ".local/state/live-order-submissions.sqlite",
 )
+
+DECISION_JOURNAL_PATHS = {
+    '.local/state/live-decision-outbox.sqlite',
+    '.local/state/live-order-submissions.sqlite',
+}
 
 DEFAULT_EXCLUDE_PARTS = {
     ".git",
@@ -86,14 +95,38 @@ def create_backup(
         file_count=len(files),
     )
 
+    # Decision journals contain private account context. Create the archive with
+    # private permissions before writing its first byte.
+    with archive_path.open('xb'):
+        archive_path.chmod(0o600)
     with tarfile.open(archive_path, "w:gz") as archive:
         manifest_bytes = manifest.as_json().encode("utf-8")
         manifest_info = tarfile.TarInfo("BACKUP_MANIFEST.json")
         manifest_info.size = len(manifest_bytes)
         manifest_info.mtime = int(created_at.timestamp())
         archive.addfile(manifest_info, fileobj=_BytesReader(manifest_bytes))
-        for path in files:
-            archive.add(path, arcname=path.relative_to(project_root))
+        # The queue retains receipts after delivery. Snapshot it AFTER the order
+        # journal, so a backed-up enqueued marker never points at an older queue.
+        ordered = sorted(files, key=lambda p:
+            p.relative_to(project_root).as_posix() == '.local/state/live-decision-outbox.sqlite')
+        for path in ordered:
+            relative = path.relative_to(project_root)
+            if relative.as_posix() in DECISION_JOURNAL_PATHS:
+                # Use SQLite's online backup, including committed WAL pages;
+                # copying the main file while the executor runs can lose them.
+                with tempfile.TemporaryDirectory() as directory:
+                    snapshot = Path(directory) / path.name
+                    source = sqlite3.connect(path.as_uri() + '?mode=ro', uri=True, timeout=2)
+                    target = sqlite3.connect(snapshot)
+                    try:
+                        source.backup(target)
+                    finally:
+                        target.close()
+                        source.close()
+                    snapshot.chmod(0o600)
+                    archive.add(snapshot, arcname=relative)
+            else:
+                archive.add(path, arcname=relative)
 
     sha256 = sha256_file(archive_path)
     checksum_path.write_text(f"{sha256}  {archive_path.name}\n", encoding="utf-8")

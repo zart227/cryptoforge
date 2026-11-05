@@ -9,7 +9,7 @@ import stat
 
 import pytest
 from cryptoforge import research_native_rest_audit as m
-from cryptoforge.training_diagnostics import canonical,digest
+from cryptoforge.research_training_diagnostics import canonical,digest
 from test_research_revision_bridge import native_fixture
 from test_research_value_audit import value_base
 

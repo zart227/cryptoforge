@@ -4,13 +4,32 @@ from datetime import UTC,datetime
 import hashlib,json,sqlite3
 
 from cryptoforge.live_learning_protocol import time
+from cryptoforge.walk_forward import validate_fold
 
 
 def fold_payload(fold):
+    validate_fold(fold)
     values=asdict(fold)
     if any(value.tzinfo is None for value in values.values() if isinstance(value,datetime)):
         raise ValueError('aware fold boundaries required')
     return {key:value.astimezone(UTC).isoformat() if isinstance(value,datetime) else value.total_seconds() for key,value in values.items()}
+
+
+def validate_selected_information(artifact,fold,observed):
+    """Every declared outcome cutoff is bounded, including prior evaluations."""
+    trained=time(artifact['trained_at'])
+    config=artifact['config']
+    fit=time(config['fit_information_end'])
+    boundary=fold.test_start-fold.embargo
+    if not fit<=trained<=observed or fit>=boundary:
+        raise ValueError('selection contains unavailable or unpurged information')
+    for key in ('evaluation_information_end','previous_test_information_end','selection_information_end'):
+        if key in config:
+            end=time(config[key])
+            if end>=boundary or end>observed:
+                raise ValueError('selection contains unavailable or unpurged evaluation information')
+    if artifact.get('live_eligible') is not False:
+        raise ValueError('research-only fold selection required')
 
 
 class FoldSelections:
@@ -33,11 +52,7 @@ class FoldSelections:
         now=self.clock()
         if now.tzinfo is None or not fold.test_start<=now<fold.test_start+fold.embargo:
             raise ValueError('select after validation end and before eligible test starts')
-        information_end=time(artifact['config']['fit_information_end'])
-        trained=time(artifact['trained_at'])
-        if not information_end<=trained<=now or information_end>=fold.test_start-fold.embargo:
-            raise ValueError('selection contains unavailable or unpurged information')
-        if artifact.get('live_eligible') is not False:raise ValueError('research-only fold selection required')
+        validate_selected_information(artifact,fold,now)
         payload={'schema_version':'observed-fold-selection-v1','fold_sha256':key,'protocol_sha256':protocol_sha,
                  'artifact_sha256':sha,'artifact_payload':artifact_raw.decode(),'observed_at':now.isoformat(),
                  'fold':fold_data,'live_promotion_allowed':False}
@@ -60,14 +75,24 @@ class FoldSelections:
         try:
             tables={row[0] for row in db.execute("SELECT name FROM sqlite_master WHERE type='table'")}
             if tables-{'fold_selections'}:raise ValueError('fold selection needs isolated database')
-            row=db.execute('SELECT payload FROM fold_selections WHERE id=?',(key,)).fetchone() if tables else None
+            row=db.execute('SELECT payload,protocol,test_start,test_end FROM fold_selections WHERE id=?',(key,)).fetchone() if tables else None
         finally:db.close()
         if row is None:return None
         payload=json.loads(row[0])
+        if (payload['protocol_sha256'],payload['fold']['test_start'],payload['fold']['test_end'])!=row[1:]:
+            raise ValueError('fold selection registry identity differs from receipt')
         recomputed=hashlib.sha256(json.dumps({'protocol':payload['protocol_sha256'],'fold':payload['fold']},sort_keys=True).encode()).hexdigest()
         if recomputed!=key or payload['fold_sha256']!=key or hashlib.sha256(payload['artifact_payload'].encode()).hexdigest()!=payload['artifact_sha256']:
             raise ValueError('corrupt fold selection')
         observed=time(payload['observed_at']);start=time(payload['fold']['test_start'])
+        now=self.clock()
+        if now.tzinfo is None or observed>now:raise ValueError('fold selection observation is unavailable at current clock')
         from datetime import timedelta
         if not start<=observed<start+timedelta(seconds=payload['fold']['embargo']):raise ValueError('unobserved prospective fold selection')
+        from cryptoforge.walk_forward import Fold
+        fold=Fold(**{name:time(payload['fold'][name]) for name in ('train_start','train_end','validation_start','validation_end','test_start','test_end')},embargo=timedelta(seconds=payload['fold']['embargo']))
+        if not fold.train_start<fold.train_end==fold.validation_start<fold.validation_end==fold.test_start<fold.test_end:
+            raise ValueError('invalid stored fold boundaries')
+        validate_fold(fold)
+        validate_selected_information(json.loads(payload['artifact_payload']),fold,observed)
         return payload

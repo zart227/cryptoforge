@@ -2,6 +2,7 @@
 from datetime import timedelta
 from cryptoforge.closed_timeframes import aggregate_closed
 from cryptoforge.research_protocol import assert_development_range
+from cryptoforge.candle_contract import known_closed
 
 
 def compare_intrabar_source(fine, coarse, *, protocol, as_of):
@@ -17,9 +18,17 @@ def compare_intrabar_source(fine, coarse, *, protocol, as_of):
     expected=int((end-start).total_seconds()/300)
     if len(combined)!=expected or quality['incomplete_buckets'] or quality['unfinished_buckets']:
         raise ValueError('complete closed minute source required')
+    if any(row.open_time.tzinfo is None for row in coarse):
+        raise ValueError('aware coarse source timestamps required')
     selected=[row for row in coarse if start<=row.open_time<end]
     if len(selected)!=expected or len({row.open_time for row in selected})!=expected:
         raise ValueError('complete unique frozen coarse source required')
+    for row in selected:
+        if not known_closed(row,step=timedelta(minutes=5),as_of=as_of):
+            raise ValueError('coarse source was not available at audit cutoff')
+        if not all(value.is_finite() for value in (row.open,row.high,row.low,row.close,row.volume)) or not (
+            0<row.low<=min(row.open,row.close)<=max(row.open,row.close)<=row.high and row.volume>=0):
+            raise ValueError('valid coarse source OHLCV required')
     lookup={row.open_time:row for row in selected};checks=[]
     for row in combined:
         old=lookup.get(row.open_time)

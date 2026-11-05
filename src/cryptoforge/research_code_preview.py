@@ -6,7 +6,7 @@ from pathlib import Path
 import re
 
 from cryptoforge import semantic_source_collector as files, training_diagnostics
-from cryptoforge.training_diagnostics import canonical, digest, exact_fields
+from cryptoforge.research_training_diagnostics import canonical, digest, exact_fields
 
 
 POLICY = {'schema_version': 'research-code-preview-policy-v1', 'allowed_path': 'research/feature_candidate.py',

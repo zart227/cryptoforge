@@ -42,3 +42,20 @@ def test_freqtrade_url_rejects_caller_defined_search_path() -> None:
 
     with pytest.raises(ValueError, match="Do not set search_path"):
         build_runtime_url(source)
+
+
+def test_local_freqtrade_uses_loopback_and_private_schema():
+    result = make_url(build_runtime_url(
+        "postgresql://freqtrade_worker:secret@127.0.0.1:55432/cryptoforge", backend="local"))
+    assert result.query["options"] == "-c search_path=freqtrade"
+    assert result.query["sslmode"] == "disable"
+    assert result.username == "freqtrade_worker"
+
+
+@pytest.mark.parametrize("source", [
+    "postgresql://freqtrade_worker:secret@external.example:55432/cryptoforge",
+    "postgresql://postgres:secret@127.0.0.1:55432/cryptoforge",
+])
+def test_local_freqtrade_rejects_remote_and_admin_connections(source):
+    with pytest.raises(ValueError):
+        build_runtime_url(source, backend="local")

@@ -11,7 +11,7 @@ import re
 
 from cryptoforge import semantic_event_review as events, semantic_asset_registry as assets
 from cryptoforge import semantic_source_snapshot as snapshots, semantic_source_collector as collector
-from cryptoforge.training_diagnostics import canonical, digest, exact_fields, timestamp
+from cryptoforge.research_training_diagnostics import canonical, digest, exact_fields, timestamp
 
 
 MAX_PACKAGE_BYTES = 8_000_000

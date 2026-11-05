@@ -8,7 +8,7 @@ import pytest
 
 from cryptoforge import research_numeric_verification as verification, research_numeric_worker as worker
 from cryptoforge import research_feature_windows as windows, research_code_resources as resources
-from cryptoforge.training_diagnostics import canonical, digest
+from cryptoforge.research_training_diagnostics import canonical, digest
 from test_research_numeric_controls import migrated, fake_worker
 from test_research_code_static import source
 from test_research_feature_windows import capture, request

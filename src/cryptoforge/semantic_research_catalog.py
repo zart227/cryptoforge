@@ -5,7 +5,7 @@ from pathlib import Path
 import re
 import sqlite3
 
-from cryptoforge.training_diagnostics import canonical, digest, exact_fields, validate_diagnostics, number
+from cryptoforge.research_training_diagnostics import canonical, digest, exact_fields, validate_diagnostics, number
 from cryptoforge.training_experiment_planner import read_json
 from cryptoforge.typesafe_judgment_contracts import evaluate_mock, text, validate_catalog
 

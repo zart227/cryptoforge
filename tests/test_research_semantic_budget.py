@@ -11,7 +11,7 @@ from cryptoforge import research_run_budget as module
 from cryptoforge import llm_research_coordinator as coordinator
 from cryptoforge.research_resource_budget import DEFAULT_RESOURCES, ZERO_TOKENS
 from cryptoforge.research_semantic_budget import DEFAULT_SEMANTIC_POLICY, EXTENSION_TABLE, table_digest
-from cryptoforge.training_diagnostics import canonical, digest
+from cryptoforge.research_training_diagnostics import canonical, digest
 from test_research_run_budget import bindings, envelope
 
 

@@ -9,7 +9,7 @@ import stat
 
 from cryptoforge import research_phase as phase
 from cryptoforge import semantic_source_snapshot as snapshots,semantic_asset_registry as assets,semantic_event_review as events
-from cryptoforge.training_diagnostics import canonical,digest
+from cryptoforge.research_training_diagnostics import canonical,digest
 
 
 def existing(path,maximum=16777216):

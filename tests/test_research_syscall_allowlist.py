@@ -9,7 +9,7 @@ import struct
 
 import pytest
 from cryptoforge import research_syscall_allowlist as m
-from cryptoforge.training_diagnostics import canonical, digest
+from cryptoforge.research_training_diagnostics import canonical, digest
 from test_research_seccomp_probe import observation as old_observation, PARENT
 
 

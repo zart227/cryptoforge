@@ -79,7 +79,9 @@ def select_registered_validation_reports(ledger_path, *, study_sha256, reports,
                 study_sha256, hashlib.sha256(raw).hexdigest(),
                 *(Decimal(str(metrics[name])) for name in ('initial_cash','net_pnl',
                     'stress_net_pnl','max_drawdown','stress_max_drawdown')),
-                metrics['trade_count'],metrics['stress_trade_count']))
+                metrics['trade_count'],metrics['stress_trade_count'],
+                *(metrics.get(name) for name in ('open_positions_at_end','stress_open_positions_at_end',
+                    'exit_minimum_violations','stress_exit_minimum_violations'))))
         result = select_validation_threshold(rows,
             declared_thresholds=[candidate['threshold'] for candidate in grid],
             validation_start=validation_start, validation_end=validation_end,
