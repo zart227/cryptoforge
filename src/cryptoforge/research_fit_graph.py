@@ -15,11 +15,11 @@ from cryptoforge.llm_research_contracts import CATALOG
 from cryptoforge.research_training_diagnostics import canonical, digest
 from cryptoforge import research_local_export as private, semantic_source_collector as files
 
-REVIEWED = {'training_experiment_planner.py': '94da2e3bfce36d23eed0c6fc30f3669c6e11b6bf19714e7c032408301a858d06',
-    'llm_training_study.py': 'd2b28dc59d7b314d6e7d261e309e2cbe28142f117bcb934b2d2b71192a848c0c',
+REVIEWED = {'training_experiment_planner.py': '9124124479ff9c778847cbc27140a13e327c4294d1687db2cc670090b6bae1cc',
+    'llm_training_study.py': 'cfffa0403f128c6ab16033a405f5f022247b40974226a1125575df1293028e5a',
     'model_training.py': '9afb8aab375ec786aa8f9c9a7f617a5db642e49fcfbf45d311a413a05e63aeb7',
-    'training_diagnostics.py': '85c8d646290fd30c105eeda05cd8b3a630b3783353727db69bf3a20d4687243e',
-    'llm_research_contracts.py': '26fa4e050a03791a003b6d9745347203515e498f0d584b406fa9295e266891f4'}
+    'research_training_diagnostics.py': '85c8d646290fd30c105eeda05cd8b3a630b3783353727db69bf3a20d4687243e',
+    'llm_research_contracts.py': '857acc20b5c8bcd92c3ce7a67ee4a9b6f8c331406a2780735cc6535f90db0850'}
 POLICY = {'schema_version': 'research-fit-reuse-graph-policy-v1', 'reviewed_sources': REVIEWED,
     'supported_parameters': ['l2', 'threshold'], 'existing_primary_metric': 'validation_brier_score',
     'search_scope': 'baseline_plus_single_parameter_changes_only', 'maximum_configurations': 7,

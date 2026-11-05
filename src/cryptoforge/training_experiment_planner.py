@@ -26,7 +26,7 @@ from cryptoforge.research_training_diagnostics import (
 
 DATA_VERSION = 'llm-development-examples-v1'
 PROTOCOL_VERSION = 'llm-offline-training-protocol-v1'
-SOURCE_MODULES = ('model_training.py', 'research_attempts.py', 'training_diagnostics.py',
+SOURCE_MODULES = ('model_training.py', 'research_attempts.py', 'research_training_diagnostics.py',
                   'llm_research_contracts.py', 'training_experiment_planner.py', 'research_environment.py')
 BASELINE = {'l2': 0.01, 'threshold': 0.6}
 

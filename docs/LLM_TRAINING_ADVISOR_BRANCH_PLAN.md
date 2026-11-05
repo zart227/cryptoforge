@@ -4,9 +4,16 @@
 Этот документ — единый источник правды для завершения ветки. Журналы [LLM_ASSISTED_TRAINING_PLAN.md](LLM_ASSISTED_TRAINING_PLAN.md) и [LLM_TRAINING_ADVISOR.md](LLM_TRAINING_ADVISOR.md) сохраняют уже сделанную работу и не заменяют статусы ниже.
 
 Worktree: `/home/arthur/.codex/worktrees/llm-training-advisor/CryptoForge`.
-HEAD: `8da4cb17cbf1b6bfef390c57b31cb2148c5eb892`, тот же commit, что у `main`. Коммитов поверх `main` нет. Upstream не настроен. В индексе **268** файлов инфраструктурного merge (повторная сверка 5 ноября, UTC). Commit, push, merge и rebase этой сверкой не выполнялись.
+HEAD: `b221438` (merge `main` `bbf123b` → `arthur_dev/llm-training-advisor` поверх `62cc078`). Checkout `main` в `/home/arthur/Projects/personal/CryptoForge` остаётся **`bbf123b`** — не двигался. Push не выполнялся.
 
 Файл `.agents/skills/typesafe-ai/SKILL.md` в этом worktree **отсутствует** (повторная проверка 5 ноября). Новых вызовов TypeSafe не добавлено.
+
+### Merge с `main` (`bbf123b`), 5 ноября 2026 UTC
+
+- **`training_diagnostics.py`:** контракт L1a из `main` сохранён в `src/cryptoforge/training_diagnostics.py` (SHA-256 файла `2709f2d3e0be3d2bb988563b655507aee8c54148e8513730e5c3af6ca4b907e3`). Frozen overlay **не** подменяет этот модуль в дереве ветки.
+- **Advisor v2 diagnostics:** прежнее содержимое вынесено в `src/cryptoforge/research_training_diagnostics.py` (SHA-256 `85c8d646290fd30c105eeda05cd8b3a630b3783353727db69bf3a20d4687243e`); импорты advisor/research переключены.
+- **`docs/LLM_ASSISTED_TRAINING_PLAN.md`:** полная версия ветки + blockquote со сведениями из checkout `bbf123b` (L1a, CURRENT_PLAN, `.local/state/additional-plan-import-20261018/`).
+- **`research_fit_graph` / planner:** reviewed pin переименован на `research_training_diagnostics.py`; хеши `llm_training_study.py` и `llm_research_contracts.py` обновлены под post-merge байты.
 
 ## Статус и границы безопасности
 
@@ -73,7 +80,7 @@ SHA-256 отчёта: `56568fbe7e0313e9bebb8d1ec3796da730fc68fbe342f154a1287b160
 - Затронутые pin-ом тесты: `tests/test_research_cohort_http_audit.py`, `tests/test_research_cohort_reader_audit.py`, `tests/test_research_feature_oracle.py`, `tests/test_research_label_oracle.py`, `tests/test_research_late_label_audit.py`, `tests/test_research_loader_audit.py`, `tests/test_research_local_cohort_audit.py`, `tests/test_research_native_rest_audit.py`, `tests/test_research_prospective_cohort_audit.py`, `tests/test_research_revision_bridge.py`, `tests/test_research_source_diagnostics.py`, `tests/test_research_trainer_base.py`, `tests/test_research_value_audit.py`.
 - `DEFAULT_MODEL` в `llm_research_advisor.py` — `nvidia/nemotron-3-super-120b-a12b:free`. Каталог M65 от 28 октября 03:51 UTC эту запись не содержит. Candidate v2/v3 — `nvidia/nemotron-3.5-super-vl:free` с нулевой каталожной ценой. Ни модель по умолчанию, ни candidate не квалифицированы: нет отдельного offline-протокола квалификации и нет проверяемого provider evidence по endpoint, качеству, расходу аккаунта и native input-token bound.
 - `.local/research-cohort-http-real-20261026/verification.json` хранит `post_transfer_verification_pending=true`. Это поле само по себе не является закрытой post-transfer аттестацией.
-- В индексе нет `.local`, `.env` и файлов с именами secret/pem/key. Несохранённые правки этой сверки — документы плана, модуль инвентаря и его тест. Они не закоммичены.
+- В индексе нет `.local`, `.env` и файлов с именами secret/pem/key. Post-merge доводка: fit-graph pin и план/audit (отдельный commit после merge).
 
 ### Допустимые решения по `supabase_executor.py`
 
@@ -100,18 +107,18 @@ SHA-256 отчёта: `56568fbe7e0313e9bebb8d1ec3796da730fc68fbe342f154a1287b160
 | LLM / торговля               | `research_code_preview.py`: `execution_enabled: false`; merge-профиль включает advisor, exchange audit, code preview — **2697 passed**. Советник JSON-only, без исполнения кода и сделок.                                                                                                                                                        |
 | Exposure                     | `report_sha256` `56568fbe…`; `training_admitted`, `holdout_independence_attested`, `coverage_complete` — **false**.                                                                                                                                                                                                                              |
 
-Артефакты сверки: pytest `.local/research-plan-audit-20261105/pytest-merge-infrastructure-profile-20261105-verify.txt`; exposure `.local/research-exposure-inventory-20261105-verify/report.json`; audit `.local/research-plan-audit-20261105/merge-infrastructure-audit-report.json`.
+Артефакты сверки после merge: pytest `.local/research-plan-audit-20261105/pytest-merge-infrastructure-profile-post-merge-b221438.txt` (**2697 passed, 19 skipped**, exit **0**); exposure `.local/research-exposure-inventory-post-merge-b221438/report.json` (`report_sha256` **`56568fbe7e0313e9bebb8d1ec3796da730fc68fbe342f154a1287b160065cb90`**); audit `.local/research-plan-audit-20261105/merge-infrastructure-audit-report.json`.
 
-Пока ни один вариант не выбран, R01 остаётся заблокированным, а 13 тестов выше не считаются зелёными.
+Pin **variant B** выбран; 13 pin-bound тестов входят в merge-профиль и проходят на frozen runtime.
 
 ## Чеклисты
 
 ### Воспроизводимость и pin-файлы
 
-- [x] HEAD и worktree зафиксированы: `8da4cb17`, ветка `arthur_dev/llm-training-advisor`.
+- [x] HEAD и worktree: infra **`62cc078`**, merge **`b221438`**, ветка `arthur_dev/llm-training-advisor`; checkout `main` **`bbf123b`** не менялся.
 - [x] Pin и текущий hash `supabase_executor.py` записаны. Совпадения нет.
 - [x] Выбран один из трёх вариантов решения по pin. **B**, 5 ноября 2026. Следствие: frozen bytes + `research_reviewed_main_runtime.py`; live `main` не менялся.
-- [x] Повтор целевого профиля на согласованных байтах проходит целиком. Лог: `.local/research-plan-audit-20261105/pytest-merge-infrastructure-profile-20261105-verify.txt`, **2697 passed, 19 skipped**, exit **0**, без `main_reference_runtime_requires_review`.
+- [x] Повтор целевого профиля на согласованных байтах проходит целиком. Лог: `.local/research-plan-audit-20261105/pytest-merge-infrastructure-profile-post-merge-b221438.txt`, **2697 passed, 19 skipped**, exit **0**, без `main_reference_runtime_requires_review`.
 
 ### Данные, lineage, exposure и независимость holdout
 
@@ -158,7 +165,7 @@ SHA-256 отчёта: `56568fbe7e0313e9bebb8d1ec3796da730fc68fbe342f154a1287b160
 
 ## Что нельзя делать до закрытия блокеров
 
-- Не редактировать `main`, не менять pin под грязный `supabase_executor.py` и не считать 13 затронутых тестов зелёными.
+- Не редактировать checkout `main` (`/home/arthur/Projects/personal/CryptoForge`) и не менять pin frozen `supabase_executor` на live `0ae3096e…` без отдельного решения человека.
 - Не запускать обучение, fit на реальных данных, сбор рынка и HTTP к JobPilot, Ollama или OpenRouter.
 - Не создавать недостающие operational bindings и не копировать SQLite, чтобы получить новую числовую попытку.
 - Не называть M48, M52 или M64 независимым holdout. Ноль расхождений значений этого не доказывает.
@@ -213,10 +220,10 @@ SHA-256 отчёта: `56568fbe7e0313e9bebb8d1ec3796da730fc68fbe342f154a1287b160
 Ветка может идти в `main` с аудитом, документацией, exposure-инвентарём и тестами, когда закрыт каждый пункт этого чеклиста. Квалификация LLM-провайдера, Ollama, память хоста, новый бюджет 3/3 и запуск обучения в этот чеклист не входят.
 
 - [x] В staged diff нет `.local`, секретов, ключей, случайных бинарных файлов и нерелевантных изменений. **268 staged**, `git diff --cached --check` код **0** (UTC 2026-11-05, после `git add`).
-- [x] Все новые и изменённые исходники имеют целевые зелёные тесты. `.local/research-plan-audit-20261105/pytest-merge-infrastructure-profile-20261105-verify.txt`: **2697 passed, 19 skipped**, exit **0**, `main_reference_runtime_requires_review` **0**.
+- [x] Все новые и изменённые исходники имеют целевые зелёные тесты. `.local/research-plan-audit-20261105/pytest-merge-infrastructure-profile-post-merge-b221438.txt`: **2697 passed, 19 skipped**, exit **0**, `main_reference_runtime_requires_review` **0**.
 - [x] Есть финальная проверка `git diff --cached --check` на финальном индексе (**268** файлов, код 0).
 - [x] План, чеклисты, исходники и журналы не противоречат друг другу. Ручной review записан выше.
-- [x] Exposure-инвентарь не заявляет ложную независимость или допуск данных к обучению. `.local/research-exposure-inventory-20261105-verify/report.json`, `report_sha256` **`56568fbe7e0313e9bebb8d1ec3796da730fc68fbe342f154a1287b160065cb90`**, три флага **false**.
+- [x] Exposure-инвентарь не заявляет ложную независимость или допуск данных к обучению. `.local/research-exposure-inventory-post-merge-b221438/report.json`, `report_sha256` **`56568fbe7e0313e9bebb8d1ec3796da730fc68fbe342f154a1287b160065cb90`**, три флага **false**.
 - [x] LLM-код не способен менять код, конфигурацию, датасеты, параметры торговли или выполнять команды.
 - [x] Выбран и задокументирован один вариант для pin `supabase_executor.py`: **B**, 5 ноября 2026.
 - [x] После выбора варианта выполнен согласованный финальный тестовый профиль без ошибок, связанных с pin.
@@ -226,10 +233,10 @@ SHA-256 отчёта: `56568fbe7e0313e9bebb8d1ec3796da730fc68fbe342f154a1287b160
 | Условие                                                                                         | Статус сейчас | Что конкретно сделать | Проверяемый артефакт                                                                               | Кто/какое решение требуется |
 | ----------------------------------------------------------------------------------------------- | ------------- | --------------------- | -------------------------------------------------------------------------------------------------- | --------------------------- |
 | Staged diff без `.local`, секретов, ключей, случайных бинарных файлов и нерелевантных изменений | выполнено     | —                     | **268** staged; `git diff --cached --check` **0**; подозрительных имён нет.                        | Review в плане.             |
-| Целевые зелёные тесты для новых и изменённых исходников                                         | выполнено     | —                     | `pytest-merge-infrastructure-profile-20261105-verify.txt`: **2697 passed**, exit **0**.            | Код ветки.                  |
+| Целевые зелёные тесты для новых и изменённых исходников                                         | выполнено     | —                     | `pytest-merge-infrastructure-profile-post-merge-b221438.txt`: **2697 passed**, exit **0**.            | Код ветки.                  |
 | `git diff --cached --check`                                                                     | выполнено     | —                     | Финальный индекс **268** файлов, код **0**.                                                        | Подготовка индекса.         |
 | Согласованность плана, чеклистов, исходников и журналов                                         | выполнено     | —                     | План + ручной review; журналы M01–M69 — история.                                                   | Review в плане.             |
-| Exposure-инвентарь без ложной независимости и без допуска к обучению                            | выполнено     | —                     | `.local/research-exposure-inventory-20261105-verify/report.json`, `report_sha256` **`56568fbe…`**. | Пересборка UTC 2026-11-05.  |
+| Exposure-инвентарь без ложной независимости и без допуска к обучению                            | выполнено     | —                     | `.local/research-exposure-inventory-post-merge-b221438/report.json`, `report_sha256` **`56568fbe…`**. | Post-merge UTC 2026-11-05.  |
 | LLM не меняет код, конфигурацию, датасеты, параметры торговли и не выполняет команды            | выполнено     | —                     | `execution_enabled: false`; merge-профиль зелёный.                                                 | Review в плане.             |
 | Выбран вариант A, B или C для pin `supabase_executor.py`                                        | выполнено     | —                     | **B** + frozen overlay + runtime module.                                                           | План.                       |
 | Согласованный финальный профиль без ошибок pin                                                  | выполнено     | —                     | Verify-log; pin-ошибок **0**.                                                                      | Код ветки.                  |
@@ -266,7 +273,8 @@ SHA-256 отчёта: `56568fbe7e0313e9bebb8d1ec3796da730fc68fbe342f154a1287b160
 
 ## Текущий merge verdict
 
-- Статус: **`ГОТОВО К РУЧНОМУ MERGE REVIEW`** (решение 1 — все пункты чеклиста закрыты свежими артефактами 2026-11-05 UTC).
-- Pin **variant B**; frozen **`b3a85306…`**; live **`main`** **`0ae3096e…`** не менялся.
-- Merge-профиль: **2697 passed**, exit **0**; индекс **268** файлов, `git diff --cached --check` **0**.
-- Commit, push и merge в `main` этой сверкой **не выполнялись** — следующий шаг за человеком с commit/PR.
+- Статус: **`ГОТОВО К РУЧНОМУ MERGE REVIEW`** (решение 1 — merge с `bbf123b` в ветке выполнен; checkout `main` не двигался).
+- Commits: **`62cc078099004f6f235a3c36f1968d39261e36d8`** (infra), **`b2214380895575cc0979dbfeb8be886ac9c5270b`** (merge `bbf123b`), post-merge доводка — **`git rev-parse HEAD`** на этой ветке после merge.
+- Pin **variant B**; frozen **`b3a85306…`**; live checkout **`main`** **`0ae3096e…`** не менялся; `src/cryptoforge/supabase_executor.py` в worktree = live hash.
+- Merge-профиль post-merge: **2697 passed**, exit **0**.
+- Push и fast-forward checkout `main` **не выполнялись** — перенос в primary repo за человеком.
