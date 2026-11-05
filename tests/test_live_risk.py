@@ -17,6 +17,7 @@ def test_counts_only_material_non_usdt_positions() -> None:
 def test_daily_equity_guard_persists_start_and_blocks_loss(tmp_path) -> None:
     state = tmp_path / "equity.json"
     now = datetime(2026, 9, 30, tzinfo=UTC)
+    state.write_text('{"date":"2026-09-30","start_equity":"16"}')
     assert daily_equity_blockers(
         current_equity=Decimal("16"), maximum_loss=Decimal("2"), state_path=state, now=now
     ) == ()

@@ -43,3 +43,14 @@ def test_future_test_labels_cannot_be_unsealed_by_a_flag_alone():
     fold=folds(START,START+timedelta(days=365))[0]
     with pytest.raises(ValueError,match='sealed'):select_fold([sample('test',152)],fold,as_of=fold.test_start,include_test=True)
     with pytest.raises(ValueError,match='unfinished'):select_fold([],fold,as_of=fold.test_start-timedelta(seconds=1))
+
+
+@pytest.mark.parametrize('change',['overlap','naive','negative_embargo','empty_test'])
+def test_manually_constructed_fold_cannot_bypass_calendar_guards(change):
+    from dataclasses import replace
+    fold=folds(START,START+timedelta(days=365))[0]
+    edits={'overlap':{'validation_start':fold.train_start},
+           'naive':{'train_start':fold.train_start.replace(tzinfo=None)},
+           'negative_embargo':{'embargo':timedelta(days=-1)},
+           'empty_test':{'test_end':fold.test_start}}
+    with pytest.raises(ValueError):select_fold([],replace(fold,**edits[change]),as_of=fold.test_end)

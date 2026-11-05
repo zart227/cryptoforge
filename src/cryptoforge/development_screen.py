@@ -18,17 +18,29 @@ def screen_development_comparison(comparison, *, minimum_trades, minimum_profit_
     failures=[]
     for name in ('filtered','stress_filtered'):
         role=comparison['roles'][name]
+        for field in ('open_positions_at_end','open_cost_basis_at_end','known_exit_minimum_violations'):
+            if role.get(field) is None:
+                failures.append({'role':name,'gate':'unknown_execution_accounting','field':field})
         count=role['executed_trades']
         if type(count) is not int or count<0:raise ValueError('nonnegative executed trade count required')
         counts=[role[key] for key in ('positive_trades','negative_trades','zero_trades')]
         if any(type(value) is not int or value<0 for value in counts) or sum(counts)!=count:
             raise ValueError('inconsistent trade outcome counts')
         generated,rejected=role['generated_signals'],role['rejected_signals']
-        if any(type(value) is not int or value<0 for value in (generated,rejected)) or generated!=count+rejected:
+        open_count=role.get('open_positions_at_end',0)
+        if type(open_count) is not int or open_count<0:raise ValueError('valid open inventory accounting required')
+        if any(type(value) is not int or value<0 for value in (generated,rejected)) or generated!=count+rejected+open_count:
             raise ValueError('inconsistent signal accounting')
         if _number(role['total_fees'])<0:raise ValueError('nonnegative fees required')
+        violations=role.get('known_exit_minimum_violations')
+        if violations is not None:
+            if type(violations) is not int or violations<0:raise ValueError('valid exit-minimum violation count required')
+            if violations:failures.append({'role':name,'gate':'exit_minimum_violations','actual':violations})
         pnl=_number(role['net_pnl']);cash=_number(role['final_cash']);drawdown=_number(role['drawdown_bound'])
-        if cash<0 or not 0<=drawdown<=1 or abs(cash-capital-pnl)>Decimal('1e-18'):
+        basis=_number(role.get('open_cost_basis_at_end','0'));open_count=role.get('open_positions_at_end',0)
+        if type(open_count) is not int or open_count<0 or basis<0:raise ValueError('valid open inventory accounting required')
+        if open_count:failures.append({'role':name,'gate':'unclosed_inventory','actual':open_count})
+        if cash<0 or not 0<=drawdown<=1 or abs(cash+basis-capital-pnl)>Decimal('1e-18'):
             raise ValueError('inconsistent shared-wallet screening metrics')
         pf=None if role['profit_factor'] is None else _number(role['profit_factor'])
         if pf is not None and pf<0:raise ValueError('nonnegative profit factor required')

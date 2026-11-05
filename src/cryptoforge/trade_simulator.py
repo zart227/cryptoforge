@@ -31,8 +31,11 @@ class SimulationConfig:
     max_volume_fraction: Decimal = D('0.01')
     entry_fee: Decimal | None = None
     exit_fee: Decimal | None = None
+    exit_minimum_policy: str = 'legacy_assumed'
 
     def __post_init__(self):
+        if self.exit_minimum_policy not in {'legacy_assumed','preserve_inventory'}:
+            raise ValueError('explicit supported exit minimum policy required')
         for name in ('capital','stake','min_notional','quantity_step'):
             value = getattr(self,name)
             if not value.is_finite() or value <= 0:
@@ -99,6 +102,9 @@ class SimulationResult:
     equity_snapshots: tuple = ()
     entry_fee_currency: str = 'quote'
     exit_fee_currency: str = 'quote'
+    exit_minimum_violations: tuple = ()
+    open_positions: tuple = ()
+    exit_minimum_policy: str = 'legacy_assumed'
 
 
 @dataclass
@@ -172,7 +178,7 @@ def simulate_portfolio(data: Mapping[str, Sequence[CandleRow]],
                 raise ValueError('risk plan unavailable at entry time')
     cash=config.capital
     positions: dict[str,_Position]={}
-    trades=[]
+    trades=[];exit_minimum_violations=[]
     equity=[];equity_snapshots=[]
     peak=config.capital
     drawdown=D(0);realized_total=D(0)
@@ -180,11 +186,24 @@ def simulate_portfolio(data: Mapping[str, Sequence[CandleRow]],
     bid_factor=1-config.spread_fraction/2
     ask_factor=1+config.spread_fraction/2
 
+    def liquidation(pos,bid_price):
+        price=bid_price*(1-config.slippage)
+        if config.exit_minimum_policy=='preserve_inventory' and pos.quantity*price<config.min_notional:
+            return D(0)
+        return spot_sale(quantity=pos.quantity,price=price,fee_fraction=config.effective_exit_fee,fee_currency='quote').cash_proceeds
+
     def close(pair,index,bid_price,reason,ambiguous=False):
         nonlocal cash,realized_total
-        pos=positions.pop(pair)
+        pos=positions[pair]
         price=bid_price*(1-config.slippage)
         sale=spot_sale(quantity=pos.quantity,price=price,fee_fraction=config.effective_exit_fee,fee_currency='quote')
+        if sale.notional<config.min_notional:
+            exit_minimum_violations.append({'pair':pair,'exit_time':times[index],
+                'quantity':pos.quantity,'price':price,'notional':sale.notional,
+                'required_minimum':config.min_notional,'exit_reason':reason,
+                'scope':'assumed_exit_not_certified_executable'})
+            if config.exit_minimum_policy=='preserve_inventory':return
+        positions.pop(pair)
         exit_fee=sale.fee_amount;proceeds=sale.cash_proceeds
         cash+=proceeds
         realized_total+=proceeds-pos.cost
@@ -234,7 +253,7 @@ def simulate_portfolio(data: Mapping[str, Sequence[CandleRow]],
             if candle.open*bid_factor<=pos.price*(1-pos.stop_fraction):
                 close(pair,index,candle.open*bid_factor,'stop_gap')
         # Record conservative simultaneous lows before intrabar exits.
-        low_equity=cash+sum((p.quantity*data[pair][index].low*bid_factor*(1-config.slippage)*(1-config.effective_exit_fee)
+        low_equity=cash+sum((liquidation(p,data[pair][index].low*bid_factor)
                             for pair,p in positions.items()),D(0))
         drawdown=max(drawdown,1-low_equity/peak)
         for pair in sorted(list(positions)):
@@ -251,7 +270,7 @@ def simulate_portfolio(data: Mapping[str, Sequence[CandleRow]],
         if index == len(times)-1:
             for pair in sorted(list(positions)):
                 close(pair,index,data[pair][index].close*bid_factor,'end_of_data')
-        mark=cash+sum((p.quantity*data[pair][index].close*bid_factor*(1-config.slippage)*(1-config.effective_exit_fee)
+        mark=cash+sum((liquidation(p,data[pair][index].close*bid_factor)
                        for pair,p in positions.items()),D(0))
         peak=max(peak,mark)
         drawdown=max(drawdown,1-mark/peak)
@@ -259,10 +278,10 @@ def simulate_portfolio(data: Mapping[str, Sequence[CandleRow]],
         if capture_equity_details:
             inventory=[]
             for pair,pos in sorted(positions.items()):
-                liquidation=pos.quantity*data[pair][index].close*bid_factor*(1-config.slippage)*(1-config.effective_exit_fee)
+                liquidation_value=liquidation(pos,data[pair][index].close*bid_factor)
                 inventory.append({'pair':pair,'quantity':pos.quantity,'cost_basis':pos.cost,
-                    'entry_time':times[pos.entry_index],'liquidation_estimate':liquidation,
-                    'unrealized_net_pnl_estimate':liquidation-pos.cost})
+                    'entry_time':times[pos.entry_index],'liquidation_estimate':liquidation_value,
+                    'unrealized_net_pnl_estimate':liquidation_value-pos.cost})
             basis=sum((row['cost_basis'] for row in inventory),D(0))
             realized=realized_total
             if abs(cash+basis-config.capital-realized)>D('1e-20'):raise ValueError('equity cash/basis reconciliation failed')
@@ -270,4 +289,8 @@ def simulate_portfolio(data: Mapping[str, Sequence[CandleRow]],
                 'realized_net_pnl':realized,'equity':mark,'open_positions':inventory,
                 'valuation_scope':'close_bid_proxy_adverse_slippage_quote_fees_not_actual_executable_equity'})
     return SimulationResult(tuple(trades),tuple(rejections),tuple(equity),cash,drawdown,
-        entry_risk_plans=tuple(entry_risks[key] for key in sorted(entry_risks)) if entry_risks is not None else (),equity_snapshots=tuple(equity_snapshots))
+        entry_risk_plans=tuple(entry_risks[key] for key in sorted(entry_risks)) if entry_risks is not None else (),equity_snapshots=tuple(equity_snapshots),
+        exit_minimum_violations=tuple(exit_minimum_violations),
+        open_positions=tuple({'pair':pair,'signal_time':pos.signal_time,'entry_time':times[pos.entry_index],
+            'quantity':pos.quantity,'cost_basis':pos.cost,'entry_fee':pos.entry_fee}
+            for pair,pos in sorted(positions.items())),exit_minimum_policy=config.exit_minimum_policy)

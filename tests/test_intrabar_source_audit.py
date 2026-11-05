@@ -31,3 +31,16 @@ def test_incomplete_or_disordered_minute_range_is_rejected(fine):
 
 def test_missing_coarse_bar_is_rejected():
     with pytest.raises(ValueError,match='coarse source'):run(rows(),[])
+
+
+def test_later_coarse_revision_cannot_certify_earlier_minute_history():
+    coarse=aggregate_closed(rows(),as_of=START+timedelta(minutes=10),minutes=5,base_minutes=1)[0]
+    coarse=[replace(row,cache_observed_at=START+timedelta(minutes=11)) for row in coarse]
+    with pytest.raises(ValueError,match='not available'):run(rows(),coarse)
+
+
+@pytest.mark.parametrize('changes',[{'volume':D('NaN')},{'low':D(0)}])
+def test_invalid_coarse_source_is_rejected_before_price_matching(changes):
+    coarse=aggregate_closed(rows(),as_of=START+timedelta(minutes=10),minutes=5,base_minutes=1)[0]
+    coarse[0]=replace(coarse[0],**changes)
+    with pytest.raises(ValueError,match='valid coarse'):run(rows(),coarse)

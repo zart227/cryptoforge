@@ -38,6 +38,15 @@ def test_fees_rejections_and_no_incomplete_horizon_labels():
     assert rejected[0].rejection_reason=='minimum_order'
 
 
+def test_impossible_minimum_exit_is_not_a_completed_net_training_example():
+    rows=history(count=100)
+    rows[38]=replace(rows[38],open=D(40),high=D(41),low=D(39),close=D(40))
+    label=build_trade_labels('ETH/USDT',rows,config())[0]
+    assert label.status=='unresolved_exit_minimum'
+    assert label.example is None and label.trade is None and label.net_return is None
+    assert label.rejection_reason=='minimum_exit_notional'
+
+
 def test_future_changes_affect_labels_not_features_and_purge_is_preserved():
     rows=history(count=160)
     changed=list(rows)

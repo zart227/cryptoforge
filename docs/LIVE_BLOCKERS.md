@@ -1,6 +1,16 @@
 # Live Trading Blockers
 
-Updated: 2026-09-25.
+Current reconciliation: 2026-10-14. See
+[actual executor blockers R1–R16](IMPLEMENTATION_RECONCILIATION_20261014.md).
+Linux Supabase executor is installed with `--live`; complete runtime-specific
+switch/risk/outage and independent/paper qualification remains open.
+No service/order/model change was made during reconciliation.
+
+The section below is the **2026-09-25 historical pilot checklist**. Its statements
+about disabled trading, balances, permissions or Freqtrade config readiness are
+not current checks of the Supabase executor.
+
+Historical update: 2026-09-25.
 
 Real trading must remain disabled until these blockers are closed by the
 operator and re-tested:

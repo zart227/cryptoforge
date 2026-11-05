@@ -238,6 +238,23 @@ class BybitPrivateClient:
         accounts = payload.get("result", {}).get("list") or []
         return list(accounts[0].get("coin") or []) if accounts else []
 
+    def get_unified_wallet_coins_for(self, coins: list[str]) -> list[dict[str, Any]]:
+        """Explicit coin query retains observed zero balances omitted by defaults."""
+        if not coins or len(set(coins))!=len(coins) or any(
+            not isinstance(coin,str) or not coin or not coin.isascii() or not coin.isalnum() or coin!=coin.upper()
+            for coin in coins):
+            raise ValueError("unique explicit uppercase wallet coins required")
+        rows=[]
+        for start in range(0,len(coins),20):
+            batch=coins[start:start+20]
+            payload=self._private_get("/v5/account/wallet-balance",{"accountType":"UNIFIED","coin":",".join(batch)})
+            accounts=payload.get("result",{}).get("list") or []
+            returned=list(accounts[0].get("coin") or []) if accounts else []
+            if len(returned)!=len(batch) or {row.get("coin") for row in returned}!=set(batch):
+                raise ValueError("explicit wallet coin observation incomplete")
+            rows.extend(returned)
+        return rows
+
     def create_spot_limit_order(
         self,
         *,

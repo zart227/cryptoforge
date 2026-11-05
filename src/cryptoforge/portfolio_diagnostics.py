@@ -8,7 +8,7 @@ from cryptoforge.equity_blocks import daily_changes,block_interval
 def portfolio_diagnostics(outcome,signals,*,initial_capital=None):
     generated=sum(len(values) for values in signals.values());trades=outcome.trades
     reasons=Counter(row['reason'] for row in outcome.rejections)
-    if generated!=len(trades)+len(outcome.rejections):
+    if generated!=len(trades)+len(outcome.rejections)+len(outcome.open_positions):
         raise ValueError('portfolio signal accounting is incomplete')
     wins=sum((trade.net_pnl for trade in trades if trade.net_pnl>0),Decimal(0))
     losses=-sum((trade.net_pnl for trade in trades if trade.net_pnl<0),Decimal(0))
@@ -24,6 +24,12 @@ def portfolio_diagnostics(outcome,signals,*,initial_capital=None):
     by_day=grouped(lambda trade:trade.entry_time.astimezone(UTC).date().isoformat())
     best=sorted((trade.net_pnl for trade in trades),reverse=True)[:2]
     report={'entry_risk_policy':'per_signal_ex_ante_plan' if outcome.entry_risk_plans else 'fixed_configuration',
+        'open_positions_at_end':len(outcome.open_positions),'exit_minimum_policy':outcome.exit_minimum_policy,
+        'open_cost_basis_at_end':str(sum((row['cost_basis'] for row in outcome.open_positions),Decimal(0))),
+        'no_entry_sample':not trades and not outcome.open_positions,'no_closed_trade_sample':not trades,
+        'closed_trade_net_excludes_open_basis':True,
+        'known_exit_minimum_violations':len(outcome.exit_minimum_violations),
+        'all_exit_minimums_satisfied_in_declared_scenario':not outcome.exit_minimum_violations,
         'recorded_entry_risk_plans':len(outcome.entry_risk_plans),'drawdown_semantics':outcome.drawdown_semantics,'by_pair':by_pair,'by_entry_day':by_day,
         'cash_only_baseline':{'net_pnl':'0','fees':'0','assumption':'idle_cash_no_interest'},
         'excess_net_over_cash_only':str(net),

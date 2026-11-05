@@ -73,7 +73,10 @@ def compare_filtered_portfolios(data, baseline_signals, filtered_signals, config
             raise ValueError('paired complete-day coverage mismatch')
         paired={day:str(Decimal(a_days[day])-Decimal(b_days[day])) for day in sorted(a_days)}
         differences[prefix+'filtered_minus_'+control]={
-            'net_pnl_difference':str(left.final_cash-right.final_cash),
+            'net_pnl_difference':str(sum((trade.net_pnl for trade in left.trades),Decimal(0))-sum((trade.net_pnl for trade in right.trades),Decimal(0))),
+            'final_cash_difference':str(left.final_cash-right.final_cash),
+            'unclosed_inventory':bool(left.open_positions or right.open_positions),
+            'completed_cash_comparison':not (left.open_positions or right.open_positions),
             'daily_equity_difference_fraction_initial_capital':paired,
             'excluded_partial_boundary_days':a['partial_boundary_days'],
             'block_interval':block_interval(paired,**bootstrap_policy)}

@@ -1,0 +1,27 @@
+# Linux host networking lets the existing application containers reach the
+# loopback-only backend. Use alongside the repository-root compose.yaml.
+services:
+  market-feeder:
+    network_mode: host
+    environment:
+      CRYPTOFORGE_LOCAL_API_KEY_FILE: /run/cryptoforge-local-api-key
+    volumes:
+      - ./.local/database/api-key:/run/cryptoforge-local-api-key:ro
+  live-executor:
+    network_mode: host
+    environment:
+      CRYPTOFORGE_LOCAL_API_KEY_FILE: /run/cryptoforge-local-api-key
+    volumes:
+      - ./.local/database/api-key:/run/cryptoforge-local-api-key:ro
+  night-research:
+    network_mode: host
+    environment:
+      CRYPTOFORGE_LOCAL_API_KEY_FILE: /run/cryptoforge-local-api-key
+    volumes:
+      - ./.local/database/api-key:/run/cryptoforge-local-api-key:ro
+  telegram-relay:
+    network_mode: host
+    environment:
+      CRYPTOFORGE_LOCAL_API_KEY_FILE: /run/cryptoforge-local-api-key
+    volumes:
+      - ./.local/database/api-key:/run/cryptoforge-local-api-key:ro

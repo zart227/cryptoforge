@@ -390,3 +390,14 @@ def test_raw_instrument_observation_preserves_independent_limits():
     raw['lotSizeFilter']['maxMarketOrderQty']='999999'
     assert observed.raw_metadata['lotSizeFilter']['maxMarketOrderQty']=='6000'
     assert observed.raw_metadata['lotSizeFilter']['postOnlyMaxLimitOrderSize']=='40000'
+
+
+def test_explicit_wallet_query_keeps_zero_and_rejects_incomplete_observation():
+    from urllib.parse import urlparse,parse_qs
+    def get(url,headers,timeout):
+        assert parse_qs(urlparse(url).query)['coin']==['ETH,BTC']
+        return {'retCode':0,'result':{'list':[{'coin':[{'coin':'ETH','walletBalance':'0'},{'coin':'BTC','walletBalance':'1'}]}]}}
+    client=BybitPrivateClient(api_key='key',api_secret='secret',http_get=get)
+    assert client.get_unified_wallet_coins_for(['ETH','BTC'])[0]['walletBalance']=='0'
+    client.http_get=lambda *args:{'retCode':0,'result':{'list':[{'coin':[]}]}}
+    with pytest.raises(ValueError,match='incomplete'):client.get_unified_wallet_coins_for(['ETH'])

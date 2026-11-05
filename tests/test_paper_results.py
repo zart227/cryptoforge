@@ -75,3 +75,47 @@ def test_future_worker_event_without_quality_error_is_still_unavailable(tmp_path
     before=clock.now;clock.advance();worker._event({'status':'later_diagnostic'})
     with pytest.raises(ValueError,match='earlier paper worker'):
         export_results(wallet.path,worker.path,as_of=before)
+
+
+def test_consistent_looking_cash_and_basis_cannot_hide_changed_fill_price(tmp_path):
+    import json
+    clock,wallet,worker,calls=setup(tmp_path);rows=[prediction(clock)]
+    tick(worker,rows);clock.advance();tick(worker,rows)
+    db=wallet._db()
+    identity,raw=db.execute('select intent_id,payload from fills').fetchone()
+    fill=json.loads(raw);fill['price']='101'
+    db.execute('update fills set payload=? where intent_id=?',(json.dumps(fill),identity));db.commit();db.close()
+    with pytest.raises(ValueError,match='arithmetic'):export_results(wallet.path,worker.path,as_of=clock.now)
+
+
+def test_changed_remaining_quantity_cannot_hide_behind_unchanged_cost_basis(tmp_path):
+    clock,wallet,worker,calls=setup(tmp_path);rows=[prediction(clock)]
+    tick(worker,rows);clock.advance();tick(worker,rows)
+    db=wallet._db();db.execute("update lots set qty='1000'");db.commit();db.close()
+    with pytest.raises(ValueError,match='quantity is not conserved'):
+        export_results(wallet.path,worker.path,as_of=clock.now)
+
+
+def test_segment_fee_is_replayed_even_when_cash_and_cost_still_reconcile(tmp_path):
+    import json
+    clock,wallet,worker,calls=setup(tmp_path);rows=[prediction(clock)]
+    tick(worker,rows);clock.advance();tick(worker,rows)
+    clock.advance(3601);tick(worker,rows);clock.advance();tick(worker,rows)
+    db=wallet._db();identity,raw=db.execute('select id,payload from closed_segments').fetchone()
+    segment=json.loads(raw);segment['fees']='0'
+    db.execute('update closed_segments set payload=? where id=?',(json.dumps(segment),identity));db.commit();db.close()
+    with pytest.raises(ValueError,match='arithmetic'):
+        export_results(wallet.path,worker.path,as_of=clock.now)
+
+
+def test_valid_math_for_larger_purchase_cannot_bypass_frozen_stake(tmp_path):
+    import json
+    from cryptoforge.paper_fill_audit import verify_paper_fill_arithmetic
+    clock,wallet,worker,calls=setup(tmp_path);rows=[prediction(clock)]
+    tick(worker,rows);clock.advance();tick(worker,rows)
+    report=export_results(wallet.path,worker.path,as_of=clock.now)
+    fill=report['fills'][0]
+    for key in ('quantity','order_quantity','cost','fee_amount','fee_quote_equivalent'):
+        fill[key]=str(Decimal(fill[key])*2)
+    with pytest.raises(ValueError,match='stake budget'):
+        verify_paper_fill_arithmetic([fill],[],report['policy']['config'])

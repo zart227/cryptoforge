@@ -6,6 +6,7 @@ from math import isfinite
 import re
 
 from cryptoforge.model_training import TrainingExample,FEATURE_VERSION
+from cryptoforge.original_entry_context import unique_entry_contexts
 
 TARGET_VERSION='spot-long-real-execution-net-v1'
 
@@ -39,12 +40,7 @@ def build_live_experiences(trades,decisions,*,observed_at: datetime,truncated=Fa
         return {'target_version':TARGET_VERSION,'examples':[],'excluded':[{'reason':'unverified_accounting_snapshot'}],
                 'accounting_quality_verified':False,'live_eligible':False}
     if truncated:return {'target_version':TARGET_VERSION,'examples':[],'excluded':[{'reason':'truncated_snapshot'}]}
-    contexts={}
-    for decision in decisions:
-        if decision.get('decision')!='approve_entry':continue
-        result=((decision.get('features') or {}).get('order') or {}).get('result') or {}
-        order=result.get('orderId') if isinstance(result,dict) else None
-        if order:contexts[(decision['pair'],str(order))]=decision
+    contexts,conflicts=unique_entry_contexts(decisions)
     groups={};excluded=[];seen=set()
     for row in trades:
         identity=str(row.get('idempotency_key') or '')
@@ -72,6 +68,7 @@ def build_live_experiences(trades,decisions,*,observed_at: datetime,truncated=Fa
         elif any(row.get('realized_pnl') is None or row.get('fee_amount') is None for row in closed):
             reason='unknown_net_pnl_or_fees'
         context=contexts.get((pair,order))
+        if (pair,order) in conflicts:reason='conflicting_original_feature_context'
         features=(context or {}).get('features') or {}
         if reason is None and (not context or features.get('feature_capture_status')!='complete' or features.get('feature_version')!=FEATURE_VERSION):
             reason='missing_original_feature_context'

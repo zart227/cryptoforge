@@ -329,3 +329,26 @@ def test_candidate_forecast_recording_error_does_not_change_buy_gate():
     assert executor._last_candidate_forecast['long_probability']==.9
     assert not executor._last_candidate_forecast['counts_as_real_executed_buys']
     assert executor._ml_entry_allows(rows)[0]
+
+
+def test_submitted_order_reasons_survive_same_candle_hold_and_second_exit():
+    from copy import deepcopy
+    executor=make_ml_executor('gate',.9);candles=support_bounce_candles();stored={}
+    def upsert(table,records,**options):
+        for record in records:
+            key=record['idempotency_key']
+            if options.get('resolution')=='ignore-duplicates' and key in stored:continue
+            stored[key]=deepcopy(record)
+    executor.supabase=SimpleNamespace(upsert=upsert)
+    pair=candles[-1].pair
+    first={'result':{'orderId':'sell-first','orderLinkId':'cf-first'}}
+    second={'result':{'orderId':'sell-second','orderLinkId':'cf-second'}}
+    executor._record(pair,'approve_exit',['stop_loss=True'],candles,live=True,order=first)
+    executor._record(pair,'hold',['ignored_dust=0.1'],candles,live=True)
+    executor._record(pair,'reject_entry',['gate=reject'],candles,live=True)
+    executor._record(pair,'approve_exit',['exit_trend_down=True'],candles,live=True,order=second)
+    executor._record(pair,'approve_exit',['later_retry_context'],candles,live=True,order=first)
+    first_row=stored[f'executor:live:{pair}:order:sell-first']
+    assert first_row['decision']=='approve_exit'
+    assert first_row['reasons']==['stop_loss=True']
+    assert stored[f'executor:live:{pair}:order:sell-second']['reasons']==['exit_trend_down=True']

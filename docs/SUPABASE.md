@@ -1,6 +1,11 @@
 # Supabase Persistent Backend
 
-CryptoForge uses Supabase as its durable backend. The live Freqtrade
+As of 2026-10-20, this workstation uses the local PostgreSQL
+backend after the cloud organization exhausted its egress quota. Supabase
+remains a selectable backend. See [database switching and migration](DATABASE_BACKENDS.md)
+for the current deployment, verification, backup and rollback procedure.
+
+CryptoForge supports Supabase as a durable backend. The live Freqtrade
 worker needs a database connection to start and persist trading state;
 Bybit remains authoritative for exchange balances and order execution.
 

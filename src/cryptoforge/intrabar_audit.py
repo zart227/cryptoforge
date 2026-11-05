@@ -5,7 +5,8 @@ from cryptoforge.closed_timeframes import aggregate_closed
 from cryptoforge.candle_contract import known_closed
 
 
-def audit_barrier_order(coarse,fine,*,entry_price,stop_fraction,target_fraction,as_of):
+def audit_barrier_order(coarse,fine,*,entry_price,stop_fraction,target_fraction,as_of,inspect_unambiguous=False):
+    if type(inspect_unambiguous) is not bool:raise ValueError('explicit intrabar inspection mode required')
     values=(entry_price,stop_fraction,target_fraction)
     if any(not isinstance(v,Decimal) or not v.is_finite() or v<=0 for v in values) or not stop_fraction<1 or not target_fraction<1:
         raise ValueError('finite positive price and fractions below one required')
@@ -22,17 +23,20 @@ def audit_barrier_order(coarse,fine,*,entry_price,stop_fraction,target_fraction,
     if coarse.open>=target:return {**base,'status':'coarse_open_target_gap','first_barrier':'target','raw_price':str(coarse.open)}
     if not (coarse.low<=stop and coarse.high>=target):
         side='stop' if coarse.low<=stop else 'target' if coarse.high>=target else None
-        return {**base,'status':'coarse_bar_not_ambiguous','first_barrier':side,
-            'raw_price':str(stop if side=='stop' else target) if side else None}
+        if not inspect_unambiguous or side is None:
+            return {**base,'status':'coarse_bar_not_ambiguous','first_barrier':side,
+                'raw_price':str(stop if side=='stop' else target) if side else None}
+    fallback='stop' if coarse.low<=stop else 'target'
+    fallback_price=stop if fallback=='stop' else target
     selected=sorted([row for row in fine if coarse.open_time<=row.open_time<end
               and known_closed(row,step=timedelta(minutes=1),as_of=as_of)],key=lambda row:row.open_time)
     if any((row.pair,row.symbol)!=(coarse.pair,coarse.symbol) for row in selected):raise ValueError('fine market identity mismatch')
     aggregate,quality=aggregate_closed(selected,as_of=as_of,minutes=5,base_minutes=1)
     if len(aggregate)!=1 or aggregate[0].open_time!=coarse.open_time:
-        return {**base,'status':'unresolved_incomplete_fine_history','first_barrier':'stop','raw_price':str(stop)}
+        return {**base,'status':'unresolved_incomplete_fine_history','first_barrier':fallback,'raw_price':str(fallback_price)}
     combined=aggregate[0]
     if any(getattr(combined,key)!=getattr(coarse,key) for key in ('open','high','low','close')):
-        return {**base,'status':'unresolved_fine_coarse_price_mismatch','first_barrier':'stop','raw_price':str(stop)}
+        return {**base,'status':'unresolved_fine_coarse_price_mismatch','first_barrier':fallback,'raw_price':str(fallback_price)}
     observed=combined.cache_observed_at
     if observed is not None:base['information_available_at']=max(end,observed,coarse.cache_observed_at or end).isoformat()
     base['volume_matches']=combined.volume==coarse.volume

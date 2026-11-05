@@ -12,10 +12,11 @@ from cryptoforge.source_contract import source_hashes
 def main(argv=None):
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--output',type=Path,default=Path('.local/state/atr-entry-risk-input-audit.json'))
+    parser.add_argument('--resource-protocol',type=Path)
     args=parser.parse_args(argv)
     status_path=args.output.with_name(args.output.stem+'-status.json')
     now=datetime.now(UTC)
-    try:protocol=prepare_research()
+    try:protocol=prepare_research(str(args.resource_protocol)) if args.resource_protocol else prepare_research()
     except ValueError as exc:
         if str(exc).startswith(('insufficient resources:','another offline research worker')):
             result={'observed_at':now.isoformat(),'status':'deferred_by_resource_or_worker_guard','completed':False,'fit_performed':False,'orders_allowed':False}
@@ -31,17 +32,23 @@ def main(argv=None):
         if prior.get('audit_identity')==identity and prior.get('status')=='completed_input_audit':
             result={'observed_at':now.isoformat(),'status':'original_completed_audit_preserved','completed':True,'audit_identity':identity,'fit_performed':False,'orders_allowed':False}
             write_json_report(status_path,result);print(json.dumps(result));return 0
+        raise ValueError('existing ATR audit receipt is immutable; choose a new output')
+    from cryptoforge.training_snapshot import save_runtime_sources,_save_raw
+    from dataclasses import asdict
+    runtime=save_runtime_sources(args.output.parent/'atr-audit-runtime',dependencies,hashes)
     cases=[]
     for pair in protocol['baseline_pairs']:
         dataset=next(row for row in protocol['datasets'] if row['pair']==pair)
         rows=ArchiveReader(Path(dataset['path']).parent,protocol=protocol).read_candles(pair,limit=2000)[:1400]
         if len(rows)!=1400:raise ValueError('complete declared ATR audit slice required')
+        reference=_save_raw(args.output.parent/'atr-audit-inputs',json.dumps([asdict(row) for row in rows],sort_keys=True,default=str).encode())
         plans=[]
         for index in range(14,len(rows)-1,14):
             plan=atr_entry_risk(rows,index,as_of=rows[index].open_time+timedelta(minutes=5))
             if plan.information_available_at>rows[index+1].open_time:raise ValueError('risk plan unavailable at next open')
             plans.append(plan)
         cases.append({'pair':pair,'input_cases_checked':len(plans),'unavailable_at_next_open':0,
+            'input_snapshot':reference,
             'start':rows[0].open_time.isoformat(),'end':rows[-1].open_time.isoformat(),
             'minimum_stop':str(min(plan.stop_fraction for plan in plans)),
             'maximum_stop':str(max(plan.stop_fraction for plan in plans)),
@@ -49,7 +56,8 @@ def main(argv=None):
             'maximum_target':str(max(plan.target_fraction for plan in plans))})
     if hashes!=source_hashes(dependencies):raise ValueError('ATR audit source changed during calculation')
     result={'observed_at':datetime.now(UTC).isoformat(),'status':'completed_input_audit','audit_identity':identity,
-        'source_hashes':hashes,'datasets':protocol['datasets'],'cases':cases,'development_only':True,
+        'source_hashes':hashes,'runtime_source_bundle':runtime,'resource_protocol':protocol,
+        'datasets':protocol['datasets'],'cases':cases,'development_only':True,
         'historical_observation_times_certified':False,'strategy_outcomes_evaluated':False,'fit_performed':False,'orders_allowed':False}
     write_json_report(args.output,result)
     write_json_report(status_path,{'observed_at':result['observed_at'],'status':'completed_input_audit','completed':True,'audit_identity':identity,'fit_performed':False,'orders_allowed':False})

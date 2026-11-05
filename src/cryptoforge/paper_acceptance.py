@@ -64,7 +64,19 @@ def _stats(results,start,end):
         if ((quality.get('first_mark_at') and time(quality['first_mark_at'])<start) or
             (quality.get('last_mark_at') and time(quality['last_mark_at'])>end)):
             raise ValueError('risk summary contains marks outside the paper window')
-        all_known=quality['all_marks_known'];drawdown=D(quality['max_drawdown'])
+        if (type(raw_count) is not int or type(known_count) is not int or
+                not 0<=known_count<=raw_count or raw_count<len(marks) or known_count<len(known)):
+            raise ValueError('inconsistent retained mark counts')
+        all_known=quality['all_marks_known']
+        if type(all_known) is not bool or all_known!=(known_count==raw_count) or (all_known and len(known)!=len(marks)):
+            raise ValueError('inconsistent complete mark coverage')
+        summary_drawdown=D(quality['max_drawdown'])
+        if not summary_drawdown.is_finite() or not 0<=summary_drawdown<=1 or summary_drawdown<drawdown:
+            raise ValueError('invalid full-history drawdown summary')
+        gap=quality.get('max_gap_seconds')
+        if isinstance(gap,bool) or gap is None or not D(str(gap)).is_finite() or D(str(gap))<max(gaps,default=0):
+            raise ValueError('invalid full-history mark gap summary')
+        drawdown=summary_drawdown
     first=time(quality['first_mark_at']) if quality.get('first_mark_at') else (stamps[0] if stamps else None)
     last=time(quality['last_mark_at']) if quality.get('last_mark_at') else (stamps[-1] if stamps else None)
     first_gap=(first-start).total_seconds() if first else None

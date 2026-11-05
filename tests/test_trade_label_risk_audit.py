@@ -35,3 +35,20 @@ def test_independent_labels_reconcile_bid_ask_spread_and_risk_bounds():
     verify_trade(label,rows,cfg)
     assert label.trade.entry_price==D('101.101') and label.trade.exit_price==D('98.901')
     assert label.trade.net_pnl<0
+
+
+def test_independent_audit_rejects_changed_barrier_ambiguity_flag():
+    rows=history(count=100)
+    cfg=SimulationConfig(stake=D(10),fee=D(0),slippage=D(0),hold_bars=3)
+    label=build_trade_labels('ETH/USDT',rows,cfg)[0]
+    verify_trade(label,rows,cfg)
+    with pytest.raises(AssertionError):
+        verify_trade(replace(label,trade=replace(label.trade,ambiguous=not label.trade.ambiguous)),rows,cfg)
+
+
+def test_independent_audit_rejects_later_label_availability_clock():
+    from datetime import timedelta
+    rows=history(count=100);cfg=SimulationConfig(stake=D(10),fee=D(0),slippage=D(0),hold_bars=3)
+    label=build_trade_labels('ETH/USDT',rows,cfg)[0]
+    wrong=replace(label,label_end_time=label.label_end_time+timedelta(minutes=5))
+    with pytest.raises(AssertionError):verify_trade(wrong,rows,cfg)

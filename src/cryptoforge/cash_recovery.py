@@ -27,14 +27,8 @@ def build_cash_recovery(trades, decisions, observations, *, observed_at: datetim
             'live_eligible':False,'automatic_training_allowed':False}
     if not accounting_quality_verified or truncated:
         result['excluded']=[{'reason':'unverified_or_truncated_snapshot'}];return result
-    contexts={};groups={};seen=set()
-    for context in decisions:
-        if context.get('decision')!='approve_entry':continue
-        context_features=context.get('features') or {}
-        context_order=context_features.get('order') or {}
-        order_result=context_order.get('result') or {}
-        order=order_result.get('orderId') if isinstance(order_result,dict) else None
-        if order:contexts[context['pair'],str(order)]=context
+    from cryptoforge.original_entry_context import unique_entry_contexts
+    contexts,conflicts=unique_entry_contexts(decisions);groups={};seen=set()
     for row in trades:
         identity=str(row.get('idempotency_key') or '')
         if not identity.startswith('bybit:spot:fifo:') or row.get('mode')!='live':continue
@@ -44,6 +38,9 @@ def build_cash_recovery(trades, decisions, observations, *, observed_at: datetim
         order=_order(row.get('entry_reason'))
         if order:groups.setdefault((row['pair'],order),[]).append(row)
     for (pair,order),rows in groups.items():
+        if (pair,order) in conflicts:
+            result['excluded'].append({'pair':pair,'entry_order':order,'reason':'conflicting_original_feature_context'})
+            continue
         try:
             example=_example(pair,order,rows,contexts.get((pair,order)),observations.get(pair),
                              observed_at,source_as_of)

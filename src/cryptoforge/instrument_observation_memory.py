@@ -46,18 +46,34 @@ class InstrumentObservationMemory:
         if as_of.tzinfo is None or maximum_age<=timedelta(0):raise ValueError('aware bounded instrument observation cutoff required')
         if not self.path.exists():return {'status':'no_prior_observation','can_certify_historical_execution':False}
         db=sqlite3.connect('file:'+str(self.path.resolve())+'?mode=ro',uri=True)
-        try:row=db.execute('SELECT payload FROM instrument_observations WHERE observed_at<=? ORDER BY observed_at DESC LIMIT 1',
+        try:row=db.execute('SELECT id,observed_at,payload FROM instrument_observations WHERE observed_at<=? ORDER BY observed_at DESC,id DESC LIMIT 1',
             (as_of.astimezone(UTC).isoformat(),)).fetchone()
         finally:db.close()
         if row is None:return {'status':'no_prior_observation','can_certify_historical_execution':False}
-        receipt=json.loads(row[0]);age=as_of-time(receipt['observed_at'])
+        receipt=json.loads(row[2])
+        if hashlib.sha256(json.dumps(receipt,sort_keys=True).encode()).hexdigest()!=row[0] or receipt['observed_at']!=row[1]:
+            raise ValueError('instrument registry receipt identity mismatch')
+        if receipt.get('schema_version')!='observed-public-spot-instruments-v1' or not time(receipt['request_started_at'])<=time(receipt['observed_at'])<=as_of:
+            raise ValueError('invalid observed instrument receipt chronology')
+        if any(receipt.get(key) is not False for key in ('effective_change_times_known','can_certify_historical_execution','live_promotion_allowed')):
+            raise ValueError('unsupported historical instrument certification')
+        age=as_of-time(receipt['observed_at'])
         if age>maximum_age:return {'status':'stale_prior_observation','observed_at':receipt['observed_at'],'can_certify_historical_execution':False}
         reference=receipt['source']
         import gzip
-        with gzip.open(reference['path'],'rb') as stream:raw=stream.read(reference['uncompressed_bytes']+1)
+        size=reference.get('uncompressed_bytes')
+        if reference.get('compression')!='gzip' or type(size) is not int or not 0<size<=8*1024**2:
+            raise ValueError('bounded instrument source reference required')
+        with gzip.open(reference['path'],'rb') as stream:raw=stream.read(size+1)
         if len(raw)!=reference['uncompressed_bytes'] or hashlib.sha256(raw).hexdigest()!=reference['sha256']:
             raise ValueError('instrument observation source checksum mismatch')
-        rows=json.loads(raw)['result']['list'];instrument=next((r for r in rows if r['symbol']==symbol),None)
+        source=json.loads(raw);result=source.get('result',{});rows=result.get('list')
+        if source.get('retCode')!=0 or result.get('category')!='spot' or not isinstance(rows,list):
+            raise ValueError('original public Spot source required')
+        symbols=[item.get('symbol') for item in rows]
+        if len(rows)!=receipt['symbols_observed'] or len(set(symbols))!=len(symbols) or bool(result.get('nextPageCursor'))!=receipt['response_has_more_pages']:
+            raise ValueError('instrument receipt coverage differs from original source')
+        instrument=next((r for r in rows if r['symbol']==symbol),None)
         return {'status':'observed_in_public_response' if instrument else 'not_in_observed_response',
             'observed_at':receipt['observed_at'],'instrument':instrument,
             'response_has_more_pages':receipt['response_has_more_pages'],

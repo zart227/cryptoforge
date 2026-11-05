@@ -12,6 +12,17 @@ from cryptoforge.live_trade_journal import default_cache_path
 from cryptoforge.inventory_audit import verify_inventory
 import sqlite3
 from cryptoforge.supabase_market import SupabaseRestClient
+from cryptoforge.execution_identity import unique_executions
+
+
+def audit_tracked_inventory(bybit,fills,transactions):
+    fills=unique_executions(fills)
+    coins=sorted({str(fill['symbol'])[:-4] for fill in fills
+                  if fill.get('execType','Trade')=='Trade'
+                  and str(fill.get('symbol','')).endswith('USDT')
+                  and str(fill.get('orderLinkId') or '').startswith('cf-')})
+    wallet=bybit.get_unified_wallet_coins_for(coins) if coins else []
+    return verify_inventory(fills,transactions,wallet)
 
 
 def main():
@@ -32,7 +43,7 @@ def main():
             fills=[json.loads(r[0]) for r in db.execute('select payload from executions')]
             transactions=[json.loads(r[0]) for r in db.execute('select payload from account_transactions')]
         finally:db.close()
-        inventory=verify_inventory(fills,transactions,bybit.get_unified_wallet_coins())
+        inventory=audit_tracked_inventory(bybit,fills,transactions)
         report['inventory_audit']=inventory
         report['accounting_quality_verified']=report['accounting_quality_verified'] and inventory['consistent']
     except Exception as exc:

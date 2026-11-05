@@ -209,3 +209,32 @@ def test_notices_show_unknown_result_for_unmatched_sale():
     rows, _ = reconstruct_trades(fills)
     events = trade_notice_events(fills, rows, {'s'}, now=datetime.now(UTC))
     assert events[0]['payload']['realized_pnl'] is None
+
+
+def test_conflicting_execution_identity_cannot_select_a_favorable_fill():
+    b=fill('b','Buy','1','2')
+    wrong={**b,'execPrice':'1'}
+    for rows in ([b,wrong],[wrong,b]):
+        with pytest.raises(ValueError,match='conflicting'):reconstruct_trades(rows)
+
+
+@pytest.mark.parametrize('key,value',[('execQty','NaN'),('execPrice','Infinity'),('execFee','NaN'),('side','Unknown')])
+def test_invalid_execution_fields_cannot_produce_learnable_pnl(key,value):
+    b=fill('b','Buy','1','2')
+    with pytest.raises(ValueError):reconstruct_trades([{**b,key:value}])
+
+
+def test_restart_cannot_overwrite_observed_execution_before_validation(tmp_path):
+    row=fill('b','Buy','1','2')
+    bybit=SimpleNamespace(get_spot_executions=lambda **kw:[row])
+    store=Store();path=tmp_path/'journal.sqlite'
+    now=datetime(1970,1,1,0,0,3,tzinfo=UTC)
+    sync_live_journal(bybit=bybit,supabase=store,cache_path=path,now=now)
+    original=dict(store.rows)
+    row['execPrice']='1'
+    with pytest.raises(ValueError,match='conflicting'):
+        sync_live_journal(bybit=bybit,supabase=store,cache_path=path,now=now)
+    assert store.rows==original
+    import json
+    with sqlite3.connect(path) as db:
+        assert json.loads(db.execute('select payload from executions').fetchone()[0])['execPrice']=='2'

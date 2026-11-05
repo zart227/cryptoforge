@@ -89,3 +89,16 @@ def test_fixed_reference_model_uses_same_capital_costs_and_original_opportunitie
         compare_filtered_portfolios({'ETH/USDT':rows},signals,signals,SimulationConfig(),
             stress_multiplier=2,bootstrap_policy=POLICY,
             reference_signals={'ETH/USDT':[rows[1].open_time]})
+
+
+def test_unsellable_inventory_is_not_reported_as_realized_paired_profit():
+    from dataclasses import replace
+    rows=history()
+    rows=[replace(row,open=D(40),high=D(41),low=D(39),close=D(40)) if i>=2 else row for i,row in enumerate(rows)]
+    report=compare_filtered_portfolios({'ETH/USDT':rows},{'ETH/USDT':[rows[0].open_time]}, {},
+        SimulationConfig(capital=D(100),stake=D(10),fee=D(0),slippage=D(0),exit_minimum_policy='preserve_inventory'),
+        stress_multiplier=2,bootstrap_policy=POLICY)
+    delta=report['paired_differences']['filtered_minus_baseline']
+    assert delta['net_pnl_difference']=='0'
+    assert D(delta['final_cash_difference'])==10
+    assert delta['unclosed_inventory'] and not delta['completed_cash_comparison']

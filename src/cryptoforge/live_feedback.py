@@ -1,5 +1,6 @@
 """Read-only feedback from execution-backed net PnL, with attribution limits."""
 from collections import defaultdict
+import json
 from datetime import datetime,UTC,timedelta
 from decimal import Decimal
 import re
@@ -32,14 +33,34 @@ def _decision_order(decision):
     return str(result.get('orderId') or '') if isinstance(result,dict) else ''
 
 
+def accounting_health_verified(state, *, observed_at, maximum_age=timedelta(hours=1)):
+    """Current source health must cover at most two 30-minute feedback intervals."""
+    if observed_at.tzinfo is None or maximum_age<=timedelta(0):
+        raise ValueError('aware health clock and positive freshness interval required')
+    if not isinstance(state,dict):return False
+    try:stamp=_dt(state['observed_at'])
+    except (KeyError,ValueError,TypeError):return False
+    if stamp.tzinfo is None or not timedelta(0)<=observed_at-stamp<=maximum_age:
+        return False
+    payload=state.get('payload') or {}
+    if not isinstance(payload,dict):return False
+    version=payload.get('accounting_version')
+    return (state.get('status')=='ok' and type(version) is int and version>=2
+            and payload.get('inventory_verified') is True)
+
+
 def analyze_feedback(trades,decisions,*,as_of=None):
     as_of=as_of or datetime.now(UTC)
     if as_of.tzinfo is None:raise ValueError('timezone-aware feedback cutoff required')
-    contexts={};groups=defaultdict(list);excluded=[];seen=set()
+    contexts={};conflicted_contexts=set();groups=defaultdict(list);excluded=[];seen=set()
     for decision in decisions:
         order=_decision_order(decision)
         if order and _dt(decision['decided_at'])<=as_of:
-            contexts[(decision['pair'],order,decision['decision'])]=decision
+            key=(decision['pair'],order,decision['decision'])
+            if key in conflicted_contexts:continue
+            if key in contexts and json.dumps(contexts[key],sort_keys=True,default=str)!=json.dumps(decision,sort_keys=True,default=str):
+                contexts.pop(key);conflicted_contexts.add(key)
+            else:contexts[key]=decision
     for trade in trades:
         if trade.get('status')!='closed' or trade.get('mode')!='live':continue
         if _dt(trade['closed_at'])>as_of:continue
@@ -147,7 +168,9 @@ def analyze_feedback(trades,decisions,*,as_of=None):
             'today_bot_exits':summary(controlled_daily),'today_external_exits':summary([r for r in daily if not r['exit_controlled_by_bot']]),'excluded':excluded,
             'entry_conflict_outcomes':conflict_report,'entry_cohorts':cohort_report,'exact_entry_cost_coverage_fraction':str(matched_cost/total_cost) if total_cost else '0',
             'closed_pnl_without_two_largest_outcomes':str(sum((D(r['net_pnl']) for r in outcomes),D(0))-sum(sorted((D(r['net_pnl']) for r in outcomes),reverse=True)[:2],D(0))),
-            'hypotheses':hypotheses,'fee_accounting':'net_pnl_already_includes_fees_do_not_subtract_again',
+            'hypotheses':hypotheses,'conflicting_order_contexts':len(conflicted_contexts),
+            'order_context_policy':'identical_duplicates_deduplicated_conflicts_excluded_from_attribution',
+            'fee_accounting':'net_pnl_already_includes_fees_do_not_subtract_again',
             'sample_limitations':'exit orders can combine multiple FIFO lots; partial closes are not independent outcomes',
             'automatic_live_changes_allowed':False}
 
@@ -203,10 +226,14 @@ class LiveFeedbackReader:
             'and':f'(decided_at.gte.{context_start.isoformat()},decided_at.lte.{as_of.isoformat()})',
             'order':'decided_at.asc,id.asc','select':'pair,decided_at,decision,reasons,features,strategy_name,strategy_version'})
         report=analyze_feedback(trades,decisions,as_of=as_of)
-        health,_=self._rows('bot_health',{'component':'eq.live_trade_journal','select':'status,payload,observed_at'})
+        health,_=self._rows('bot_health',{'component':'eq.live_trade_journal','select':'status,payload,observed_at',
+                                        'order':'observed_at.desc'})
         state=health[0] if health else {}
-        report['accounting_quality_verified']=(state.get('status')=='ok' and (state.get('payload') or {}).get('accounting_version',0)>=2
-                                               and (state.get('payload') or {}).get('inventory_verified') is True)
+        checked_at=datetime.now(UTC)
+        report['accounting_quality_verified']=accounting_health_verified(state,observed_at=checked_at)
+        report['accounting_health_observed_at']=state.get('observed_at')
+        report['accounting_health_checked_at']=checked_at.isoformat()
+        report['accounting_health_maximum_age_seconds']=3600
         report['accounting_quality_status']=state.get('status','unknown')
         report.update(trades_truncated=truncated,decisions_truncated=context_truncated,
                       source_lookback_days=lookback_days)
@@ -215,10 +242,16 @@ class LiveFeedbackReader:
 
 def candidate_cost_floor(report,*,minimum_orders=5,slippage_fraction=D('0.001')):
     """Fee calibration uses completed prior executions, not outcome profitability."""
-    if report.get('trades_truncated') or not report.get('accounting_quality_verified'):
+    if type(minimum_orders) is not int or minimum_orders<1:
+        raise ValueError('positive integer fee calibration sample minimum required')
+    if not isinstance(slippage_fraction,D) or not slippage_fraction.is_finite() or not 0<=slippage_fraction<1:
+        raise ValueError('finite nonnegative slippage fraction below one required')
+    if report.get('trades_truncated') or report.get('accounting_quality_verified') is not True:
         return None
     eligible=[row for row in report.get('outcomes',[]) if row.get('exit_controlled_by_bot') and row.get('exit_kind')=='spot_order']
     if len(eligible)<minimum_orders:return None
-    rates=[D(row['fee_drag_fraction']) for row in eligible]
+    try:rates=[D(row['fee_drag_fraction']) for row in eligible]
+    except (KeyError,TypeError,ValueError,ArithmeticError):return None
+    if any(not rate.is_finite() or rate<0 or rate>=1 for rate in rates):return None
     if not rates:return None
     return max(D(0),median(rates))+slippage_fraction

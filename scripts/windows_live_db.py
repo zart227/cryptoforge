@@ -8,6 +8,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 from sqlalchemy import create_engine, text
+from sqlalchemy.engine import make_url
 
 
 def read_status(path: Path) -> dict[str, int]:
@@ -28,9 +29,10 @@ def read_status(path: Path) -> dict[str, int]:
 
 
 def read_postgres_status(db_url: str) -> dict[str, int]:
+    local = make_url(db_url).host in {"localhost", "127.0.0.1", "::1"}
     engine = create_engine(
         db_url,
-        connect_args={"connect_timeout": 10, "sslmode": "require"},
+        connect_args={"connect_timeout": 10, "sslmode": "disable" if local else "require"},
         pool_pre_ping=True,
     )
     try:

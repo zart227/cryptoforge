@@ -48,7 +48,9 @@ def verify_trade(label,rows,cfg):
     assert abs(trade.net_pnl-(proceeds-cost))<Decimal('1e-20')
     assert label.example.label==int(proceeds>cost)
     assert abs(Decimal(str(label.example.future_return))-(proceeds-cost)/cost)<Decimal("1e-12")
-    assert label.label_end_time>trade.exit_time
+    assert label.label_end_time==trade.exit_time+(rows[1].open_time-rows[0].open_time)
+    expected_ambiguous=(reason=='stop' and rows[index].low*bid_factor<=stop and rows[index].high*bid_factor>=target)
+    assert trade.ambiguous is expected_ambiguous
     risk=label.risk_outcome
     assert risk['risk_target_version']==RISK_TARGET_VERSION
     assert risk['outcome_available_at']==label.label_end_time
@@ -80,12 +82,23 @@ def main():
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--pair',action='append',required=True)
     parser.add_argument('--max-candles',type=int,default=5000)
+    parser.add_argument('--exit-minimum-policy',choices=('legacy_assumed','preserve_inventory'),default='preserve_inventory')
     parser.add_argument('--directory',type=Path,default=Path('.local/archive'))
-    parser.add_argument('--output',type=Path,default=Path('.local/state/trade-label-audit.json'))
+    parser.add_argument('--output',type=Path,default=Path('.local/state/trade-label-strict-audit.json'))
+    parser.add_argument('--resource-protocol',type=Path,default=Path('config/research-protocol-v1.json'))
     args=parser.parse_args()
+    if args.max_candles<100 or not args.pair:parser.error('at least100candles and explicit pairs required')
+    if args.output.exists():parser.error('existing audit receipt is immutable; choose a new output path')
     from cryptoforge.research_protocol import prepare_research
-    protocol = prepare_research()
-    reader=ArchiveReader(args.directory, protocol=protocol);cfg=SimulationConfig();report=[]
+    protocol = prepare_research(str(getattr(args,'resource_protocol','config/research-protocol-v1.json')))
+    from cryptoforge.source_contract import net_research_sources, source_hashes
+    from cryptoforge.training_snapshot import save_runtime_sources
+    from datetime import datetime, UTC
+    dependencies=net_research_sources('label_builder',build_trade_labels,runner=Path(__file__).resolve())
+    hashes=source_hashes(dependencies)
+    runtime=save_runtime_sources(args.output.parent/'trade-label-audit-runtime',dependencies,hashes)
+    started=datetime.now(UTC)
+    reader=ArchiveReader(args.directory, protocol=protocol);cfg=SimulationConfig(exit_minimum_policy=args.exit_minimum_policy);report=[]
     for pair in dict.fromkeys(args.pair):
         all_rows=reader.read_candles(pair,limit=args.max_candles)
         rows=all_rows[:int(len(all_rows)*0.7)]
@@ -104,8 +117,15 @@ def main():
                 break
             if label not in samples:
                 samples.append(label)
+        sample_sources=[]
         for sample in samples:
             verify_trade(sample,rows,cfg)
+            used=[row for row in rows if sample.signal_time<=row.open_time<=sample.trade.exit_time]
+            raw=json.dumps([asdict(row) for row in used],default=str,sort_keys=True,separators=(',',':')).encode()
+            sha=hashlib.sha256(raw).hexdigest()
+            from cryptoforge.training_snapshot import _save_raw
+            ref=_save_raw(args.output.parent/'trade-label-review-inputs',raw)
+            sample_sources.append({'signal_time':sample.signal_time.isoformat(),'pair':pair,'input_reference':ref,'input_sha256':sha,'review_status':'independent_arithmetic_passed_manual_review_pending'})
         digest=hashlib.sha256(json.dumps([asdict(c) for c in rows],default=str,sort_keys=True).encode()).hexdigest()
         monthly={}
         for label in executed:
@@ -116,13 +136,20 @@ def main():
                        'candles':len(rows),'start':str(rows[0].open_time),'end':str(rows[-1].open_time),
                        'dataset_sha256':digest,'executed':len(executed),'rejected':len(labels)-len(executed),
                        'positive_rate':sum(l.example.label for l in executed)/max(len(executed),1),
-                       'exit_reasons':dict(counts),'monthly':monthly,'audited_samples':len(samples),
+                       'exit_reasons':dict(counts),'label_status_counts':dict(Counter(label.status for label in labels)),
+                       'sample_category_counts':dict(Counter(sample.trade.exit_reason+(':ambiguous' if sample.trade.ambiguous else ':unambiguous') for sample in samples)),
+                       'fee_erased_price_gains_checked':sum(sample.trade.exit_price>sample.trade.entry_price and sample.trade.net_pnl<=0 for sample in samples),
+                       'scenario_execution_rules_historically_certified':False,'monthly':monthly,'audited_samples':len(samples),
                        'risk_bounds_samples_checked':len(samples),
-                       'samples':[asdict(l) for l in samples],
+                       'samples':[asdict(l) for l in samples],'sample_source_references':sample_sources,
                        'audit':'independent_arithmetic_passed_not_human_review'})
+    if source_hashes(dependencies)!=hashes:
+        raise ValueError('audit sources changed during calculation')
+    if args.output.exists():
+        raise ValueError('audit output appeared during calculation; preserve original receipt')
     args.output.parent.mkdir(parents=True,exist_ok=True)
-    write_json_report(args.output,{'target_version':TARGET_VERSION,'risk_target_version':RISK_TARGET_VERSION,'counts_as_real_executed_buys':False,'independent_trade_labels_may_overlap':True,'portfolio_profitability_established':False,'numeric_target':'net_pnl_divided_by_total_entry_cost','config':asdict(cfg),'pairs':report},default=str)
-    print(json.dumps([{k:v for k,v in r.items() if k not in ('samples','monthly')} for r in report]))
+    write_json_report(args.output,{'target_version':TARGET_VERSION,'risk_target_version':RISK_TARGET_VERSION,'counts_as_real_executed_buys':False,'independent_trade_labels_may_overlap':True,'portfolio_profitability_established':False,'numeric_target':'net_pnl_divided_by_total_entry_cost','config':asdict(cfg),'audit_implementation_sha256':hashes["runner"],'implementation_hashes':hashes,'runtime_source_bundle':runtime,'execution_started_at':started.isoformat(),'execution_finished_at':datetime.now(UTC).isoformat(),'manual_review_complete':False,'pairs':report},default=str)
+    print(json.dumps([{k:v for k,v in r.items() if k not in ('samples','monthly','sample_source_references')} for r in report]))
 
 
 if __name__=='__main__':
