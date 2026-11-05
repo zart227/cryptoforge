@@ -1,0 +1,13 @@
+{
+  "main_export_cpu_seconds": 8,
+  "main_export_file_bytes": 524288,
+  "main_export_max_ledger_bytes": 67108864,
+  "main_export_memory_bytes": 536870912,
+  "main_export_wall_seconds": 15,
+  "max_configurations": 4,
+  "max_datasets": 32,
+  "max_evidence_bytes": 24000,
+  "max_source_bytes": 262144,
+  "schema_version": "research-diagnostics-bridge-policy-v1",
+  "training_admission_enabled": false
+}

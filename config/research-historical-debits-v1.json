@@ -1,0 +1,12 @@
+{
+  "activation_enabled": false,
+  "actual_consumption_upper_bound_claimed": false,
+  "api_reservation_kind": "proposal",
+  "legacy_attempt_reservation_kind": "fit",
+  "limits_may_increase": false,
+  "offline_fixture_reservation_kind": "semantic_fixture",
+  "overlap_treatment": "charge_every_visible_row_in_dry_allocation_scenario",
+  "prior_numeric_control_charges": "already_in_native_common_snapshot_do_not_recharge",
+  "refunds_enabled": false,
+  "schema_version": "research-historical-debits-policy-v1"
+}

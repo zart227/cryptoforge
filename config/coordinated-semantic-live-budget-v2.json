@@ -1,0 +1,9 @@
+{
+  "schema_version": "coordinated-semantic-live-budget-v2",
+  "maximum_actions": 5,
+  "input_tokens": 32000,
+  "output_tokens": 2048,
+  "wall_ms": 35000,
+  "free_only": true,
+  "transport": "ollama_local_decision_only"
+}

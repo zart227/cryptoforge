@@ -1,0 +1,9 @@
+{
+  "schema_version": "semantic-source-policy-v1",
+  "policy_version": "development-source-captures-v1",
+  "sources": {
+    "bybit-announcements": {
+      "allowed_hosts": ["announcements.bybit.com"]
+    }
+  }
+}

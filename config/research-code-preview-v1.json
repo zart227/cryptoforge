@@ -1,0 +1,10 @@
+{
+  "schema_version": "research-code-preview-policy-v1",
+  "allowed_path": "research/feature_candidate.py",
+  "max_base_bytes": 16000,
+  "max_diff_bytes": 32000,
+  "max_candidate_bytes": 32000,
+  "max_hunks": 8,
+  "max_changed_lines": 128,
+  "execution_enabled": false
+}

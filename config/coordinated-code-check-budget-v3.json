@@ -1,0 +1,10 @@
+{
+  "candidate_execution_enabled": false,
+  "free_only": true,
+  "input_tokens": 0,
+  "maximum_actions": 3,
+  "output_tokens": 0,
+  "schema_version": "coordinated-code-check-budget-v3",
+  "stage": "exact_preview_only",
+  "wall_ms": 5000
+}

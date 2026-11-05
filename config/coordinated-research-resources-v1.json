@@ -1,0 +1,13 @@
+{
+  "schema_version": "coordinated-research-resources-v1",
+  "total_input_tokens": 160000,
+  "total_output_tokens": 10240,
+  "total_wall_ms": 600000,
+  "proposal_input_tokens": 32000,
+  "proposal_output_tokens": 2048,
+  "wall_ms_by_kind": {
+    "proposal": 65000,
+    "fit": 25000,
+    "semantic_fixture": 35000
+  }
+}

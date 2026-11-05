@@ -1,0 +1,17 @@
+{
+  "candidate_execution_enabled": false,
+  "cpu_period_usec": 100000,
+  "cpu_quota_usec": 25000,
+  "cpu_stress_wall_seconds": 1.25,
+  "maximum_allocator_bytes": 100663296,
+  "maximum_output_bytes": 32000,
+  "memory_max_bytes": 67108864,
+  "memory_swap_max_bytes": 0,
+  "minimum_ancestor_headroom_bytes": 335544320,
+  "oom_policy": "continue_for_fixed_diagnostic_observer_only",
+  "parent_timeout_seconds": 10,
+  "schema_version": "research-resource-stress-policy-v1",
+  "scope_runtime_seconds": 5,
+  "shared_candidate_budget_integrated": false,
+  "tasks_max": 8
+}

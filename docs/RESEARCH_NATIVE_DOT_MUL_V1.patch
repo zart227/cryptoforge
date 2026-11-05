@@ -1,0 +1,11 @@
+--- a/src/cryptoforge/model_training.py
++++ b/src/cryptoforge/model_training.py
+@@ -8,2 +8,3 @@
+ import math
++from operator import mul as _dot_mul
+ from pathlib import Path
+@@ -750,3 +751,3 @@
+     if len(left)!=len(right):raise ValueError('coefficient/feature dimensions differ')
+-    result=sum(a*b for a,b in zip(left,right))
++    result=sum(map(_dot_mul,left,right))
+     if not math.isfinite(result):raise ValueError('nonfinite model dot product')

@@ -1,0 +1,58 @@
+{
+  "schema_version": "ollama-local-preparation-profile-v1",
+  "reviewed_on": "2026-10-18",
+  "platform": {
+    "system": "Linux",
+    "machine": "x86_64",
+    "execution": "cpu"
+  },
+  "runtime": {
+    "version": "0.40.5",
+    "asset": "ollama-linux-amd64.tar.zst",
+    "archive_bytes": 1438684604,
+    "archive_sha256": "sha256:dc5eabc292f9949546c90a97c820f924b035e05243b0de13c7f366182562169c",
+    "unpacked_bytes": null
+  },
+  "model": {
+    "tag": "tev1:0.8b-q8_0",
+    "manifest_sha256": "sha256:abc31fdb0bf52506cc47091145ac19c4cfb509b73a6841789324f9e32200c099",
+    "manifest_bytes": 988,
+    "blobs": [
+      {
+        "mediaType": "application/vnd.docker.container.image.v1+json",
+        "digest": "sha256:2ca85e17ada004f7fcd6cf9daaa0677489d1fdcd7af86dda501628cd3bb21591",
+        "size": 138
+      },
+      {
+        "mediaType": "application/vnd.ollama.image.model",
+        "digest": "sha256:7daa72d2ed4fa16f5120bc1bb89713531d0f511c360e9228905ba88c092f13b5",
+        "size": 833594080
+      },
+      {
+        "mediaType": "application/vnd.ollama.image.license",
+        "digest": "sha256:5153ce5bc5e5a4e0151f878690119e49ee8953aeecf994a48615f0754e1da73b",
+        "size": 11344
+      },
+      {
+        "mediaType": "application/vnd.ollama.image.license",
+        "digest": "sha256:88d60e10f694a6ba067d033b8fa09363930ef340afab62d09f58bb59f8397ed8",
+        "size": 1078
+      },
+      {
+        "mediaType": "application/vnd.ollama.image.params",
+        "digest": "sha256:ce4a164fc04605703b485251fe9f1a181688ba0eb6badb80cc6335c0de17ca0d",
+        "size": 17
+      }
+    ]
+  },
+  "resource_policy": {
+    "memory_working_bytes": 2147483648,
+    "memory_headroom_bytes": 1073741824,
+    "disk_headroom_bytes": 2147483648
+  },
+  "sources": {
+    "model_manifest": "https://registry.ollama.ai/v2/library/tev1/manifests/0.8b-q8_0",
+    "release": "https://github.com/ollama/ollama/releases/tag/v0.40.5",
+    "model_card": "https://ollama.com/library/tev1:0.8b-q8_0"
+  }
+}

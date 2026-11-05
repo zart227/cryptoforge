@@ -1,0 +1,27 @@
+{
+  "candidate_execution_enabled": false,
+  "candle_fields": [
+    "open",
+    "high",
+    "low",
+    "close",
+    "volume"
+  ],
+  "exchange": "bybit",
+  "market_type": "spot",
+  "max_abs_output": 1000000000000,
+  "max_capture_bytes": 512000,
+  "max_capture_candles": 1024,
+  "max_price": 1000000000000,
+  "max_volume": 1000000000000000,
+  "max_window_candles": 64,
+  "require_contiguous_window": true,
+  "require_latest_closed_bar": true,
+  "schema_version": "research-feature-input-policy-v1",
+  "timeframe_seconds": [
+    60,
+    300,
+    900,
+    3600
+  ]
+}

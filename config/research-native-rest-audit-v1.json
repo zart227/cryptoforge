@@ -1,0 +1,24 @@
+{
+  "credentials_file": ".local/database/api-key",
+  "database_writes_enabled": false,
+  "feature_lookback_candles": 120,
+  "horizon_candles": 3,
+  "http_timeout_seconds": 3,
+  "lookback_candles": 144,
+  "maximum_body_bytes": 512000,
+  "maximum_local_gets": 2,
+  "maximum_packet_bytes": 2097152,
+  "maximum_result_bytes": 2097152,
+  "min_label_return": "0.003",
+  "origin": "http://127.0.0.1:54321",
+  "pairs": [
+    "BTC/USDT",
+    "ETH/USDT"
+  ],
+  "schema_version": "native-local-rest-audit-policy-v1",
+  "timeframe": "5m",
+  "training_admission_enabled": false,
+  "worker_cpu_seconds": 8,
+  "worker_memory_bytes": 536870912,
+  "worker_wall_seconds": 15
+}

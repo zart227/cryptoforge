@@ -1,0 +1,27 @@
+{
+  "candidate_execution_enabled": false,
+  "candidate_runtime_integration_enabled": false,
+  "library_names": [
+    "libm.so.6",
+    "libz.so.1",
+    "libexpat.so.1",
+    "libc.so.6",
+    "libffi.so.8",
+    "libcrypto.so.3",
+    "libseccomp.so.2.5.5",
+    "ld-linux-x86-64.so.2"
+  ],
+  "maximum_file_bytes": 16777216,
+  "maximum_files": 2048,
+  "maximum_inventory_bytes": 524288,
+  "maximum_total_bytes": 134217728,
+  "python_path": "/usr/bin/python3.12",
+  "schema_version": "trusted-runtime-mounts-policy-v1",
+  "security_audit_complete": false,
+  "stdlib_path": "/usr/lib/python3.12",
+  "stdlib_symlinks": {
+    "_sysconfigdata__linux_x86_64-linux-gnu.py": "_sysconfigdata__x86_64-linux-gnu.py",
+    "config-3.12-x86_64-linux-gnu/libpython3.12.so": "../../x86_64-linux-gnu/libpython3.12.so.1",
+    "sitecustomize.py": "/etc/python3.12/sitecustomize.py"
+  }
+}

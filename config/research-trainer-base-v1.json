@@ -1,0 +1,46 @@
+{
+  "candidate_execution_enabled": false,
+  "capture_wall_seconds": 12,
+  "functions": {
+    "src/cryptoforge/candle_contract.py": [
+      "closed_snapshot"
+    ],
+    "src/cryptoforge/model_training.py": [
+      "extract_features",
+      "ema_decimal",
+      "build_examples",
+      "ModelTrainingRunner._load_examples"
+    ],
+    "src/cryptoforge/supabase_executor.py": [
+      "rsi",
+      "SupabaseLiveExecutor._model_input_features"
+    ]
+  },
+  "git_command_seconds": 3,
+  "git_version": "git version 2.53.0",
+  "maximum_file_bytes": 512000,
+  "maximum_total_copy_bytes": 8388608,
+  "patch_generation_enabled": false,
+  "production_apply_enabled": false,
+  "schema_version": "research-trainer-base-policy-v1",
+  "source_paths": [
+    "scripts/audit_local_source_provenance.py",
+    "scripts/capture_reference_sources.py",
+    "src/cryptoforge/__init__.py",
+    "src/cryptoforge/backend.py",
+    "src/cryptoforge/bybit_private.py",
+    "src/cryptoforge/candle_contract.py",
+    "src/cryptoforge/local_source_observer.py",
+    "src/cryptoforge/local_source_provenance.py",
+    "src/cryptoforge/market_data.py",
+    "src/cryptoforge/model_training.py",
+    "src/cryptoforge/night_research.py",
+    "src/cryptoforge/night_research_cli.py",
+    "src/cryptoforge/order_observer.py",
+    "src/cryptoforge/reference_source_ledger.py",
+    "src/cryptoforge/reference_sources.py",
+    "src/cryptoforge/supabase_executor.py",
+    "src/cryptoforge/supabase_market.py",
+    "src/cryptoforge/target_contracts.py"
+  ]
+}

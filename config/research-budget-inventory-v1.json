@@ -1,0 +1,10 @@
+{
+  "global_spend_enforcement_verified": false,
+  "maximum_database_bytes": 16777216,
+  "maximum_ledgers": 16,
+  "maximum_report_bytes": 2097152,
+  "maximum_table_rows": 2000,
+  "new_actions_enabled": false,
+  "schema_version": "research-budget-inventory-policy-v1",
+  "scope": "explicit_visible_local_journals_only"
+}

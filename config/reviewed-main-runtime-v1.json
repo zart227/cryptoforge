@@ -1,0 +1,10 @@
+{
+  "schema_version": "research-reviewed-main-runtime-v1",
+  "pin_variant": "B",
+  "selected_at": "2026-11-05",
+  "live_main_project": "/home/arthur/Projects/personal/CryptoForge",
+  "frozen_supabase_executor_sha256": "b3a8530632498fc1291f1eecd2aae085b58fc6f4bc2a4b8c89c5bfcf4eb1910c",
+  "frozen_supabase_executor_path": "config/reviewed-main-runtime-overlay/src/cryptoforge/supabase_executor.py",
+  "live_main_supabase_executor_sha256_observed_2026_11_05": "0ae3096e4b0daa63a9d72fd3219ca4265153334a7c88dcce0ac175c7003bf90a",
+  "consequence": "Pin checks and project-scoped native workers prepend the frozen overlay to PYTHONPATH. Live main is not edited."
+}

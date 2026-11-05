@@ -1,0 +1,19 @@
+{
+  "max_event_bytes": 262144,
+  "max_rows_per_kind": 2,
+  "max_snapshot_bytes": 1048576,
+  "reviewed_function_shapes": {
+    "backend:resolve_backend": "4fe6c2036ddfe5be21e83ef593507b8b115c2492cc3a7f49714eedd4ea95d1e5",
+    "background_runner:load_environment": "92755898ffc1c122457b5fea5788d55853a0da58a53341bc7151ae5d1c40aaf7",
+    "background_runner:target": "2881790950c43817bfe85739fb960b841d601adf9212f5381bb4be1c99e18491",
+    "model_registry:ActiveModelRegistry._latest_by_event_type": "48eed424b43a1db01b6866d8866052d69f83ad8282f0c5528871acb007f1502f",
+    "model_registry:ActiveModelRegistry._latest_event": "016e16fd0fb7676bf41606162626b6542faef31cfed6f4f1cba5d68f984d40c7",
+    "supabase_executor:SupabaseLiveExecutor._ml_entry_allows": "61134d2e7299e3fa4d3f016e5b3e54d053afac5cf0adddd9972deec0879904a5",
+    "supabase_executor:SupabaseLiveExecutor._model_input_features": "a1fb508c2ba6453356f24f85b6a841efbe31e39adf6c38a03aabd5ee70c869e6",
+    "supabase_market:SupabaseRestClient.from_env": "459cbdecf8d9a194117e6276616ec205bf3d6fc6c3cafc14a04468b52c0864af"
+  },
+  "schema_version": "research-model-inventory-policy-v1",
+  "service": "cryptoforge-supabase-executor.service",
+  "training_admission_enabled": false,
+  "worker_wall_seconds": 15
+}

@@ -1,0 +1,18 @@
+{
+  "feature_lookback_candles": 120,
+  "horizon_candles": 3,
+  "lookback_candles": 512,
+  "maximum_packet_bytes": 2097152,
+  "maximum_result_bytes": 262144,
+  "maximum_samples": 16,
+  "maximum_sessions": 2,
+  "maximum_source_age_seconds": 600,
+  "minimum_source_coverage": 1.0,
+  "operational_reader_qualification_enabled": false,
+  "schema_version": "research-loader-audit-policy-v1",
+  "selection_rule": "latest_completed_delivery_known_at_information_cutoff",
+  "training_admission_enabled": false,
+  "worker_cpu_seconds": 8,
+  "worker_memory_bytes": 536870912,
+  "worker_wall_seconds": 15
+}

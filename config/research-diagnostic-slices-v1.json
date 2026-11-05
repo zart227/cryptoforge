@@ -1,0 +1,12 @@
+{
+  "analysis_kind": "descriptive_development_only",
+  "maximum_expected_rows_per_partition": 20000,
+  "maximum_input_bytes": 8388608,
+  "maximum_pairs": 16,
+  "maximum_report_bytes": 2097152,
+  "maximum_rows_per_partition": 20000,
+  "maximum_windows": 32,
+  "schema_version": "research-diagnostic-slices-policy-v1",
+  "timeframe_seconds": 300,
+  "training_admission_enabled": false
+}

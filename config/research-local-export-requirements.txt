@@ -1,0 +1,2 @@
+# Optional driver for the bounded local PostgreSQL exporter.
+psycopg[binary]==3.3.6

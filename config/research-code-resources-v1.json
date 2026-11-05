@@ -1,0 +1,12 @@
+{
+  "candidate_execution_enabled": false,
+  "cpu_period_usec": 100000,
+  "cpu_quota_usec": 25000,
+  "memory_max_bytes": 67108864,
+  "memory_swap_max_bytes": 0,
+  "parent_wait_seconds": 8,
+  "schema_version": "trusted-code-resources-v1",
+  "scope_runtime_seconds": 3,
+  "shared_candidate_budget_integrated": false,
+  "tasks_max": 8
+}

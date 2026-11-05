@@ -1,0 +1,19 @@
+{
+  "connect_timeout_seconds": 3,
+  "database": "cryptoforge",
+  "database_soft_deadline_seconds": 8,
+  "driver_version": "3.3.6",
+  "host": "127.0.0.1",
+  "idle_transaction_timeout_ms": 5000,
+  "isolation": "repeatable read",
+  "lock_timeout_ms": 250,
+  "login": "authenticator",
+  "max_rows": 256,
+  "max_source_bytes": 512000,
+  "port": 55432,
+  "read_only": true,
+  "role": "service_role",
+  "schema_version": "research-local-export-policy-v1",
+  "statement_timeout_ms": 3000,
+  "training_admission_enabled": false
+}

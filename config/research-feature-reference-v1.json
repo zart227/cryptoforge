@@ -1,0 +1,30 @@
+{
+  "arithmetic": "exact_decimal_lexemes_as_fractions_then_binary64",
+  "comparison": "exact_finite_float_hex_without_tolerance",
+  "feature_order": [
+    "return_1",
+    "return_3",
+    "range_12",
+    "volume_ratio",
+    "ema_gap",
+    "rsi_14",
+    "candle_body"
+  ],
+  "feature_version": "candle-v1",
+  "formulae": {
+    "candle_body": "(C119-O119)/C119",
+    "ema_gap": "(E12-E36)/C119; Ep=C0*r^119+sum(2*Cj*r^(119-j)/(p+1),j=1..119); r=(p-1)/(p+1)",
+    "range_12": "(max(H108..H119)-min(L108..L119))/C119",
+    "return_1": "(C119-C118)/C118",
+    "return_3": "(C119-C116)/C116",
+    "rsi_14": "G/(G+L); G=sum(max(Cj-Cj-1,0),j=106..119); L=sum(max(Cj-1-Cj,0),j=106..119); one if L=0",
+    "volume_ratio": "20*V119/sum(V100..V119); zero if denominator zero"
+  },
+  "input_state": "closed_only",
+  "legacy_prefix_ema_supported": false,
+  "schema_version": "research-feature-reference-spec-v1",
+  "timeframe_seconds": 300,
+  "training_admission_enabled": false,
+  "window_candles": 120,
+  "zero_loss_rsi": "one_including_flat_window"
+}

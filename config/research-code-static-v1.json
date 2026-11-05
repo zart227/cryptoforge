@@ -1,0 +1,20 @@
+{
+  "argument": "window",
+  "candidate_execution_enabled": false,
+  "candle_fields": [
+    "open",
+    "high",
+    "low",
+    "close",
+    "volume"
+  ],
+  "function": "candidate_features",
+  "max_abs_literal": 1000000,
+  "max_ast_depth": 32,
+  "max_ast_nodes": 512,
+  "max_source_bytes": 32000,
+  "max_window_candles": 64,
+  "output_key": "value",
+  "path": "research/feature_candidate.py",
+  "schema_version": "research-feature-static-contract-v1"
+}

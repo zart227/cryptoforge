@@ -1,0 +1,14 @@
+{
+  "candidate_execution_enabled": false,
+  "comparison": "exact_finite_float_hex_without_tolerance",
+  "maximum_packet_bytes": 2097152,
+  "maximum_result_bytes": 262144,
+  "maximum_samples": 16,
+  "parent_timeout_seconds": 15,
+  "schema_version": "research-feature-oracle-policy-v1",
+  "training_admission_enabled": false,
+  "worker_address_space_bytes": 536870912,
+  "worker_cpu_seconds": 8,
+  "worker_file_bytes": 2097152,
+  "worker_open_files": 64
+}

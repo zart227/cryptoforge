@@ -1,0 +1,12 @@
+{
+  "schema_version": "coordinated-research-budget-v1",
+  "daily_actions": 12,
+  "total_actions": 24,
+  "maximum_by_kind": {
+    "proposal": 5,
+    "semantic_fixture": 10,
+    "fit": 12
+  },
+  "semantic_questions": 80,
+  "free_only": true
+}
