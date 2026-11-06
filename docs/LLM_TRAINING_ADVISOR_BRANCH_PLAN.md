@@ -3,10 +3,16 @@
 Дата сверки: 5 ноября 2026, Europe/Moscow.
 Этот документ — единый источник правды для завершения ветки. Журналы [LLM_ASSISTED_TRAINING_PLAN.md](LLM_ASSISTED_TRAINING_PLAN.md) и [LLM_TRAINING_ADVISOR.md](LLM_TRAINING_ADVISOR.md) сохраняют уже сделанную работу и не заменяют статусы ниже.
 
-Worktree: `/home/arthur/.codex/worktrees/llm-training-advisor/CryptoForge`.
-HEAD: `b221438` (merge `main` `bbf123b` → `arthur_dev/llm-training-advisor` поверх `62cc078`). Checkout `main` в `/home/arthur/Projects/personal/CryptoForge` остаётся **`bbf123b`** — не двигался. Push не выполнялся.
+Worktree ветки: `/home/arthur/.codex/worktrees/llm-training-advisor/CryptoForge` (ветка `arthur_dev/llm-training-advisor`, сейчас совпадает с `main`).
+Checkout `main`: `/home/arthur/Projects/personal/CryptoForge` → **`c5ff109d68dc6dadd9379702eff4bff8c14d6422`** (локальный fast-forward с **`bbf123b4dc7caa78924e6ff1efb20d24d781e131`**, 6 ноября 2026 UTC). Push не выполнялся.
 
-Файл `.agents/skills/typesafe-ai/SKILL.md` в этом worktree **отсутствует** (повторная проверка 5 ноября). Новых вызовов TypeSafe не добавлено.
+Файл `.agents/skills/typesafe-ai/SKILL.md` в worktree ветки **отсутствует**. Новых вызовов TypeSafe не добавлено.
+
+### Локальный перенос решения 1 в `main` (6 ноября 2026 UTC)
+
+- **Способ:** проверка fast-forward в от detached worktree от `bbf123b`, затем `git update-ref refs/heads/main c5ff109 bbf123b` (без merge-коммита и без `--force` push); синхронизация checkout `main` через `git reset --hard main` (checkout был грязным до переноса — `.gitignore`, `docs/CURRENT_PLAN.md` временно убраны в stash).
+- **Коммиты на `main`:** `62cc078` → `b221438` → `c5ff109` (3 коммита поверх прежнего `bbf123b`).
+- **Решения 2 и 3 не открывались:** LLM остаётся offline-советником; `execution_enabled: false`; торговый контур и провайдеры этим переносом не включались.
 
 ### Merge с `main` (`bbf123b`), 5 ноября 2026 UTC
 
@@ -273,8 +279,7 @@ Pin **variant B** выбран; 13 pin-bound тестов входят в merge-
 
 ## Текущий merge verdict
 
-- Статус: **`ГОТОВО К РУЧНОМУ MERGE REVIEW`** (решение 1 — merge с `bbf123b` в ветке выполнен; checkout `main` не двигался).
-- Commits: **`62cc078099004f6f235a3c36f1968d39261e36d8`** (infra), **`b2214380895575cc0979dbfeb8be886ac9c5270b`** (merge `bbf123b`), post-merge доводка — **`git rev-parse HEAD`** на этой ветке после merge.
-- Pin **variant B**; frozen **`b3a85306…`**; live checkout **`main`** **`0ae3096e…`** не менялся; `src/cryptoforge/supabase_executor.py` в worktree = live hash.
-- Merge-профиль post-merge: **2697 passed**, exit **0**.
-- Push и fast-forward checkout `main` **не выполнялись** — перенос в primary repo за человеком.
+- **Решение 1 (инфраструктурный merge):** выполнено локально — `main` = **`c5ff109`**, fast-forward с **`bbf123b`**, push **не** делался.
+- **Решения 2 и 3:** по-прежнему **не открыты** (LLM в рабочем контуре, обучение, квалификация провайдера — отдельные решения; см. таблицы §2–§3 ниже).
+- Pin **variant B**; frozen **`b3a85306…`**; runtime `supabase_executor.py` **`0ae3096e…`** без изменений.
+- Merge-профиль (post-merge в ветке): **2697 passed**, exit **0** (лог `.local/research-plan-audit-20261105/pytest-merge-infrastructure-profile-post-merge-b221438.txt` в worktree, не в git).
